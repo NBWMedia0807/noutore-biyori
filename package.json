@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
   "main": "script.js",
+  "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
