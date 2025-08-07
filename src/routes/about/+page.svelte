@@ -80,6 +80,7 @@
                 <h3>📊 運営者情報</h3>
                 <div class="operator-info">
                     <table class="info-table">
+                        <tbody>
                         <tr>
                             <th>サイト名</th>
                             <td>脳トレ日和</td>
@@ -100,6 +101,7 @@
                             <th>連絡先</th>
                             <td><a href="contact.html">お問い合わせフォーム</a></td>
                         </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
