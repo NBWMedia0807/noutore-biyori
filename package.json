@@ -1,0 +1,28 @@
+{
+  "name": "noutore-biyori",
+  "version": "1.0.0",
+  "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
+  "main": "script.js",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NBWMedia0807/noutore-biyori.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NBWMedia0807/noutore-biyori/issues"
+  },
+  "homepage": "https://github.com/NBWMedia0807/noutore-biyori#readme",
+  "dependencies": {
+    "@sveltejs/adapter-auto": "^6.0.1",
+    "@sveltejs/kit": "^2.27.1",
+    "vite": "^7.1.0"
+  }
+}
