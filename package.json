@@ -22,6 +22,8 @@
   },
   "homepage": "https://github.com/NBWMedia0807/noutore-biyori#readme",
   "dependencies": {
+    "@sanity/client": "^7.8.2",
+    "@sanity/image-url": "^1.1.0",
     "@sveltejs/adapter-auto": "^6.0.1",
     "@sveltejs/kit": "^2.27.1",
     "vite": "^7.1.0"

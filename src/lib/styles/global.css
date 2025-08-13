@@ -1,3 +1,5 @@
+/* 脳トレ日和 - 改善されたスタイル */
+
 * {
     margin: 0;
     padding: 0;
@@ -5,214 +7,61 @@
 }
 
 body {
-    font-family: 'Meiryo', 'Hiragino Kaku Gothic Pro', sans-serif;
+    font-family: 'Noto Sans JP', 'Meiryo', 'Hiragino Kaku Gothic Pro', sans-serif;
     line-height: 1.6;
-    background: linear-gradient(135deg, #fefcf3 0%, #f9f6e8 100%);
-    color: #333;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #2d3436;
     min-height: 100vh;
 }
 
+/* ヘッダー */
 header {
-    background: linear-gradient(135deg, #fff9c4 0%, #f4e98a 100%);
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
     text-align: center;
     padding: 2rem 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+    pointer-events: none;
 }
 
 header h1 {
     font-size: 2.5rem;
-    color: #8b4513;
+    color: white;
     margin-bottom: 0.5rem;
-    text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.1);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+    font-weight: 700;
 }
 
 .subtitle {
     font-size: 1.2rem;
-    color: #6b4a2a;
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 300;
+    position: relative;
+    z-index: 1;
 }
 
-main {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
-
-.game-menu {
-    display: none;
-}
-
-.card-container .game-card {
-    cursor: pointer;
-}
-
-.card-container .game-card:active {
-    transform: scale(0.98);
-}
-
-.game-menu h2 {
-    font-size: 1.8rem;
-    color: #8b4513;
-    margin-bottom: 2rem;
-}
-
-.game-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-.game-btn {
-    background: linear-gradient(135deg, #fff4d6 0%, #f9e79f 100%);
-    border: 3px solid #d4af37;
-    border-radius: 15px;
-    padding: 2rem 1.5rem;
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #8b4513;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.game-btn:hover {
-    background: linear-gradient(135deg, #f9e79f 0%, #f4d03f 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.game-section {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 20px;
-    padding: 2rem;
-    margin: 2rem 0;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.game-section h3 {
-    font-size: 2rem;
-    color: #8b4513;
-    text-align: center;
-    margin-bottom: 1rem;
-}
-
-.game-instruction {
-    font-size: 1.1rem;
-    color: #6b4a2a;
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: #fefcf3;
-    border-radius: 10px;
-    border-left: 5px solid #d4af37;
-}
-
-.memory-display, .calculation-problem, .color-display, .word-display {
-    text-align: center;
-    font-size: 3rem;
-    font-weight: bold;
-    color: #8b4513;
-    background: #fff9c4;
-    border-radius: 15px;
-    padding: 2rem;
-    margin: 2rem 0;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid #d4af37;
-}
-
-.memory-input, .calculation-input, .word-input {
-    text-align: center;
-    margin: 2rem 0;
-}
-
-.memory-input input, .calculation-input input, .word-input input {
-    font-size: 1.5rem;
-    padding: 1rem;
-    border: 3px solid #d4af37;
-    border-radius: 10px;
-    margin-right: 1rem;
-    width: 300px;
-    max-width: 70%;
-    text-align: center;
-}
-
-.color-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin: 2rem 0;
-}
-
-.color-btn {
-    background: linear-gradient(135deg, #fff4d6 0%, #f9e79f 100%);
-    border: 3px solid #d4af37;
-    border-radius: 10px;
-    padding: 1.5rem 3rem;
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #8b4513;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.color-btn:hover {
-    background: linear-gradient(135deg, #f9e79f 0%, #f4d03f 100%);
-    transform: translateY(-2px);
-}
-
-button {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 1rem 2rem;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 0.5rem;
-}
-
-button:hover {
-    background: linear-gradient(135deg, #b8860b 0%, #9a7209 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.back-btn {
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-    margin-top: 2rem;
-}
-
-.back-btn:hover {
-    background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
-}
-
-.result-section {
-    text-align: center;
-}
-
-#result-display {
-    font-size: 1.5rem;
-    color: #8b4513;
-    margin: 2rem 0;
-    padding: 2rem;
-    background: #fff9c4;
-    border-radius: 15px;
-    border: 3px solid #d4af37;
-}
-
+/* ナビゲーション */
 .main-nav {
     background: rgba(255, 255, 255, 0.95);
     padding: 0.5rem 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
+    backdrop-filter: blur(10px);
 }
 
 .nav-container {
@@ -235,7 +84,7 @@ button:hover {
 .hamburger-line {
     width: 25px;
     height: 3px;
-    background: #8b4513;
+    background: #2d3436;
     margin: 3px 0;
     transition: 0.3s;
     border-radius: 2px;
@@ -256,22 +105,50 @@ button:hover {
 }
 
 .nav-menu a {
-    color: #8b4513;
+    color: #2d3436;
     text-decoration: none;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 500;
     transition: all 0.3s ease;
     display: block;
     font-size: 0.9rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-menu a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    transition: left 0.3s ease;
+    z-index: -1;
+}
+
+.nav-menu a:hover::before,
+.nav-menu a.active::before {
+    left: 0;
 }
 
 .nav-menu a:hover,
 .nav-menu a.active {
-    background: linear-gradient(135deg, #f9e79f 0%, #f4d03f 100%);
-    color: #6b4a2a;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
 }
 
+/* メインコンテンツ */
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* セクション */
 .section-header {
     max-width: 600px;
     margin: 2rem auto 1rem auto;
@@ -281,561 +158,60 @@ button:hover {
 
 .section-title {
     font-size: 2rem;
-    color: #8b4513;
+    color: #2d3436;
     margin: 0;
     padding: 1rem 0;
-    background: linear-gradient(135deg, #fff9c4 0%, #f4e98a 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 1rem 2rem 1rem;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-
-.content-card {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.1);
+    border: 2px solid rgba(108, 92, 231, 0.1);
     position: relative;
-    cursor: pointer;
+    overflow: hidden;
 }
 
-.content-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.card-header {
-    padding: 0.75rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.section-title::before {
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 2;
+    height: 4px;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
 }
 
-.card-date {
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-.card-tag {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
+/* ボタン */
+button {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    color: white;
+    border: none;
     border-radius: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.news-tag {
-    background: #e74c3c;
-    color: white;
-}
-
-.guide-tag {
-    background: #3498db;
-    color: white;
-}
-
-.memory-tag {
-    background: #e74c3c;
-    color: white;
-}
-
-.calculation-tag {
-    background: #3498db;
-    color: white;
-}
-
-.color-tag {
-    background: #9b59b6;
-    color: white;
-}
-
-.word-tag {
-    background: #f39c12;
-    color: white;
-}
-
-.ranking-tag {
-    background: #ffd700;
-    color: #333;
-}
-
-.info-tag {
-    background: #95a5a6;
-    color: white;
-}
-
-.card-image {
-    height: 120px;
-    position: relative;
-    overflow: hidden;
-}
-
-.image-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: white;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.news-image {
-    background: linear-gradient(135deg, #ff9a56 0%, #ffad56 100%);
-}
-
-.guide-image {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-}
-
-.memory-image {
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-}
-
-.calculation-image {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-}
-
-.color-image {
-    background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
-}
-
-.word-image {
-    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
-}
-
-.ranking-image {
-    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-}
-
-.info-image {
-    background: linear-gradient(135deg, #c2e9fb 0%, #a1c4fd 100%);
-}
-
-.game-numbers, .game-equation, .game-color-text, .game-scrambled {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.image-icon {
-    font-size: 3rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.card-content {
-    padding: 1rem;
-}
-
-.card-title {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #8b4513;
-    margin: 0 0 0.5rem 0;
-    line-height: 1.3;
-}
-
-.card-description {
-    font-size: 0.8rem;
-    color: #666;
-    line-height: 1.4;
-    margin: 0;
-}
-
-.ranking-list {
-    margin-top: 0.5rem;
-}
-
-.ranking-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.8rem;
-}
-
-.ranking-item:last-child {
-    border-bottom: none;
-}
-
-.rank {
-    font-weight: bold;
-    color: #d4af37;
-    width: 30px;
-}
-
-.game-name {
-    flex: 1;
-    color: #8b4513;
-}
-
-.play-count {
-    color: #999;
-    font-size: 0.7rem;
-}
-
-.info-links {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.info-link {
-    color: #8b4513;
-    text-decoration: none;
-    font-size: 0.8rem;
-    padding: 0.5rem;
-    background: #fefcf3;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    text-align: center;
-}
-
-.info-link:hover {
-    background: #f9f6e8;
-    color: #6b4a2a;
-}
-
-.card-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.game-card:hover .card-overlay {
-    opacity: 1;
-}
-
-.play-button {
-    font-size: 1.1rem;
-    font-weight: bold;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-    border-radius: 25px;
-    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-}
-
-.tile-container {
-    display: none;
-}
-
-.content-page {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
-
-.page-content {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.page-content h2 {
-    font-size: 2rem;
-    color: #8b4513;
-    margin-bottom: 1.5rem;
-    text-align: center;
-}
-
-.page-content h3 {
-    font-size: 1.5rem;
-    color: #8b4513;
-    margin: 2rem 0 1rem 0;
-    border-bottom: 2px solid #d4af37;
-    padding-bottom: 0.5rem;
-}
-
-.page-content h4 {
-    font-size: 1.2rem;
-    color: #6b4a2a;
-    margin: 1.5rem 0 0.5rem 0;
-}
-
-.last-updated {
-    text-align: right;
-    color: #666;
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-}
-
-.policy-section,
-.about-section {
-    margin-bottom: 2.5rem;
-    line-height: 1.8;
-}
-
-.policy-section ul,
-.about-section ul {
-    margin: 1rem 0;
-    padding-left: 2rem;
-}
-
-.policy-section li,
-.about-section li {
-    margin-bottom: 0.5rem;
-}
-
-.contact-intro {
-    font-size: 1.1rem;
-    color: #6b4a2a;
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: #fefcf3;
-    border-radius: 10px;
-    border-left: 5px solid #d4af37;
-}
-
-.contact-form-container {
-    max-width: 600px;
-    margin: 2rem auto;
-}
-
-.contact-form {
-    background: #fefcf3;
-    padding: 2rem;
-    border-radius: 15px;
-    border: 2px solid #d4af37;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    font-weight: bold;
-    color: #8b4513;
-    margin-bottom: 0.5rem;
-}
-
-.required {
-    color: #d32f2f;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid #d4af37;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-family: inherit;
-    background: white;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #b8860b;
-    box-shadow: 0 0 0 3px rgba(180, 134, 11, 0.1);
-}
-
-.checkbox-group {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-.checkbox-group input[type="checkbox"] {
-    width: auto;
-    margin: 0;
-    flex-shrink: 0;
-    margin-top: 0.25rem;
-}
-
-.checkbox-group label {
-    margin: 0;
-    font-weight: normal;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
-}
-
-.submit-btn {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
     padding: 1rem 2rem;
     font-size: 1.1rem;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin: 0.5rem;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
 }
 
-.submit-btn:hover {
-    background: linear-gradient(135deg, #b8860b 0%, #9a7209 100%);
-    transform: translateY(-2px);
+button:hover {
+    background: linear-gradient(135deg, #5a4fcf 0%, #9085e8 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
 }
 
-.reset-btn {
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.reset-btn:hover {
-    background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
-    transform: translateY(-2px);
-}
-
-.contact-info {
-    margin-top: 3rem;
-}
-
-.info-item {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: #fff9c4;
-    border-radius: 10px;
-    border-left: 5px solid #d4af37;
-}
-
-.info-item h4 {
-    color: #8b4513;
-    margin-bottom: 0.5rem;
-}
-
-.games-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
-}
-
-.game-info {
-    padding: 1.5rem;
-    background: #fff9c4;
-    border-radius: 10px;
-    border-left: 5px solid #d4af37;
-}
-
-.game-info h4 {
-    color: #8b4513;
-    margin-bottom: 0.5rem;
-}
-
-.features-list,
-.target-users {
-    background: #fefcf3;
-    padding: 1.5rem;
-    border-radius: 10px;
-    border-left: 5px solid #d4af37;
-}
-
-.operator-info {
-    margin: 1.5rem 0;
-}
-
-.info-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.info-table th,
-.info-table td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.info-table th {
-    background: #fff9c4;
-    color: #8b4513;
-    font-weight: bold;
-    width: 30%;
-}
-
-.info-table tr:last-child th,
-.info-table tr:last-child td {
-    border-bottom: none;
-}
-
-.cta-section {
-    text-align: center;
-    margin: 3rem 0;
-    padding: 2rem;
-    background: linear-gradient(135deg, #fff9c4 0%, #f4e98a 100%);
-    border-radius: 15px;
-}
-
-.cta-button {
-    display: inline-block;
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
-    color: white;
-    text-decoration: none;
-    padding: 1.5rem 3rem;
-    border-radius: 10px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-top: 1rem;
-    transition: all 0.3s ease;
-}
-
-.cta-button:hover {
-    background: linear-gradient(135deg, #b8860b 0%, #9a7209 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
+/* フッター */
 footer {
-    background: linear-gradient(135deg, #fff9c4 0%, #f4e98a 100%);
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
     padding: 2rem 1rem;
     margin-top: 3rem;
+    color: white;
 }
 
 .footer-content {
     max-width: 1000px;
     margin: 0 auto;
     text-align: center;
-    color: #6b4a2a;
 }
 
 .footer-links {
@@ -847,18 +223,19 @@ footer {
 }
 
 .footer-links a {
-    color: #8b4513;
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
     padding: 0.5rem 1rem;
-    border-radius: 5px;
+    border-radius: 8px;
     transition: all 0.3s ease;
 }
 
 .footer-links a:hover {
-    background: rgba(139, 69, 19, 0.1);
-    color: #6b4a2a;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
+/* レスポンシブデザイン */
 @media (max-width: 768px) {
     .mobile-menu-btn {
         display: flex;
@@ -872,11 +249,13 @@ footer {
         background: rgba(255, 255, 255, 0.98);
         flex-direction: column;
         padding: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 32px rgba(108, 92, 231, 0.2);
         transform: translateY(-10px);
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border-radius: 0 0 15px 15px;
     }
     
     .nav-menu.active {
@@ -886,235 +265,34 @@ footer {
     }
     
     .nav-menu li {
-        margin: 0.25rem 0;
+        margin: 0.5rem 0;
     }
     
     .nav-menu a {
         padding: 1rem;
-        text-align: center;
-        border-radius: 10px;
-    }
-    
-    header {
-        padding: 1.5rem 1rem;
-    }
-    
-    header h1 {
-        font-size: 2rem;
-    }
-    
-    .subtitle {
         font-size: 1rem;
-    }
-    
-    .section-header {
-        margin: 1.5rem auto 1rem auto;
-        padding: 0 0.5rem;
-    }
-    
-    .section-title {
-        font-size: 1.5rem;
-        padding: 0.75rem 0;
-    }
-    
-    .card-container {
-        padding: 0 0.5rem 2rem 0.5rem;
-        gap: 0.75rem;
-    }
-    
-    .content-card {
         border-radius: 12px;
-    }
-    
-    .card-image {
-        height: 100px;
-    }
-    
-    .card-header {
-        padding: 0.5rem;
-    }
-    
-    .card-date {
-        font-size: 0.7rem;
-    }
-    
-    .card-tag {
-        font-size: 0.6rem;
-        padding: 0.2rem 0.4rem;
-    }
-    
-    .card-content {
-        padding: 0.75rem;
-    }
-    
-    .card-title {
-        font-size: 0.9rem;
-    }
-    
-    .card-description {
-        font-size: 0.75rem;
-    }
-    
-    .game-numbers, .game-equation, .game-color-text, .game-scrambled {
-        font-size: 1.2rem;
-    }
-    
-    .image-icon {
-        font-size: 2.5rem;
-    }
-    
-    .ranking-item {
-        font-size: 0.75rem;
-    }
-    
-    .play-count {
-        font-size: 0.65rem;
-    }
-    
-    .info-link {
-        font-size: 0.75rem;
-        padding: 0.4rem;
-    }
-    
-    .memory-display, .calculation-problem, .color-display, .word-display {
-        font-size: 2rem;
-        padding: 1.5rem;
-        min-height: 100px;
-    }
-    
-    .memory-input input, .calculation-input input, .word-input input {
-        font-size: 1.2rem;
-        width: 90%;
-        margin-bottom: 1rem;
-    }
-    
-    .color-buttons {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .color-btn {
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        width: 80%;
-    }
-}
-
-@media (max-width: 480px) {
-    header {
-        padding: 1rem 0.5rem;
+        text-align: center;
     }
     
     header h1 {
-        font-size: 1.8rem;
-    }
-    
-    .subtitle {
-        font-size: 0.9rem;
-    }
-    
-    main {
-        padding: 1rem 0.5rem;
-    }
-    
-    .section-header {
-        margin: 1rem auto 0.5rem auto;
-        padding: 0 0.25rem;
-    }
-    
-    .section-title {
-        font-size: 1.3rem;
-        padding: 0.5rem 0;
-    }
-    
-    .card-container {
-        grid-template-columns: 1fr;
-        padding: 0 0.25rem 2rem 0.25rem;
-        gap: 0.5rem;
-    }
-    
-    .content-card {
-        border-radius: 10px;
-    }
-    
-    .card-image {
-        height: 80px;
-    }
-    
-    .card-header {
-        padding: 0.4rem;
-    }
-    
-    .card-date {
-        font-size: 0.65rem;
-    }
-    
-    .card-tag {
-        font-size: 0.55rem;
-        padding: 0.15rem 0.3rem;
-    }
-    
-    .card-content {
-        padding: 0.5rem;
-    }
-    
-    .card-title {
-        font-size: 0.8rem;
-        margin-bottom: 0.4rem;
-    }
-    
-    .card-description {
-        font-size: 0.7rem;
-    }
-    
-    .game-numbers, .game-equation, .game-color-text, .game-scrambled {
-        font-size: 1rem;
-    }
-    
-    .image-icon {
         font-size: 2rem;
     }
     
-    .ranking-item {
-        font-size: 0.7rem;
-        padding: 0.2rem 0;
-    }
-    
-    .play-count {
-        font-size: 0.6rem;
-    }
-    
-    .info-link {
-        font-size: 0.7rem;
-        padding: 0.35rem;
-    }
-    
-    .play-button {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
-    }
-    
-    .game-section {
-        padding: 1.5rem;
-        margin: 1rem 0;
-    }
-    
-    .memory-display, .calculation-problem, .color-display, .word-display {
-        font-size: 1.5rem;
-        padding: 1rem;
-        min-height: 80px;
-    }
-    
-    .color-btn {
-        width: 90%;
-        padding: 0.75rem 1.5rem;
+    .subtitle {
         font-size: 1rem;
     }
     
-    .nav-menu a {
-        font-size: 0.9rem;
-        padding: 0.75rem;
+    .section-title {
+        font-size: 1.6rem;
+        padding: 0.8rem 0;
+    }
+    
+    button {
+        padding: 1.2rem 2rem;
+        font-size: 1rem;
+        margin: 0.25rem;
+        min-height: 48px;
     }
     
     .footer-links {
@@ -1123,6 +301,42 @@ footer {
     }
     
     .footer-links a {
-        font-size: 0.8rem;
+        padding: 1rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
+
+/* タブレット向けの調整 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .nav-menu a {
+        font-size: 0.85rem;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    header h1 {
+        font-size: 2.2rem;
+    }
+    
+    .section-title {
+        font-size: 1.8rem;
+    }
+}
+
+/* 大画面向けの調整 */
+@media (min-width: 1200px) {
+    .nav-container {
+        max-width: 1400px;
+    }
+    
+    main {
+        max-width: 1200px;
+    }
+    
+    .section-header {
+        max-width: 800px;
+    }
+}
+
