@@ -7,7 +7,7 @@
     <div class="logo-section">
       <img src="/logo.png" alt="脳トレ日和" class="logo-image" />
       <div class="title-section">
-        <h1>🧠 脳トレ日和</h1>
+        <h1>脳トレ日和</h1>
         <p class="subtitle">楽しく脳を鍛えましょう</p>
       </div>
     </div>
@@ -22,10 +22,10 @@
       <span class="hamburger-line"></span>
     </button>
     <ul class="nav-menu">
-      <li><a href="/" class="nav-link">🏠 ホーム</a></li>
-      <li><a href="/about" class="nav-link">📖 サイトについて</a></li>
-      <li><a href="/contact" class="nav-link">📧 お問い合わせ</a></li>
-      <li><a href="/privacy" class="nav-link">🔒 プライバシーポリシー</a></li>
+      <li><a href="/" class="nav-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
+      <li><a href="/about" class="nav-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
+      <li><a href="/contact" class="nav-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
+      <li><a href="/privacy" class="nav-link"><img src="/icons/clock-icon.png" alt="プライバシーポリシー" class="nav-icon" /> プライバシーポリシー</a></li>
     </ul>
   </div>
 </nav>
@@ -76,6 +76,12 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
   }
 
   @media (max-width: 768px) {

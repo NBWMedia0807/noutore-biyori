@@ -15,7 +15,7 @@
     {
       id: 'memory',
       title: '記憶力ゲーム',
-      icon: '🧠',
+      icon: '/icons/brain-icon.png',
       difficulty: '★★★',
       description: '数字を覚えて同じ順番で入力してください。レベルが上がると桁数が増えます。',
       color: 'memory',
@@ -24,7 +24,7 @@
     {
       id: 'calculation',
       title: '計算ゲーム',
-      icon: '🔢',
+      icon: '/icons/calculator-icon.png',
       difficulty: '★★',
       description: '簡単な計算問題に答えてください。足し算、引き算、掛け算があります。',
       color: 'calculation',
@@ -33,7 +33,7 @@
     {
       id: 'color',
       title: '色判別ゲーム',
-      icon: '🎨',
+      icon: '/icons/palette-icon.png',
       difficulty: '★★★★',
       description: '文字の色と文字の内容が同じかどうか答えてください。集中力が試されます。',
       color: 'color',
@@ -42,7 +42,7 @@
     {
       id: 'word',
       title: '文字並べゲーム',
-      icon: '📝',
+      icon: '/icons/text-icon.png',
       difficulty: '★★★',
       description: 'バラバラになった文字を正しく並べて単語を作ってください。語彙力が鍛えられます。',
       color: 'word',
@@ -56,14 +56,14 @@
       category: 'ニュース',
       title: '記憶力ゲームの新しいモードを追加しました',
       description: 'より挑戦的な「ハードモード」を追加。上級者の方もお楽しみいただけます。',
-      icon: '🧠'
+      icon: '/icons/news-icon.png'
     },
     {
       date: '2024/01/10',
       category: 'ガイド',
       title: '脳トレ日和の効果的な使い方ガイド',
       description: '脳トレーニングをより効果的に行うためのコツをご紹介します。',
-      icon: '📝'
+      icon: '/icons/text-icon.png'
     }
   ];
 </script>
@@ -73,49 +73,22 @@
   <meta name="description" content="脳トレ日和は高齢者向けの無料脳トレーニングサイトです。記憶力、計算力、判断力を楽しく鍛える4つのゲームをご用意しています。">
 </svelte:head>
 
-<!-- ウェルカムセクション -->
-<section class="welcome-section">
-  <div class="welcome-content">
-    <h2>🌟 毎日の脳トレで健康な生活を</h2>
-    <p class="welcome-text">
-      脳トレ日和では、高齢者の皆様に楽しく続けていただける脳トレーニングゲームを提供しています。<br>
-      時間制限なし、自分のペースで安心してお楽しみください。
-    </p>
-    <div class="stats-row">
-      <div class="stat-item">
-        <span class="stat-number">750+</span>
-        <span class="stat-label">問題数</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">15年</span>
-        <span class="stat-label">運営実績</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">無料</span>
-        <span class="stat-label">すべて無料</span>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- 新着記事セクション -->
 <section class="news-section">
   <div class="section-header">
-    <h2 class="section-title">📰 新着記事</h2>
+    <h2 class="section-title"><img src="/icons/news-icon.png" alt="新着記事" class="section-icon" /> 新着記事</h2>
   </div>
-  <div class="news-container">
+  <div class="news-grid">
     {#each newsItems as item}
       <article class="news-card">
         <div class="news-header">
           <span class="news-date">{item.date}</span>
-          <span class="news-category {item.category === 'ニュース' ? 'news-tag' : 'guide-tag'}">{item.category}</span>
+          <span class="news-category">{item.category}</span>
         </div>
-        <div class="news-content">
-          <div class="news-icon">{item.icon}</div>
-          <div class="news-text">
-            <h3 class="news-title">{item.title}</h3>
-            <p class="news-description">{item.description}</p>
-          </div>
+        <h3 class="news-title">{item.title}</h3>
+        <p class="news-description">{item.description}</p>
+        <div class="news-icon">
+          <img src="{item.icon}" alt="{item.category}" class="news-item-icon" />
         </div>
         <button class="read-more-btn">続きを読む</button>
       </article>
@@ -126,14 +99,14 @@
 <!-- ゲームセクション -->
 <section class="games-section">
   <div class="section-header">
-    <h2 class="section-title">🎮 脳トレゲーム</h2>
+    <h2 class="section-title"><img src="/icons/game-icon.png" alt="脳トレゲーム" class="section-icon" /> 脳トレゲーム</h2>
     <p class="section-subtitle">お好きなゲームを選んで、楽しく脳を鍛えましょう</p>
   </div>
   <div class="games-grid">
     {#each gameCategories as game}
       <div class="game-card {game.color}">
         <div class="game-header">
-          <div class="game-icon">{game.icon}</div>
+          <div class="game-icon"><img src="{game.icon}" alt="{game.title}" class="game-item-icon" /></div>
           <div class="game-meta">
             <span class="difficulty">難易度 {game.difficulty}</span>
             <span class="play-count">{game.playCount}</span>
@@ -144,8 +117,8 @@
           <p class="game-description">{game.description}</p>
         </div>
         <div class="game-actions">
-          <button class="play-btn primary">🎮 プレイする</button>
-          <button class="info-btn secondary">📖 詳細を見る</button>
+          <button class="play-btn primary"><img src="/icons/game-icon.png" alt="プレイ" class="btn-icon" /> プレイする</button>
+          <button class="info-btn secondary"><img src="/icons/news-icon.png" alt="詳細" class="btn-icon" /> 詳細を見る</button>
         </div>
       </div>
     {/each}
@@ -155,7 +128,7 @@
 <!-- ランキングセクション -->
 <section class="ranking-section">
   <div class="section-header">
-    <h2 class="section-title">🏆 人気ゲームランキング</h2>
+    <h2 class="section-title"><img src="/icons/trophy-icon.png" alt="人気ゲームランキング" class="section-icon" /> 人気ゲームランキング</h2>
   </div>
   <div class="ranking-container">
     <div class="ranking-list">
@@ -163,7 +136,7 @@
         <div class="ranking-item">
           <div class="rank-number">{index + 1}位</div>
           <div class="rank-game">
-            <span class="rank-icon">{game.icon}</span>
+            <span class="rank-icon"><img src="{game.icon}" alt="{game.title}" class="rank-item-icon" /></span>
             <span class="rank-title">{game.title}</span>
           </div>
           <div class="rank-count">{game.playCount}</div>
@@ -176,26 +149,26 @@
 <!-- 特徴セクション -->
 <section class="features-section">
   <div class="section-header">
-    <h2 class="section-title">✨ 脳トレ日和の特徴</h2>
+    <h2 class="section-title"><img src="/icons/features-icon.png" alt="脳トレ日和の特徴" class="section-icon" /> 脳トレ日和の特徴</h2>
   </div>
   <div class="features-grid">
     <div class="feature-card">
-      <div class="feature-icon">⏰</div>
+      <div class="feature-icon"><img src="/icons/clock-icon.png" alt="時間制限なし" class="feature-item-icon" /></div>
       <h3>時間制限なし</h3>
       <p>自分のペースで焦らず楽しく脳トレができます</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">👁️</div>
+      <div class="feature-icon"><img src="/icons/brain-icon.png" alt="見やすいデザイン" class="feature-item-icon" /></div>
       <h3>見やすいデザイン</h3>
       <p>高齢者向けに大きな文字と見やすいイラストを使用</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">📱</div>
+      <div class="feature-icon"><img src="/icons/home-icon.png" alt="スマホ対応" class="feature-item-icon" /></div>
       <h3>スマホ対応</h3>
       <p>スマートフォンでもタブレットでも快適にご利用可能</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">💰</div>
+      <div class="feature-icon"><img src="/icons/trophy-icon.png" alt="完全無料" class="feature-item-icon" /></div>
       <h3>完全無料</h3>
       <p>すべてのゲームを無料でお楽しみいただけます</p>
     </div>
@@ -203,59 +176,56 @@
 </section>
 
 <style>
-  .welcome-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 3rem 1rem;
-    text-align: center;
-    margin-bottom: 2rem;
+  /* アイコンスタイル */
+  .section-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 0.5rem;
   }
 
-  .welcome-content h2 {
-    font-size: 2.2rem;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  .news-item-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
   }
 
-  .welcome-text {
-    font-size: 1.1rem;
-    line-height: 1.8;
+  .game-item-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  .btn-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    margin-right: 0.5rem;
+  }
+
+  .rank-item-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+
+  .feature-item-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  /* セクションスタイル */
+  .section {
     margin-bottom: 2rem;
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
   }
 
-  .stats-row {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    min-width: 120px;
-  }
-
-  .stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ffd700;
-  }
-
-  .stat-label {
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-  }
-
   .news-section, .games-section, .ranking-section, .features-section {
-    margin: 3rem 0;
+    padding: 2rem 1rem;
+    margin-bottom: 3rem;
   }
 
   .section-header {
@@ -263,33 +233,41 @@
     margin-bottom: 2rem;
   }
 
-  .section-subtitle {
-    font-size: 1.1rem;
-    color: #666;
-    margin-top: 0.5rem;
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #2d3436;
+    margin-bottom: 0.5rem;
   }
 
-  .news-container {
+  .section-subtitle {
+    color: #636e72;
+    font-size: 1.1rem;
+  }
+
+  /* 新着記事 */
+  .news-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 1rem;
   }
 
   .news-card {
     background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.1);
-    border: 2px solid rgba(108, 92, 231, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    position: relative;
   }
 
   .news-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(108, 92, 231, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   }
 
   .news-header {
@@ -300,90 +278,76 @@
   }
 
   .news-date {
+    color: #636e72;
     font-size: 0.9rem;
-    color: #666;
-    font-weight: 500;
   }
 
   .news-category {
-    padding: 0.25rem 0.75rem;
+    background: #ffc107;
+    color: #856404;
+    padding: 0.3rem 0.8rem;
     border-radius: 20px;
     font-size: 0.8rem;
-    font-weight: bold;
-  }
-
-  .news-tag {
-    background: #e74c3c;
-    color: white;
-  }
-
-  .guide-tag {
-    background: #3498db;
-    color: white;
-  }
-
-  .news-content {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .news-icon {
-    font-size: 2.5rem;
-    flex-shrink: 0;
+    font-weight: 600;
   }
 
   .news-title {
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-size: 1.3rem;
     color: #2d3436;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     line-height: 1.4;
   }
 
   .news-description {
     color: #636e72;
     line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .news-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    opacity: 0.3;
   }
 
   .read-more-btn {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-    color: white;
+    background: linear-gradient(135deg, #ffc107 0%, #ffeb3b 100%);
+    color: #856404;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 0.8rem 1.5rem;
     border-radius: 25px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    width: 100%;
   }
 
   .read-more-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
   }
 
+  /* ゲーム */
   .games-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1rem;
   }
 
   .game-card {
     background: white;
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     border: 3px solid transparent;
   }
 
   .game-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   }
 
   .game-card.memory {
@@ -404,103 +368,100 @@
 
   .game-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
   }
 
   .game-icon {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
+    margin-right: 1rem;
   }
 
   .game-meta {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
 
   .difficulty {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #f39c12;
+    color: #ffc107;
+    font-weight: 600;
   }
 
   .play-count {
-    font-size: 0.8rem;
-    color: #666;
+    color: #636e72;
+    font-size: 0.9rem;
+  }
+
+  .game-content {
+    margin-bottom: 2rem;
   }
 
   .game-title {
     font-size: 1.4rem;
-    font-weight: bold;
     color: #2d3436;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .game-description {
     color: #636e72;
     line-height: 1.6;
-    margin-bottom: 1.5rem;
   }
 
   .game-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .play-btn, .info-btn {
-    flex: 1;
-    padding: 0.875rem 1rem;
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
     border: none;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.95rem;
+    flex: 1;
+    justify-content: center;
+    min-width: 140px;
   }
 
-  .primary {
-    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-    color: white;
+  .play-btn {
+    background: linear-gradient(135deg, #ffc107 0%, #ffeb3b 100%);
+    color: #856404;
   }
 
-  .primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 184, 148, 0.3);
-  }
-
-  .secondary {
+  .info-btn {
     background: #f8f9fa;
-    color: #2d3436;
-    border: 2px solid #ddd;
+    color: #636e72;
+    border: 2px solid #dee2e6;
   }
 
-  .secondary:hover {
-    background: #e9ecef;
-    border-color: #6c5ce7;
+  .play-btn:hover, .info-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
 
+  /* ランキング */
   .ranking-container {
     max-width: 600px;
     margin: 0 auto;
-    padding: 0 1rem;
   }
 
   .ranking-list {
     background: white;
-    border-radius: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.1);
   }
 
   .ranking-item {
     display: flex;
     align-items: center;
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
     border-bottom: 1px solid #f1f3f4;
-    transition: background 0.3s ease;
+    transition: background-color 0.3s ease;
   }
 
   .ranking-item:last-child {
@@ -508,72 +469,65 @@
   }
 
   .ranking-item:hover {
-    background: #f8f9fa;
+    background-color: #f8f9fa;
   }
 
   .rank-number {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #ffd700;
-    width: 60px;
-    text-align: center;
+    color: #ffc107;
+    margin-right: 2rem;
+    min-width: 60px;
   }
 
   .rank-game {
-    flex: 1;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-  }
-
-  .rank-icon {
-    font-size: 1.5rem;
+    flex: 1;
+    gap: 1rem;
   }
 
   .rank-title {
-    font-weight: 600;
+    font-size: 1.1rem;
     color: #2d3436;
   }
 
   .rank-count {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 500;
+    color: #636e72;
+    font-weight: 600;
   }
 
+  /* 特徴 */
   .features-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 2rem;
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 1rem;
   }
 
   .feature-card {
     background: white;
+    border-radius: 16px;
     padding: 2rem;
-    border-radius: 15px;
     text-align: center;
-    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
   }
 
   .feature-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(108, 92, 231, 0.15);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   }
 
   .feature-icon {
-    font-size: 3rem;
     margin-bottom: 1rem;
   }
 
   .feature-card h3 {
     font-size: 1.3rem;
-    font-weight: bold;
     color: #2d3436;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .feature-card p {
@@ -581,22 +535,10 @@
     line-height: 1.6;
   }
 
+  /* レスポンシブ */
   @media (max-width: 768px) {
-    .welcome-content h2 {
-      font-size: 1.8rem;
-    }
-
-    .stats-row {
-      gap: 1rem;
-    }
-
-    .stat-item {
-      min-width: 100px;
-      padding: 0.75rem;
-    }
-
-    .news-container {
-      grid-template-columns: 1fr;
+    .section-title {
+      font-size: 1.6rem;
     }
 
     .games-grid {
@@ -605,6 +547,14 @@
 
     .game-actions {
       flex-direction: column;
+    }
+
+    .play-btn, .info-btn {
+      flex: none;
+    }
+
+    .news-grid {
+      grid-template-columns: 1fr;
     }
 
     .features-grid {
