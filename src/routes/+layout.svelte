@@ -1,27 +1,33 @@
 <script>
   import "../lib/styles/global.css";
+  
+  let isMenuOpen = false;
+  
+  function toggleMenu() {
+    isMenuOpen = !isMenuOpen;
+  }
 </script>
 
 <header>
   <div class="header-content">
-    <div class="logo-section">
+    <a href="/" class="logo-section">
       <img src="/logo.png" alt="脳トレ日和" class="logo-image" />
       <div class="title-section">
         <h1>脳トレ日和</h1>
         <p class="subtitle">楽しく脳を鍛えましょう</p>
       </div>
-    </div>
+    </a>
   </div>
 </header>
 
 <nav class="main-nav">
   <div class="nav-container">
-    <button class="mobile-menu-btn" aria-label="メニュー">
+    <button class="mobile-menu-btn" aria-label="メニュー" on:click={toggleMenu}>
       <span class="hamburger-line"></span>
       <span class="hamburger-line"></span>
       <span class="hamburger-line"></span>
     </button>
-    <ul class="nav-menu">
+    <ul class="nav-menu" class:active={isMenuOpen}>
       <li><a href="/" class="nav-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
       <li><a href="/about" class="nav-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
       <li><a href="/contact" class="nav-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
@@ -59,6 +65,13 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease;
+  }
+
+  .logo-section:hover {
+    transform: scale(1.02);
   }
 
   .logo-image {

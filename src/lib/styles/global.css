@@ -145,13 +145,13 @@ header h1 {
 main {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
 }
 
 /* セクション */
 .section-header {
     max-width: 600px;
-    margin: 2rem auto 1rem auto;
+    margin: 1rem auto 1rem auto;
     text-align: center;
     padding: 0 1rem;
 }
