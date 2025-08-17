@@ -8,15 +8,25 @@
 
   onMount(async () => {
     try {
-      // スキーマに依存しない直接的なクエリを使用
+      // 実際のデータ構造に基づいたクエリ
       const query = `*[_type == "quiz"] | order(_createdAt desc) {
         _id,
         title,
         slug,
-        mainImage,
+        mainImage {
+          asset->{
+            _id,
+            url
+          }
+        },
         problemDescription,
         hint,
-        answerImage,
+        answerImage {
+          asset->{
+            _id,
+            url
+          }
+        },
         answerExplanation,
         closingMessage,
         category->{
@@ -68,10 +78,10 @@
       {#each quizzes as quiz}
         <article class="quiz-card">
           <a href="/quiz/{quiz.slug?.current || quiz._id}" class="quiz-link">
-            {#if quiz.mainImage}
+            {#if quiz.mainImage?.asset?.url}
               <div class="quiz-image">
                 <img 
-                  src={`https://cdn.sanity.io/images/dxl04rd4/production/${quiz.mainImage.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg')}`}
+                  src={quiz.mainImage.asset.url}
                   alt={quiz.title}
                   loading="lazy"
                 />

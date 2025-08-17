@@ -18,10 +18,20 @@
         _id,
         title,
         slug,
-        mainImage,
+        mainImage {
+          asset->{
+            _id,
+            url
+          }
+        },
         problemDescription,
         hint,
-        answerImage,
+        answerImage {
+          asset->{
+            _id,
+            url
+          }
+        },
         answerExplanation,
         closingMessage,
         category->{
@@ -51,12 +61,6 @@
 
   function toggleAnswer() {
     showAnswer = !showAnswer;
-  }
-
-  function getImageUrl(imageRef) {
-    if (!imageRef || !imageRef.asset) return '';
-    const ref = imageRef.asset._ref;
-    return `https://cdn.sanity.io/images/dxl04rd4/production/${ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg')}`;
   }
 
   function renderPortableText(blocks) {
@@ -111,10 +115,10 @@
       <section class="problem-section">
         <h2 class="section-title">🎯 問題</h2>
         
-        {#if quiz.mainImage}
+        {#if quiz.mainImage?.asset?.url}
           <div class="quiz-image">
             <img 
-              src={getImageUrl(quiz.mainImage)}
+              src={quiz.mainImage.asset.url}
               alt="問題画像"
               loading="lazy"
             />
@@ -154,10 +158,10 @@
           <div class="answer-content">
             <h3>✅ 正解</h3>
             
-            {#if quiz.answerImage}
+            {#if quiz.answerImage?.asset?.url}
               <div class="answer-image">
                 <img 
-                  src={getImageUrl(quiz.answerImage)}
+                  src={quiz.answerImage.asset.url}
                   alt="正解画像"
                   loading="lazy"
                 />
