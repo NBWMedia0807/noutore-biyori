@@ -1,188 +1,188 @@
 <script>
-  import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { getQuiz, urlFor } from '$lib/sanity.js';
+  import { page } from '$app/stores';
+  import { client } from '$lib/sanity.js';
 
   let quiz = null;
   let loading = true;
   let error = null;
+  let showHint = false;
   let showAnswer = false;
 
   onMount(async () => {
     try {
       const slug = $page.params.slug;
-      quiz = await getQuiz(slug);
-      if (!quiz) {
+      
+      // スラッグまたはIDでクイズを検索
+      const query = `*[_type == "quiz" && (slug.current == $slug || _id == $slug)][0] {
+        _id,
+        title,
+        slug,
+        mainImage,
+        problemDescription,
+        hint,
+        answerImage,
+        answerExplanation,
+        closingMessage,
+        category->{
+          title,
+          description
+        }
+      }`;
+      
+      const result = await client.fetch(query, { slug });
+      
+      if (result) {
+        quiz = result;
+      } else {
         error = 'クイズが見つかりませんでした';
       }
       loading = false;
     } catch (err) {
+      console.error('クイズデータの取得に失敗:', err);
       error = err.message;
       loading = false;
     }
   });
 
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
-  function getDifficultyText(difficulty) {
-    const difficultyMap = {
-      easy: '★☆☆',
-      medium: '★★☆',
-      hard: '★★★'
-    };
-    return difficultyMap[difficulty] || '★☆☆';
+  function toggleHint() {
+    showHint = !showHint;
   }
 
   function toggleAnswer() {
     showAnswer = !showAnswer;
-    if (showAnswer) {
-      // 正解表示時にページ下部にスクロール
-      setTimeout(() => {
-        const answerSection = document.getElementById('answer-section');
-        if (answerSection) {
-          answerSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    }
   }
 
-  function renderBlockContent(blocks) {
+  function getImageUrl(imageRef) {
+    if (!imageRef || !imageRef.asset) return '';
+    const ref = imageRef.asset._ref;
+    return `https://cdn.sanity.io/images/dxl04rd4/production/${ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg')}`;
+  }
+
+  function renderPortableText(blocks) {
     if (!blocks || !Array.isArray(blocks)) return '';
-    
-    return blocks.map(block => {
-      if (block._type === 'block') {
-        const text = block.children?.map(child => child.text).join('') || '';
-        return `<p>${text}</p>`;
-      }
-      return '';
-    }).join('');
+    return blocks
+      .filter(block => block._type === 'block')
+      .map(block => 
+        block.children
+          ?.filter(child => child._type === 'span')
+          ?.map(child => child.text)
+          ?.join('') || ''
+      )
+      .join('\n');
   }
 </script>
 
 <svelte:head>
-  {#if quiz}
-    <title>{quiz.title} - 脳トレ日和</title>
-    <meta name="description" content={quiz.title} />
-  {:else}
-    <title>クイズ - 脳トレ日和</title>
-  {/if}
+  <title>{quiz?.title || 'クイズ'} - 脳トレ日和</title>
+  <meta name="description" content={quiz?.title ? `${quiz.title}に挑戦しましょう。` : 'クイズに挑戦しましょう。'} />
 </svelte:head>
 
 <main>
   {#if loading}
     <div class="loading-container">
-      <div class="spinner"></div>
+      <div class="loading-spinner"></div>
       <p>クイズを読み込み中...</p>
     </div>
   {:else if error}
     <div class="error-container">
-      <h2>エラーが発生しました</h2>
+      <h2>⚠️ エラーが発生しました</h2>
       <p>{error}</p>
-      <a href="/quiz" class="back-button">クイズ一覧に戻る</a>
+      <a href="/quiz" class="back-button">← クイズ一覧に戻る</a>
     </div>
   {:else if quiz}
     <article class="quiz-article">
-      <!-- クイズヘッダー -->
+      <!-- ヘッダー -->
       <header class="quiz-header">
-        <div class="quiz-meta">
-          <span class="quiz-date">{formatDate(quiz.publishedAt)}</span>
-          {#if quiz.category}
-            <span class="quiz-category">{quiz.category.title}</span>
-          {/if}
+        <div class="breadcrumb">
+          <a href="/quiz">← クイズ一覧</a>
         </div>
+        
+        {#if quiz.category}
+          <div class="category-tag">
+            {quiz.category.title}
+          </div>
+        {/if}
         
         <h1 class="quiz-title">{quiz.title}</h1>
-        
-        <div class="quiz-difficulty">
-          <span class="difficulty-label">難易度:</span>
-          <span class="difficulty-stars difficulty-{quiz.difficulty}">
-            {getDifficultyText(quiz.difficulty)}
-          </span>
-        </div>
       </header>
 
       <!-- 問題セクション -->
       <section class="problem-section">
+        <h2 class="section-title">🎯 問題</h2>
+        
         {#if quiz.mainImage}
-          <div class="problem-image">
+          <div class="quiz-image">
             <img 
-              src={urlFor(quiz.mainImage).width(800).height(600).url()} 
+              src={getImageUrl(quiz.mainImage)}
               alt="問題画像"
+              loading="lazy"
             />
           </div>
         {/if}
-
+        
         {#if quiz.problemDescription}
-          <div class="problem-description">
-            {@html renderBlockContent(quiz.problemDescription)}
+          <div class="problem-text">
+            {renderPortableText(quiz.problemDescription)}
           </div>
         {/if}
-
-        {#if quiz.hint && !showAnswer}
-          <details class="hint-section">
-            <summary>💡 ヒントを見る</summary>
-            <div class="hint-content">
-              {@html renderBlockContent(quiz.hint)}
-            </div>
-          </details>
-        {/if}
-
-        <div class="action-section">
-          {#if !showAnswer}
-            <button class="answer-button" on:click={toggleAnswer}>
-              🎯 正解を見る
-            </button>
-          {:else}
-            <button class="answer-button secondary" on:click={toggleAnswer}>
-              📝 問題に戻る
-            </button>
-          {/if}
-        </div>
       </section>
 
-      <!-- 正解セクション -->
-      {#if showAnswer}
-        <section class="answer-section" id="answer-section">
-          <h2 class="answer-title">🎉 正解発表</h2>
+      <!-- ヒントセクション -->
+      {#if quiz.hint}
+        <section class="hint-section">
+          <button class="hint-button" on:click={toggleHint}>
+            💡 ヒントを{showHint ? '隠す' : '見る'}
+          </button>
           
-          {#if quiz.answerImage}
-            <div class="answer-image">
-              <img 
-                src={urlFor(quiz.answerImage).width(800).height(600).url()} 
-                alt="正解画像"
-              />
-            </div>
-          {/if}
-
-          {#if quiz.answerExplanation}
-            <div class="answer-explanation">
-              {@html renderBlockContent(quiz.answerExplanation)}
-            </div>
-          {/if}
-
-          {#if quiz.closingMessage}
-            <div class="closing-message">
-              {@html renderBlockContent(quiz.closingMessage)}
+          {#if showHint}
+            <div class="hint-content">
+              <h3>💡 ヒント</h3>
+              <p>{renderPortableText(quiz.hint)}</p>
             </div>
           {/if}
         </section>
       {/if}
 
+      <!-- 正解セクション -->
+      <section class="answer-section">
+        <button class="answer-button" on:click={toggleAnswer}>
+          ✅ 正解を{showAnswer ? '隠す' : '見る'}
+        </button>
+        
+        {#if showAnswer}
+          <div class="answer-content">
+            <h3>✅ 正解</h3>
+            
+            {#if quiz.answerImage}
+              <div class="answer-image">
+                <img 
+                  src={getImageUrl(quiz.answerImage)}
+                  alt="正解画像"
+                  loading="lazy"
+                />
+              </div>
+            {/if}
+            
+            {#if quiz.answerExplanation}
+              <div class="answer-explanation">
+                <h4>📝 解説</h4>
+                <p>{renderPortableText(quiz.answerExplanation)}</p>
+              </div>
+            {/if}
+            
+            {#if quiz.closingMessage}
+              <div class="closing-message">
+                <p>{renderPortableText(quiz.closingMessage)}</p>
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </section>
+
       <!-- ナビゲーション -->
-      <nav class="quiz-navigation">
-        <a href="/quiz" class="nav-button">
-          ← クイズ一覧に戻る
-        </a>
-        <a href="/" class="nav-button">
-          🏠 ホームに戻る
-        </a>
+      <nav class="quiz-nav">
+        <a href="/quiz" class="nav-button">← クイズ一覧に戻る</a>
       </nav>
     </article>
   {/if}
@@ -195,20 +195,22 @@
     padding: 1rem;
   }
 
-  .loading-container,
-  .error-container {
-    text-align: center;
-    padding: 3rem 1rem;
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
   }
 
-  .spinner {
+  .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--light-amber);
+    border: 4px solid var(--light-gray);
     border-top: 4px solid var(--primary-yellow);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
   }
 
   @keyframes spin {
@@ -216,190 +218,161 @@
     100% { transform: rotate(360deg); }
   }
 
+  .error-container {
+    text-align: center;
+    padding: 2rem;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin: 2rem 0;
+  }
+
   .quiz-article {
     background: var(--white);
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    margin-bottom: 2rem;
   }
 
   .quiz-header {
     padding: 2rem;
-    background: var(--light-yellow);
-    border-bottom: 1px solid var(--light-amber);
-  }
-
-  .quiz-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
-  }
-
-  .quiz-date {
-    color: var(--medium-gray);
-  }
-
-  .quiz-category {
-    background: var(--primary-yellow);
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--primary-amber) 100%);
     color: #856404;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
+  }
+
+  .breadcrumb {
+    margin-bottom: 1rem;
+  }
+
+  .breadcrumb a {
+    color: #856404;
+    text-decoration: none;
     font-weight: 500;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .category-tag {
+    background: rgba(255, 255, 255, 0.9);
+    color: #856404;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 1rem;
   }
 
   .quiz-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--dark-gray);
-    margin-bottom: 1rem;
     line-height: 1.3;
+    margin: 0;
   }
-
-  .quiz-difficulty {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .difficulty-label {
-    font-size: 0.875rem;
-    color: var(--medium-gray);
-  }
-
-  .difficulty-stars {
-    font-size: 1.1rem;
-    font-weight: bold;
-  }
-
-  .difficulty-easy { color: var(--easy-color); }
-  .difficulty-medium { color: var(--medium-color); }
-  .difficulty-hard { color: var(--hard-color); }
 
   .problem-section,
+  .hint-section,
   .answer-section {
     padding: 2rem;
+    border-bottom: 1px solid var(--light-gray);
   }
 
-  .problem-image,
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-gray);
+    margin-bottom: 1.5rem;
+  }
+
+  .quiz-image,
   .answer-image {
+    margin: 1.5rem 0;
     text-align: center;
-    margin-bottom: 2rem;
   }
 
-  .problem-image img,
+  .quiz-image img,
   .answer-image img {
     max-width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
 
-  .problem-description,
-  .answer-explanation,
-  .closing-message {
+  .problem-text {
     font-size: 1.1rem;
     line-height: 1.7;
     color: var(--dark-gray);
-    margin-bottom: 2rem;
+    white-space: pre-line;
   }
 
-  .problem-description :global(p),
-  .answer-explanation :global(p),
-  .closing-message :global(p) {
-    margin-bottom: 1rem;
-  }
-
-  .hint-section {
-    background: var(--light-amber);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 2rem;
-    border-left: 4px solid var(--primary-amber);
-  }
-
-  .hint-section summary {
-    font-weight: 600;
-    color: #92400e;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-  }
-
-  .hint-section summary:hover {
-    background: rgba(245, 158, 11, 0.2);
-  }
-
-  .hint-content {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .action-section {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
+  .hint-button,
   .answer-button {
     background: var(--primary-yellow);
     color: #856404;
     border: none;
-    border-radius: 12px;
     padding: 1rem 2rem;
+    border-radius: 8px;
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    width: 100%;
+    margin-bottom: 1rem;
   }
 
+  .hint-button:hover,
   .answer-button:hover {
     background: var(--primary-amber);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
   }
 
-  .answer-button.secondary {
-    background: var(--light-gray);
+  .hint-content,
+  .answer-content {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-yellow);
+  }
+
+  .hint-content h3,
+  .answer-content h3 {
     color: var(--dark-gray);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
   }
 
-  .answer-button.secondary:hover {
-    background: #e5e7eb;
-  }
-
-  .answer-section {
-    background: var(--light-yellow);
-    border-top: 2px solid var(--primary-yellow);
-  }
-
-  .answer-title {
-    font-size: 1.5rem;
-    font-weight: 700;
+  .hint-content p,
+  .answer-explanation p,
+  .closing-message p {
+    line-height: 1.7;
     color: var(--dark-gray);
-    margin-bottom: 2rem;
-    text-align: center;
+    white-space: pre-line;
+  }
+
+  .answer-explanation {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--light-gray);
+  }
+
+  .answer-explanation h4 {
+    color: var(--dark-gray);
+    margin-bottom: 1rem;
   }
 
   .closing-message {
-    background: var(--light-amber);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border-left: 4px solid var(--primary-amber);
-    font-style: italic;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--primary-yellow);
+    border-radius: 8px;
+    color: #856404;
+    font-weight: 500;
   }
 
-  .quiz-navigation {
+  .quiz-nav {
     padding: 2rem;
-    background: var(--light-gray);
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+    text-align: center;
   }
 
   .nav-button,
@@ -424,27 +397,24 @@
   @media (max-width: 768px) {
     .quiz-header,
     .problem-section,
-    .answer-section {
+    .hint-section,
+    .answer-section,
+    .quiz-nav {
       padding: 1.5rem;
     }
 
     .quiz-title {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
     }
 
-    .quiz-meta {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
+    .section-title {
+      font-size: 1.3rem;
     }
 
-    .quiz-navigation {
-      flex-direction: column;
-      padding: 1.5rem;
-    }
-
-    .nav-button {
-      text-align: center;
+    .hint-button,
+    .answer-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
     }
   }
 </style>

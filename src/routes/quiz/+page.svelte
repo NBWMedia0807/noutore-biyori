@@ -1,30 +1,108 @@
 <script>
-  // 一時的に準備中表示のみ
+  import { onMount } from 'svelte';
+  import { client } from '$lib/sanity.js';
+
+  let quizzes = [];
+  let loading = true;
+  let error = null;
+
+  onMount(async () => {
+    try {
+      // スキーマに依存しない直接的なクエリを使用
+      const query = `*[_type == "quiz"] | order(_createdAt desc) {
+        _id,
+        title,
+        slug,
+        mainImage,
+        problemDescription,
+        hint,
+        answerImage,
+        answerExplanation,
+        closingMessage,
+        category->{
+          title,
+          description
+        }
+      }`;
+      
+      const result = await client.fetch(query);
+      quizzes = result;
+      loading = false;
+    } catch (err) {
+      console.error('クイズデータの取得に失敗:', err);
+      error = err.message;
+      loading = false;
+    }
+  });
 </script>
 
 <svelte:head>
-  <title>クイズ - 脳トレ日和</title>
-  <meta name="description" content="脳トレ日和のクイズページです。現在準備中です。" />
+  <title>クイズ一覧 - 脳トレ日和</title>
+  <meta name="description" content="脳トレ日和のクイズ一覧ページです。マッチ棒クイズや間違い探しなど、楽しいクイズに挑戦しましょう。" />
 </svelte:head>
 
 <main>
   <div class="section-header">
-    <h1 class="section-title">🧩 クイズ</h1>
+    <h1 class="section-title">🧩 クイズ一覧</h1>
   </div>
 
-  <div class="coming-soon-container">
-    <div class="coming-soon-content">
-      <div class="icon">🚧</div>
-      <h2>クイズ機能 準備中</h2>
-      <p>現在、新しいクイズ機能を準備しております。</p>
-      <p>マッチ棒クイズや間違い探しなど、楽しいクイズを近日公開予定です。</p>
-      <p>もうしばらくお待ちください。</p>
-      
-      <div class="back-link">
-        <a href="/" class="back-button">🏠 ホームに戻る</a>
-      </div>
+  {#if loading}
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>クイズを読み込み中...</p>
     </div>
-  </div>
+  {:else if error}
+    <div class="error-container">
+      <h2>⚠️ データ読み込みエラー</h2>
+      <p>クイズデータの読み込みに失敗しました。</p>
+      <p class="error-detail">{error}</p>
+      <button on:click={() => window.location.reload()} class="retry-button">再読み込み</button>
+    </div>
+  {:else if quizzes.length === 0}
+    <div class="no-content">
+      <h2>📝 クイズ準備中</h2>
+      <p>現在、新しいクイズを準備しております。もうしばらくお待ちください。</p>
+    </div>
+  {:else}
+    <div class="quiz-grid">
+      {#each quizzes as quiz}
+        <article class="quiz-card">
+          <a href="/quiz/{quiz.slug?.current || quiz._id}" class="quiz-link">
+            {#if quiz.mainImage}
+              <div class="quiz-image">
+                <img 
+                  src={`https://cdn.sanity.io/images/dxl04rd4/production/${quiz.mainImage.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg')}`}
+                  alt={quiz.title}
+                  loading="lazy"
+                />
+              </div>
+            {/if}
+            
+            <div class="quiz-content">
+              <h2 class="quiz-title">{quiz.title}</h2>
+              
+              {#if quiz.category}
+                <div class="quiz-category">
+                  <span class="category-tag">{quiz.category.title}</span>
+                </div>
+              {/if}
+              
+              {#if quiz.problemDescription && quiz.problemDescription[0]?.children?.[0]?.text}
+                <p class="quiz-description">
+                  {quiz.problemDescription[0].children[0].text.substring(0, 100)}...
+                </p>
+              {/if}
+              
+              <div class="quiz-meta">
+                <span class="quiz-type">🧩 クイズ</span>
+                <span class="quiz-action">挑戦する →</span>
+              </div>
+            </div>
+          </a>
+        </article>
+      {/each}
+    </div>
+  {/if}
 </main>
 
 <style>
@@ -34,80 +112,175 @@
     padding: 1rem;
   }
 
-  .coming-soon-container {
+  .loading-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    min-height: 60vh;
-    padding: 2rem;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
   }
 
-  .coming-soon-content {
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--light-gray);
+    border-top: 4px solid var(--primary-yellow);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .error-container {
     text-align: center;
-    background: var(--white);
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    padding: 3rem 2rem;
-    max-width: 500px;
-    border-left: 4px solid var(--primary-yellow);
+    padding: 2rem;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin: 2rem 0;
   }
 
-  .icon {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .coming-soon-content h2 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--dark-gray);
-    margin-bottom: 1.5rem;
-  }
-
-  .coming-soon-content p {
-    font-size: 1.1rem;
-    line-height: 1.6;
+  .error-detail {
+    font-size: 0.9rem;
     color: var(--medium-gray);
-    margin-bottom: 1rem;
+    margin: 1rem 0;
+    word-break: break-all;
   }
 
-  .back-link {
-    margin-top: 2rem;
-  }
-
-  .back-button {
+  .retry-button {
     background: var(--primary-yellow);
     color: #856404;
-    text-decoration: none;
+    border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
+    cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
-    display: inline-block;
   }
 
-  .back-button:hover {
+  .retry-button:hover {
     background: var(--primary-amber);
     transform: translateY(-2px);
   }
 
+  .no-content {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+  }
+
+  .quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .quiz-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-yellow);
+  }
+
+  .quiz-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .quiz-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .quiz-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: var(--light-gray);
+  }
+
+  .quiz-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .quiz-card:hover .quiz-image img {
+    transform: scale(1.05);
+  }
+
+  .quiz-content {
+    padding: 1.5rem;
+  }
+
+  .quiz-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark-gray);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+  }
+
+  .quiz-category {
+    margin-bottom: 1rem;
+  }
+
+  .category-tag {
+    background: var(--primary-yellow);
+    color: #856404;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .quiz-description {
+    color: var(--medium-gray);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .quiz-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+
+  .quiz-type {
+    color: var(--medium-gray);
+  }
+
+  .quiz-action {
+    color: var(--primary-yellow);
+    font-weight: 500;
+  }
+
   /* レスポンシブデザイン */
   @media (max-width: 768px) {
-    .coming-soon-content {
-      padding: 2rem 1.5rem;
-      margin: 0 1rem;
+    .quiz-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
 
-    .coming-soon-content h2 {
-      font-size: 1.5rem;
+    .quiz-content {
+      padding: 1rem;
     }
 
-    .coming-soon-content p {
-      font-size: 1rem;
-    }
-
-    .icon {
-      font-size: 3rem;
+    .quiz-title {
+      font-size: 1.1rem;
     }
   }
 </style>
