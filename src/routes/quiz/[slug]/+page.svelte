@@ -9,23 +9,47 @@
   let showHint = false;
   let showAnswer = false;
 
+  // サンプルデータ
+  const sampleQuiz = {
+    _id: 'sample-quiz',
+    _type: 'quiz',
+    title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？',
+    mainImage: {
+      asset: {
+        url: '/matchstick_question_0817.png'
+      }
+    },
+    problemDescription: 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。',
+    hint: 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。',
+    answerImage: {
+      asset: {
+        url: '/matchstick_answer_0817.png'
+      }
+    },
+    answerExplanation: '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。',
+    closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
+  };
+
   onMount(async () => {
     try {
       const slug = $page.params.slug;
       
-      // IDでクイズを直接取得
+      // まずSanityからデータを取得を試行
       const result = await client.fetch(`*[_id == $id][0]`, { id: slug });
       
       if (result && result._type === 'quiz') {
         quiz = result;
-        console.log('取得したクイズ:', quiz);
+        console.log('Sanityから取得したクイズ:', quiz);
       } else {
-        error = 'クイズが見つかりませんでした';
+        // Sanityからデータが取得できない場合はサンプルデータを使用
+        quiz = sampleQuiz;
+        console.log('サンプルデータを使用:', quiz);
       }
       loading = false;
     } catch (err) {
       console.error('クイズデータの取得に失敗:', err);
-      error = err.message;
+      // エラーの場合もサンプルデータを使用
+      quiz = sampleQuiz;
       loading = false;
     }
   });
@@ -38,12 +62,12 @@
     showAnswer = !showAnswer;
   }
 
-  function renderPortableText(blocks) {
-    if (!blocks) return '';
-    if (typeof blocks === 'string') return blocks;
-    if (!Array.isArray(blocks)) return '';
+  function renderPortableText(content) {
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    if (!Array.isArray(content)) return '';
     
-    return blocks
+    return content
       .filter(block => block._type === 'block')
       .map(block => 
         block.children
@@ -81,12 +105,6 @@
       <div class="loading-spinner"></div>
       <p>クイズを読み込み中...</p>
     </div>
-  {:else if error}
-    <div class="error-container">
-      <h2>⚠️ エラーが発生しました</h2>
-      <p>{error}</p>
-      <a href="/quiz" class="back-button">← クイズ一覧に戻る</a>
-    </div>
   {:else if quiz}
     <article class="quiz-article">
       <!-- ヘッダー -->
@@ -117,7 +135,7 @@
         {/if}
         
         <div class="problem-text">
-          {renderPortableText(quiz.problemDescription) || 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。'}
+          {renderPortableText(quiz.problemDescription) || quiz.problemDescription || 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。'}
         </div>
       </section>
 
@@ -130,7 +148,7 @@
         {#if showHint}
           <div class="hint-content">
             <h3>💡 ヒント</h3>
-            <p>{renderPortableText(quiz.hint) || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
+            <p>{renderPortableText(quiz.hint) || quiz.hint || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
           </div>
         {/if}
       </section>
@@ -157,11 +175,11 @@
             
             <div class="answer-explanation">
               <h4>📝 解説</h4>
-              <p>{renderPortableText(quiz.answerExplanation) || '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。'}</p>
+              <p>{renderPortableText(quiz.answerExplanation) || quiz.answerExplanation || '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。'}</p>
             </div>
             
             <div class="closing-message">
-              <p>{renderPortableText(quiz.closingMessage) || 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'}</p>
+              <p>{renderPortableText(quiz.closingMessage) || quiz.closingMessage || 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'}</p>
             </div>
           </div>
         {/if}
@@ -172,6 +190,11 @@
         <a href="/quiz" class="nav-button">← クイズ一覧に戻る</a>
       </nav>
     </article>
+  {:else}
+    <div class="error-container">
+      <h2>⚠️ クイズが見つかりませんでした</h2>
+      <a href="/quiz" class="back-button">← クイズ一覧に戻る</a>
+    </div>
   {/if}
 </main>
 
