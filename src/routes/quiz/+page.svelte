@@ -8,34 +8,11 @@
 
   onMount(async () => {
     try {
-      // 実際のデータ構造に基づいたクエリ
-      const query = `*[_type == "quiz"] | order(_createdAt desc) {
-        _id,
-        title,
-        slug,
-        mainImage {
-          asset->{
-            _id,
-            url
-          }
-        },
-        problemDescription,
-        hint,
-        answerImage {
-          asset->{
-            _id,
-            url
-          }
-        },
-        answerExplanation,
-        closingMessage,
-        category->{
-          title,
-          description
-        }
-      }`;
+      // スキーマなしで全ドキュメントから quiz タイプのみを取得
+      const query = `*[_type == "quiz"]`;
       
       const result = await client.fetch(query);
+      console.log('取得したクイズデータ:', result);
       quizzes = result;
       loading = false;
     } catch (err) {
@@ -77,31 +54,17 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href="/quiz/{quiz.slug?.current || quiz._id}" class="quiz-link">
-            {#if quiz.mainImage?.asset?.url}
-              <div class="quiz-image">
-                <img 
-                  src={quiz.mainImage.asset.url}
-                  alt={quiz.title}
-                  loading="lazy"
-                />
-              </div>
-            {/if}
-            
+          <a href="/quiz/{quiz._id}" class="quiz-link">
             <div class="quiz-content">
-              <h2 class="quiz-title">{quiz.title}</h2>
+              <h2 class="quiz-title">{quiz.title || 'タイトル未設定'}</h2>
               
-              {#if quiz.category}
-                <div class="quiz-category">
-                  <span class="category-tag">{quiz.category.title}</span>
-                </div>
-              {/if}
+              <div class="quiz-category">
+                <span class="category-tag">マッチ棒クイズ</span>
+              </div>
               
-              {#if quiz.problemDescription && quiz.problemDescription[0]?.children?.[0]?.text}
-                <p class="quiz-description">
-                  {quiz.problemDescription[0].children[0].text.substring(0, 100)}...
-                </p>
-              {/if}
+              <p class="quiz-description">
+                マッチ棒1本だけを動かして正しい式に直してください。
+              </p>
               
               <div class="quiz-meta">
                 <span class="quiz-type">🧩 クイズ</span>
@@ -211,24 +174,6 @@
     text-decoration: none;
     color: inherit;
     display: block;
-  }
-
-  .quiz-image {
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
-    background: var(--light-gray);
-  }
-
-  .quiz-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  .quiz-card:hover .quiz-image img {
-    transform: scale(1.05);
   }
 
   .quiz-content {
