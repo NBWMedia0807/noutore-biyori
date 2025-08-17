@@ -6,20 +6,12 @@
   let quiz = null;
   let loading = true;
   let error = null;
-  let showHint = false;
 
   // サンプルデータ
   const sampleQuiz = {
     _id: 'sample-quiz',
     _type: 'quiz',
     title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？',
-    mainImage: {
-      asset: {
-        url: 'https://cdn.sanity.io/images/dxl04rd4/production/matchstick_question_0817.png'
-      }
-    },
-    problemDescription: 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。',
-    hint: 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。',
     answerImage: {
       asset: {
         url: 'https://cdn.sanity.io/images/dxl04rd4/production/matchstick_answer_0817.png'
@@ -53,10 +45,6 @@
     }
   });
 
-  function toggleHint() {
-    showHint = !showHint;
-  }
-
   function renderPortableText(content) {
     if (!content) return '';
     if (typeof content === 'string') return content;
@@ -86,9 +74,6 @@
       }
     }
     // フォールバック：アップロードした画像を直接参照
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_question')) {
-      return '/upload/マッチ棒クイズ_question_0817.png';
-    }
     if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_answer')) {
       return '/upload/マッチ棒クイズ_answer_0817.png';
     }
@@ -103,22 +88,22 @@
 </script>
 
 <svelte:head>
-  <title>{quiz?.title || 'クイズ'} - 脳トレ日和</title>
-  <meta name="description" content={quiz?.title ? `${quiz.title}に挑戦しましょう。` : 'クイズに挑戦しましょう。'} />
+  <title>{quiz?.title || 'クイズ'} 正解 - 脳トレ日和</title>
+  <meta name="description" content={quiz?.title ? `${quiz.title}の正解と解説をご覧ください。` : 'クイズの正解と解説をご覧ください。'} />
 </svelte:head>
 
 <main>
   {#if loading}
     <div class="loading-container">
       <div class="loading-spinner"></div>
-      <p>クイズを読み込み中...</p>
+      <p>正解を読み込み中...</p>
     </div>
   {:else if quiz}
     <article class="quiz-article">
       <!-- ヘッダー -->
       <header class="quiz-header">
         <div class="breadcrumb">
-          <a href="/quiz">← クイズ一覧</a>
+          <a href="/quiz/{quiz._id}">← 問題に戻る</a>
         </div>
         
         <div class="category-tag">
@@ -128,49 +113,36 @@
         <h1 class="quiz-title">{@html formatTitle(quiz.title)}</h1>
       </header>
 
-      <!-- 問題セクション -->
-      <section class="problem-section">
-        <h2 class="section-title">問題</h2>
+      <!-- 正解セクション -->
+      <section class="answer-section">
+        <h2 class="section-title">正解</h2>
         
-        {#if getImageUrl(quiz.mainImage)}
-          <div class="quiz-image">
+        {#if getImageUrl(quiz.answerImage)}
+          <div class="answer-image">
             <img 
-              src={getImageUrl(quiz.mainImage)}
-              alt="問題画像"
+              src={getImageUrl(quiz.answerImage)}
+              alt="正解画像"
               loading="lazy"
             />
           </div>
         {/if}
         
-        <div class="problem-text">
-          {renderPortableText(quiz.problemDescription) || quiz.problemDescription || 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。'}
+        <div class="answer-explanation">
+          <h3>解説</h3>
+          <p>{renderPortableText(quiz.answerExplanation) || quiz.answerExplanation || '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。'}</p>
         </div>
-      </section>
-
-      <!-- ヒントセクション -->
-      <section class="hint-section">
-        <button class="hint-button" on:click={toggleHint}>
-          ヒントを{showHint ? '隠す' : '見る'}
-        </button>
         
-        {#if showHint}
-          <div class="hint-content">
-            <h3>ヒント</h3>
-            <p>{renderPortableText(quiz.hint) || quiz.hint || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
-          </div>
-        {/if}
-      </section>
-
-      <!-- 正解ページへのナビゲーション -->
-      <section class="answer-navigation">
-        <a href="/quiz/{quiz._id}/answer" class="answer-link">
-          正解を見る
-        </a>
+        <div class="closing-message">
+          <p>{renderPortableText(quiz.closingMessage) || quiz.closingMessage || 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'}</p>
+        </div>
       </section>
 
       <!-- ナビゲーション -->
       <nav class="quiz-nav">
-        <a href="/quiz" class="nav-button">← クイズ一覧に戻る</a>
+        <div class="nav-buttons">
+          <a href="/quiz/{quiz._id}" class="nav-button secondary">← 問題に戻る</a>
+          <a href="/quiz" class="nav-button primary">クイズ一覧</a>
+        </div>
       </nav>
     </article>
   {:else}
@@ -265,11 +237,8 @@
     margin: 0;
   }
 
-  .problem-section,
-  .hint-section,
-  .answer-navigation {
+  .answer-section {
     padding: 2rem;
-    border-bottom: 1px solid var(--light-gray);
   }
 
   .section-title {
@@ -280,90 +249,98 @@
     text-align: center;
   }
 
-  .quiz-image {
+  .answer-image {
     margin: 1.5rem 0;
     text-align: center;
   }
 
-  .quiz-image img {
+  .answer-image img {
     max-width: 100%;
     height: auto;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
 
-  .problem-text {
-    font-size: 1.1rem;
-    line-height: 1.7;
-    color: var(--dark-gray);
-    white-space: pre-line;
-    text-align: center;
-  }
-
-  .hint-button {
-    background: var(--primary-yellow);
-    color: #856404;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-
-  .hint-button:hover {
-    background: var(--primary-amber);
-    transform: translateY(-2px);
-  }
-
-  .hint-content {
-    background: #f8f9fa;
+  .answer-explanation {
+    margin-top: 2rem;
     padding: 1.5rem;
+    background: #f8f9fa;
     border-radius: 8px;
     border-left: 4px solid var(--primary-yellow);
   }
 
-  .hint-content h3 {
+  .answer-explanation h3 {
     color: var(--dark-gray);
     margin-bottom: 1rem;
+    font-size: 1.2rem;
   }
 
-  .hint-content p {
+  .answer-explanation p {
     line-height: 1.7;
     color: var(--dark-gray);
     white-space: pre-line;
+    font-size: 1.1rem;
   }
 
-  .answer-navigation {
+  .closing-message {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--primary-yellow);
+    border-radius: 8px;
+    color: #856404;
+    font-weight: 500;
     text-align: center;
   }
 
-  .answer-link {
-    background: var(--primary-yellow);
-    color: #856404;
-    text-decoration: none;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: inline-block;
-  }
-
-  .answer-link:hover {
-    background: var(--primary-amber);
-    transform: translateY(-2px);
+  .closing-message p {
+    margin: 0;
+    line-height: 1.6;
   }
 
   .quiz-nav {
     padding: 2rem;
-    text-align: center;
+    border-top: 1px solid var(--light-gray);
   }
 
-  .nav-button,
+  .nav-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .nav-button {
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .nav-button.primary {
+    background: var(--primary-yellow);
+    color: #856404;
+  }
+
+  .nav-button.secondary {
+    background: #f8f9fa;
+    color: var(--dark-gray);
+    border: 1px solid var(--light-gray);
+  }
+
+  .nav-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .nav-button.primary:hover {
+    background: var(--primary-amber);
+  }
+
+  .nav-button.secondary:hover {
+    background: #e9ecef;
+  }
+
   .back-button {
     background: var(--primary-yellow);
     color: #856404;
@@ -375,7 +352,6 @@
     display: inline-block;
   }
 
-  .nav-button:hover,
   .back-button:hover {
     background: var(--primary-amber);
     transform: translateY(-2px);
@@ -384,9 +360,7 @@
   /* レスポンシブデザイン */
   @media (max-width: 768px) {
     .quiz-header,
-    .problem-section,
-    .hint-section,
-    .answer-navigation,
+    .answer-section,
     .quiz-nav {
       padding: 1.5rem;
     }
@@ -399,10 +373,15 @@
       font-size: 1.3rem;
     }
 
-    .hint-button,
-    .answer-link {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
+    .nav-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .nav-button {
+      width: 100%;
+      max-width: 300px;
+      text-align: center;
     }
   }
 </style>
