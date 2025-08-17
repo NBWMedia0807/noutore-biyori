@@ -28,10 +28,10 @@
       <span class="hamburger-line"></span>
     </button>
     <ul class="nav-menu" class:active={isMenuOpen}>
-      <li><a href="/" class="nav-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
-      <li><a href="/about" class="nav-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
-      <li><a href="/contact" class="nav-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
-      <li><a href="/privacy" class="nav-link"><img src="/icons/clock-icon.png" alt="プライバシーポリシー" class="nav-icon" /> プライバシーポリシー</a></li>
+      <li><a href="/" class="nav-link home-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
+      <li><a href="/about" class="nav-link about-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
+      <li><a href="/contact" class="nav-link contact-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
+      <li><a href="/privacy" class="nav-link privacy-link"><img src="/icons/clock-icon.png" alt="プライバシーポリシー" class="nav-icon" /> プライバシーポリシー</a></li>
     </ul>
   </div>
 </nav>
@@ -79,6 +79,9 @@
     height: 80px;
     object-fit: contain;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    background: var(--white);
+    border-radius: 12px;
+    padding: 8px;
   }
 
   .title-section {
@@ -89,6 +92,27 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  /* カテゴリ別色分け */
+  .home-link {
+    background: var(--light-blue);
+    color: var(--primary-blue);
+  }
+
+  .about-link {
+    background: var(--light-green);
+    color: var(--primary-green);
+  }
+
+  .contact-link {
+    background: var(--light-purple);
+    color: var(--primary-purple);
+  }
+
+  .privacy-link {
+    background: #fed7aa;
+    color: var(--word-game-color);
   }
 
   .nav-icon {
@@ -114,3 +138,4 @@
     }
   }
 </style>
+

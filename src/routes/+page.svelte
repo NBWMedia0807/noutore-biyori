@@ -238,12 +238,12 @@
     align-items: center;
     justify-content: center;
     font-size: 2rem;
-    color: #2d3436;
+    color: var(--dark-gray);
     margin-bottom: 0.5rem;
   }
 
   .section-subtitle {
-    color: #636e72;
+    color: var(--medium-gray);
     font-size: 1.1rem;
   }
 
@@ -257,12 +257,13 @@
   }
 
   .news-card {
-    background: white;
+    background: var(--white);
     border-radius: 16px;
     padding: 2rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     position: relative;
+    border-left: 4px solid var(--primary-blue);
   }
 
   .news-card:hover {
@@ -278,13 +279,13 @@
   }
 
   .news-date {
-    color: #636e72;
+    color: var(--medium-gray);
     font-size: 0.9rem;
   }
 
   .news-category {
-    background: #ffc107;
-    color: #856404;
+    background: var(--primary-blue);
+    color: var(--white);
     padding: 0.3rem 0.8rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -293,13 +294,13 @@
 
   .news-title {
     font-size: 1.3rem;
-    color: #2d3436;
+    color: var(--dark-gray);
     margin-bottom: 1rem;
     line-height: 1.4;
   }
 
   .news-description {
-    color: #636e72;
+    color: var(--medium-gray);
     line-height: 1.6;
     margin-bottom: 1.5rem;
   }
@@ -312,8 +313,8 @@
   }
 
   .read-more-btn {
-    background: linear-gradient(135deg, #ffc107 0%, #ffeb3b 100%);
-    color: #856404;
+    background: var(--primary-blue);
+    color: var(--white);
     border: none;
     padding: 0.8rem 1.5rem;
     border-radius: 25px;
@@ -323,8 +324,9 @@
   }
 
   .read-more-btn:hover {
+    background: #1d4ed8;
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
   }
 
   /* ゲーム */
@@ -337,12 +339,12 @@
   }
 
   .game-card {
-    background: white;
+    background: var(--white);
     border-radius: 20px;
     padding: 2rem;
     box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
-    border: 3px solid transparent;
+    border-left: 4px solid transparent;
   }
 
   .game-card:hover {
@@ -351,19 +353,19 @@
   }
 
   .game-card.memory {
-    border-color: #e74c3c;
+    border-left-color: var(--memory-color);
   }
 
   .game-card.calculation {
-    border-color: #3498db;
+    border-left-color: var(--calculation-color);
   }
 
   .game-card.color {
-    border-color: #9b59b6;
+    border-left-color: var(--color-game-color);
   }
 
   .game-card.word {
-    border-color: #f39c12;
+    border-left-color: var(--word-game-color);
   }
 
   .game-header {
@@ -383,12 +385,12 @@
   }
 
   .difficulty {
-    color: #ffc107;
+    color: var(--medium-color);
     font-weight: 600;
   }
 
   .play-count {
-    color: #636e72;
+    color: var(--medium-gray);
     font-size: 0.9rem;
   }
 
@@ -398,12 +400,12 @@
 
   .game-title {
     font-size: 1.4rem;
-    color: #2d3436;
+    color: var(--dark-gray);
     margin-bottom: 1rem;
   }
 
   .game-description {
-    color: #636e72;
+    color: var(--medium-gray);
     line-height: 1.6;
   }
 
@@ -428,17 +430,24 @@
   }
 
   .play-btn {
-    background: linear-gradient(135deg, #ffc107 0%, #ffeb3b 100%);
-    color: #856404;
+    background: var(--primary-blue);
+    color: var(--white);
   }
 
   .info-btn {
-    background: #f8f9fa;
-    color: #636e72;
+    background: var(--light-gray);
+    color: var(--dark-gray);
     border: 2px solid #dee2e6;
   }
 
-  .play-btn:hover, .info-btn:hover {
+  .play-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  }
+
+  .info-btn:hover {
+    background: #e5e7eb;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
@@ -450,7 +459,7 @@
   }
 
   .ranking-list {
-    background: white;
+    background: var(--white);
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
@@ -460,8 +469,9 @@
     display: flex;
     align-items: center;
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid #f1f3f4;
+    border-bottom: 1px solid var(--light-gray);
     transition: background-color 0.3s ease;
+    border-left: 4px solid var(--primary-blue);
   }
 
   .ranking-item:last-child {
@@ -469,15 +479,22 @@
   }
 
   .ranking-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--light-gray);
   }
 
   .rank-number {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #ffc107;
+    color: var(--white);
+    background: var(--primary-blue);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-right: 2rem;
-    min-width: 60px;
+    min-width: 40px;
   }
 
   .rank-game {
@@ -489,11 +506,11 @@
 
   .rank-title {
     font-size: 1.1rem;
-    color: #2d3436;
+    color: var(--dark-gray);
   }
 
   .rank-count {
-    color: #636e72;
+    color: var(--medium-gray);
     font-weight: 600;
   }
 
@@ -507,12 +524,13 @@
   }
 
   .feature-card {
-    background: white;
+    background: var(--white);
     border-radius: 16px;
     padding: 2rem;
     text-align: center;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    border-top: 4px solid var(--primary-purple);
   }
 
   .feature-card:hover {
@@ -526,12 +544,12 @@
 
   .feature-card h3 {
     font-size: 1.3rem;
-    color: #2d3436;
+    color: var(--dark-gray);
     margin-bottom: 1rem;
   }
 
   .feature-card p {
-    color: #636e72;
+    color: var(--medium-gray);
     line-height: 1.6;
   }
 
