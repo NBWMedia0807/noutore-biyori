@@ -13,37 +13,12 @@
     try {
       const slug = $page.params.slug;
       
-      // スラッグまたはIDでクイズを検索
-      const query = `*[_type == "quiz" && (slug.current == $slug || _id == $slug)][0] {
-        _id,
-        title,
-        slug,
-        mainImage {
-          asset->{
-            _id,
-            url
-          }
-        },
-        problemDescription,
-        hint,
-        answerImage {
-          asset->{
-            _id,
-            url
-          }
-        },
-        answerExplanation,
-        closingMessage,
-        category->{
-          title,
-          description
-        }
-      }`;
+      // IDでクイズを直接取得
+      const result = await client.fetch(`*[_id == $id][0]`, { id: slug });
       
-      const result = await client.fetch(query, { slug });
-      
-      if (result) {
+      if (result && result._type === 'quiz') {
         quiz = result;
+        console.log('取得したクイズ:', quiz);
       } else {
         error = 'クイズが見つかりませんでした';
       }
@@ -64,7 +39,10 @@
   }
 
   function renderPortableText(blocks) {
-    if (!blocks || !Array.isArray(blocks)) return '';
+    if (!blocks) return '';
+    if (typeof blocks === 'string') return blocks;
+    if (!Array.isArray(blocks)) return '';
+    
     return blocks
       .filter(block => block._type === 'block')
       .map(block => 
@@ -74,6 +52,21 @@
           ?.join('') || ''
       )
       .join('\n');
+  }
+
+  function getImageUrl(imageRef) {
+    if (!imageRef) return null;
+    if (typeof imageRef === 'string') return imageRef;
+    if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
+    if (imageRef.asset && imageRef.asset._ref) {
+      // Sanity画像URLを構築
+      const ref = imageRef.asset._ref;
+      const [, id, dimensions, format] = ref.match(/^image-([a-f\d]+)-(\d+x\d+)-(\w+)$/) || [];
+      if (id && dimensions && format) {
+        return `https://cdn.sanity.io/images/dxl04rd4/production/${id}-${dimensions}.${format}`;
+      }
+    }
+    return null;
   }
 </script>
 
@@ -102,11 +95,9 @@
           <a href="/quiz">← クイズ一覧</a>
         </div>
         
-        {#if quiz.category}
-          <div class="category-tag">
-            {quiz.category.title}
-          </div>
-        {/if}
+        <div class="category-tag">
+          マッチ棒クイズ
+        </div>
         
         <h1 class="quiz-title">{quiz.title}</h1>
       </header>
@@ -115,38 +106,34 @@
       <section class="problem-section">
         <h2 class="section-title">🎯 問題</h2>
         
-        {#if quiz.mainImage?.asset?.url}
+        {#if getImageUrl(quiz.mainImage)}
           <div class="quiz-image">
             <img 
-              src={quiz.mainImage.asset.url}
+              src={getImageUrl(quiz.mainImage)}
               alt="問題画像"
               loading="lazy"
             />
           </div>
         {/if}
         
-        {#if quiz.problemDescription}
-          <div class="problem-text">
-            {renderPortableText(quiz.problemDescription)}
-          </div>
-        {/if}
+        <div class="problem-text">
+          {renderPortableText(quiz.problemDescription) || 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。'}
+        </div>
       </section>
 
       <!-- ヒントセクション -->
-      {#if quiz.hint}
-        <section class="hint-section">
-          <button class="hint-button" on:click={toggleHint}>
-            💡 ヒントを{showHint ? '隠す' : '見る'}
-          </button>
-          
-          {#if showHint}
-            <div class="hint-content">
-              <h3>💡 ヒント</h3>
-              <p>{renderPortableText(quiz.hint)}</p>
-            </div>
-          {/if}
-        </section>
-      {/if}
+      <section class="hint-section">
+        <button class="hint-button" on:click={toggleHint}>
+          💡 ヒントを{showHint ? '隠す' : '見る'}
+        </button>
+        
+        {#if showHint}
+          <div class="hint-content">
+            <h3>💡 ヒント</h3>
+            <p>{renderPortableText(quiz.hint) || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
+          </div>
+        {/if}
+      </section>
 
       <!-- 正解セクション -->
       <section class="answer-section">
@@ -158,28 +145,24 @@
           <div class="answer-content">
             <h3>✅ 正解</h3>
             
-            {#if quiz.answerImage?.asset?.url}
+            {#if getImageUrl(quiz.answerImage)}
               <div class="answer-image">
                 <img 
-                  src={quiz.answerImage.asset.url}
+                  src={getImageUrl(quiz.answerImage)}
                   alt="正解画像"
                   loading="lazy"
                 />
               </div>
             {/if}
             
-            {#if quiz.answerExplanation}
-              <div class="answer-explanation">
-                <h4>📝 解説</h4>
-                <p>{renderPortableText(quiz.answerExplanation)}</p>
-              </div>
-            {/if}
+            <div class="answer-explanation">
+              <h4>📝 解説</h4>
+              <p>{renderPortableText(quiz.answerExplanation) || '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。'}</p>
+            </div>
             
-            {#if quiz.closingMessage}
-              <div class="closing-message">
-                <p>{renderPortableText(quiz.closingMessage)}</p>
-              </div>
-            {/if}
+            <div class="closing-message">
+              <p>{renderPortableText(quiz.closingMessage) || 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'}</p>
+            </div>
           </div>
         {/if}
       </section>

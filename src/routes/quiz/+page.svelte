@@ -8,12 +8,13 @@
 
   onMount(async () => {
     try {
-      // スキーマなしで全ドキュメントから quiz タイプのみを取得
-      const query = `*[_type == "quiz"]`;
-      
-      const result = await client.fetch(query);
+      // 最もシンプルなクエリでquizタイプのドキュメントを取得
+      const result = await client.fetch('*[_type == "quiz"]');
       console.log('取得したクイズデータ:', result);
-      quizzes = result;
+      
+      if (result && result.length > 0) {
+        quizzes = result;
+      }
       loading = false;
     } catch (err) {
       console.error('クイズデータの取得に失敗:', err);
@@ -56,14 +57,14 @@
         <article class="quiz-card">
           <a href="/quiz/{quiz._id}" class="quiz-link">
             <div class="quiz-content">
-              <h2 class="quiz-title">{quiz.title || 'タイトル未設定'}</h2>
+              <h2 class="quiz-title">{quiz.title || 'マッチ棒クイズ'}</h2>
               
               <div class="quiz-category">
                 <span class="category-tag">マッチ棒クイズ</span>
               </div>
               
               <p class="quiz-description">
-                マッチ棒1本だけを動かして正しい式に直してください。
+                マッチ棒1本だけを動かして正しい式に直してください。頭の体操にぴったりです！
               </p>
               
               <div class="quiz-meta">
@@ -83,6 +84,18 @@
     max-width: 1000px;
     margin: 0 auto;
     padding: 1rem;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark-gray);
+    margin: 0;
   }
 
   .loading-container {
@@ -236,6 +249,10 @@
 
     .quiz-title {
       font-size: 1.1rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
     }
   }
 </style>
