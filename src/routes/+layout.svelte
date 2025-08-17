@@ -29,6 +29,7 @@
     </button>
     <ul class="nav-menu" class:active={isMenuOpen}>
       <li><a href="/" class="nav-link home-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
+      <li><a href="/quiz" class="nav-link quiz-link"><img src="/icons/brain-icon.png" alt="クイズ" class="nav-icon" /> クイズ</a></li>
       <li><a href="/about" class="nav-link about-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
       <li><a href="/contact" class="nav-link contact-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
       <li><a href="/privacy" class="nav-link privacy-link"><img src="/icons/clock-icon.png" alt="プライバシーポリシー" class="nav-icon" /> プライバシーポリシー</a></li>
@@ -98,6 +99,11 @@
   .home-link {
     background: var(--light-blue);
     color: var(--primary-blue);
+  }
+
+  .quiz-link {
+    background: var(--light-purple);
+    color: var(--primary-purple);
   }
 
   .about-link {
