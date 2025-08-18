@@ -29,10 +29,10 @@
     </button>
     <ul class="nav-menu" class:active={isMenuOpen}>
       <li><a href="/" class="nav-link home-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
-      <li><a href="/quiz" class="nav-link quiz-link"><img src="/icons/brain-icon.png" alt="クイズ" class="nav-icon" /> クイズ</a></li>
+      <li><a href="/category/matchstick" class="nav-link matchstick-link"><img src="/icons/brain-icon.png" alt="マッチ棒クイズ" class="nav-icon" /> マッチ棒クイズ</a></li>
+      <li><a href="/category/spot-the-difference" class="nav-link difference-link"><img src="/icons/search-icon.png" alt="間違い探し" class="nav-icon" /> 間違い探し</a></li>
       <li><a href="/about" class="nav-link about-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
       <li><a href="/contact" class="nav-link contact-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
-      <li><a href="/privacy" class="nav-link privacy-link"><img src="/icons/clock-icon.png" alt="プライバシーポリシー" class="nav-icon" /> プライバシーポリシー</a></li>
     </ul>
   </div>
 </nav>
@@ -101,9 +101,14 @@
     color: var(--primary-blue);
   }
 
-  .quiz-link {
+  .matchstick-link {
     background: var(--light-purple);
     color: var(--primary-purple);
+  }
+
+  .difference-link {
+    background: var(--light-green);
+    color: var(--primary-green);
   }
 
   .about-link {
@@ -116,11 +121,6 @@
     color: var(--primary-purple);
   }
 
-  .privacy-link {
-    background: #fed7aa;
-    color: var(--word-game-color);
-  }
-
   .nav-icon {
     width: 20px;
     height: 20px;
@@ -129,13 +129,14 @@
 
   @media (max-width: 768px) {
     .logo-section {
-      flex-direction: column;
-      text-align: center;
-      gap: 0.5rem;
+      /* スマホでも横並びを維持 */
+      flex-direction: row;
+      text-align: left;
+      gap: 1rem;
     }
 
     .title-section {
-      text-align: center;
+      text-align: left;
     }
 
     .logo-image {

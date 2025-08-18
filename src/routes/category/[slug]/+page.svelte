@@ -1,13 +1,26 @@
 <script>
   import { onMount } from 'svelte';
-  import { client } from '../lib/sanity.js';
+  import { page } from '$app/stores';
+  import { client } from '../../../lib/sanity.js';
 
   let quizzes = [];
   let loading = true;
+  let category = '';
+  let categoryTitle = '';
+
+  $: slug = $page.params.slug;
 
   onMount(async () => {
+    if (slug === 'matchstick') {
+      category = 'マッチ棒クイズ';
+      categoryTitle = 'マッチ棒クイズ';
+    } else if (slug === 'spot-the-difference') {
+      category = '間違い探し';
+      categoryTitle = '間違い探し';
+    }
+
     try {
-      const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
+      const query = `*[_type == "quiz" && category == "${category}"] | order(_createdAt desc) {
         _id,
         title,
         category,
@@ -36,23 +49,39 @@
 </script>
 
 <svelte:head>
-  <title>脳トレ日和 - 高齢者向け無料脳トレーニングサイト</title>
-  <meta name="description" content="脳トレ日和は高齢者向けの無料脳トレーニングサイトです。マッチ棒クイズや間違い探しなど、楽しく脳を鍛えるクイズをご用意しています。">
+  <title>{categoryTitle} - 脳トレ日和</title>
+  <meta name="description" content="{categoryTitle}の一覧ページです。楽しく脳を鍛える{categoryTitle}をお楽しみください。">
 </svelte:head>
 
-<!-- 新着クイズセクション -->
-<section class="quiz-section">
-  <div class="section-header">
-    <h2 class="section-title"><img src="/icons/news-icon.png" alt="新着クイズ" class="section-icon" /> 新着クイズ</h2>
+<!-- カテゴリヘッダー -->
+<section class="category-header">
+  <div class="category-info">
+    <h1 class="category-title">{categoryTitle}</h1>
+    <p class="category-description">
+      {#if slug === 'matchstick'}
+        マッチ棒を動かして正しい式を作るパズルゲームです。論理的思考力を鍛えましょう。
+      {:else if slug === 'spot-the-difference'}
+        2つの画像の違いを見つけるゲームです。観察力と集中力を鍛えましょう。
+      {/if}
+    </p>
+    <div class="quiz-count">
+      {#if !loading}
+        全{quizzes.length}問
+      {/if}
+    </div>
   </div>
-  
+</section>
+
+<!-- クイズ一覧 -->
+<section class="quiz-list-section">
   {#if loading}
     <div class="loading">
       <p>クイズを読み込み中...</p>
     </div>
   {:else if quizzes.length === 0}
     <div class="no-quizzes">
-      <p>まだクイズが投稿されていません。</p>
+      <p>まだ{categoryTitle}が投稿されていません。</p>
+      <p>新しいクイズをお楽しみに！</p>
     </div>
   {:else}
     <div class="quiz-grid">
@@ -75,34 +104,50 @@
 </section>
 
 <style>
-  /* セクションスタイル */
-  .quiz-section {
+  /* カテゴリヘッダー */
+  .category-header {
+    background: linear-gradient(135deg, var(--light-yellow) 0%, var(--light-amber) 100%);
     padding: 2rem 1rem;
-    margin-bottom: 3rem;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .section-header {
-    text-align: center;
     margin-bottom: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.2);
   }
 
-  .section-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
+  .category-info {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .category-title {
+    font-size: 2.5rem;
     color: var(--dark-gray);
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
   }
 
-  .section-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    margin-right: 0.5rem;
+  .category-description {
+    font-size: 1.1rem;
+    color: var(--medium-gray);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .quiz-count {
+    display: inline-block;
+    background: var(--primary-yellow);
+    color: #856404;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* クイズ一覧セクション */
+  .quiz-list-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
   }
 
   /* 読み込み・エラー状態 */
@@ -113,13 +158,16 @@
     font-size: 1.1rem;
   }
 
+  .no-quizzes p {
+    margin-bottom: 0.5rem;
+  }
+
   /* クイズグリッド */
   .quiz-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    margin-bottom: 3rem;
   }
 
   /* クイズカード */
@@ -196,8 +244,12 @@
 
   /* レスポンシブ */
   @media (max-width: 768px) {
-    .section-title {
-      font-size: 1.6rem;
+    .category-title {
+      font-size: 2rem;
+    }
+
+    .category-description {
+      font-size: 1rem;
     }
 
     .quiz-grid {
@@ -219,8 +271,8 @@
   }
 
   @media (max-width: 480px) {
-    .quiz-section {
-      padding: 1rem 0.5rem;
+    .category-header {
+      padding: 1.5rem 1rem;
     }
 
     .quiz-image {
