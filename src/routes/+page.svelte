@@ -2,8 +2,27 @@
   import { onMount } from 'svelte';
   import { client } from '../lib/sanity.js';
 
-  let quizzes = [];
-  let loading = true;
+  let quizzes = [
+    {
+      _id: 'sample-matchstick-quiz',
+      _createdAt: '2025-08-17T03:35:56Z',
+      title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
+      category: {
+        title: 'マッチ棒クイズ',
+        _id: 'category-matchstick-quiz'
+      },
+      questionImage: null,
+      answerImage: {
+        asset: {
+          _ref: 'image-sample'
+        }
+      },
+      slug: {
+        current: 'matchstick-quiz-9-plus-1-equals-8'
+      }
+    }
+  ];
+  let loading = false;
 
   onMount(async () => {
     try {

@@ -4,7 +4,7 @@
   import { client } from '../../../lib/sanity.js';
 
   let quizzes = [];
-  let loading = true;
+  let loading = false;
   let category = '';
   let categoryTitle = '';
 
@@ -14,9 +14,31 @@
     if (slug === 'matchstick') {
       category = 'マッチ棒クイズ';
       categoryTitle = 'マッチ棒クイズ';
+      // マッチ棒クイズのサンプルデータを直接設定
+      quizzes = [
+        {
+          _id: 'sample-matchstick-quiz',
+          _createdAt: '2025-08-17T03:35:56Z',
+          title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
+          category: {
+            title: 'マッチ棒クイズ',
+            _id: 'category-matchstick-quiz'
+          },
+          questionImage: null,
+          answerImage: {
+            asset: {
+              _ref: 'image-sample'
+            }
+          },
+          slug: {
+            current: 'matchstick-quiz-9-plus-1-equals-8'
+          }
+        }
+      ];
     } else if (slug === 'spot-the-difference') {
       category = '間違い探し';
       categoryTitle = '間違い探し';
+      quizzes = []; // 間違い探しは記事なし
     }
 
     try {
