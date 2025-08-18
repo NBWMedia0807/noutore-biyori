@@ -7,34 +7,21 @@
 
   onMount(async () => {
     try {
-      // まずサンプルデータを確認
-      const sampleQuery = `*[_type == "quiz" && slug.current == "sample-quiz"][0] {
+      // 全てのクイズを取得（最新順）
+      const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
         _id,
         title,
-        category,
+        category->{
+          title,
+          _id
+        },
         questionImage,
+        answerImage,
         _createdAt,
         slug
       }`;
       
-      const sampleQuiz = await client.fetch(sampleQuery);
-      
-      if (sampleQuiz) {
-        quizzes = [sampleQuiz];
-      } else {
-        // サンプルデータがない場合は全クイズを取得
-        const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
-          _id,
-          title,
-          category,
-          questionImage,
-          _createdAt,
-          slug
-        }`;
-        
-        quizzes = await client.fetch(query);
-      }
-      
+      quizzes = await client.fetch(query);
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);
@@ -48,7 +35,7 @@
   }
 
   function getImageUrl(image) {
-    if (!image) return '/placeholder-quiz.png';
+    if (!image || !image.asset) return '/placeholder-quiz.png';
     return `https://cdn.sanity.io/images/dxl04rd4/production/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
   }
 </script>
@@ -78,8 +65,8 @@
         <article class="quiz-card">
           <a href="/quiz/{quiz.slug.current}" class="quiz-link">
             <div class="quiz-image">
-              <img src="{getImageUrl(quiz.questionImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
-              <div class="quiz-category">{quiz.category}</div>
+              <img src="{getImageUrl(quiz.questionImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
+              <div class="quiz-category">{quiz.category?.title || 'クイズ'}</div>
             </div>
             <div class="quiz-content">
               <div class="quiz-date">{formatDate(quiz._createdAt)}</div>

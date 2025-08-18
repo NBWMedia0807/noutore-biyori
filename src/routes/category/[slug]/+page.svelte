@@ -20,11 +20,16 @@
     }
 
     try {
-      const query = `*[_type == "quiz" && category == "${category}"] | order(_createdAt desc) {
+      // カテゴリ参照を使用してクイズを取得
+      const query = `*[_type == "quiz" && category->title == "${category}"] | order(_createdAt desc) {
         _id,
         title,
-        category,
+        category->{
+          title,
+          _id
+        },
         questionImage,
+        answerImage,
         _createdAt,
         slug
       }`;
@@ -43,7 +48,7 @@
   }
 
   function getImageUrl(image) {
-    if (!image) return '/placeholder-quiz.png';
+    if (!image || !image.asset) return '/placeholder-quiz.png';
     return `https://cdn.sanity.io/images/dxl04rd4/production/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
   }
 </script>
@@ -89,8 +94,8 @@
         <article class="quiz-card">
           <a href="/quiz/{quiz.slug.current}" class="quiz-link">
             <div class="quiz-image">
-              <img src="{getImageUrl(quiz.questionImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
-              <div class="quiz-category">{quiz.category}</div>
+              <img src="{getImageUrl(quiz.questionImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
+              <div class="quiz-category">{quiz.category?.title || categoryTitle}</div>
             </div>
             <div class="quiz-content">
               <div class="quiz-date">{formatDate(quiz._createdAt)}</div>
