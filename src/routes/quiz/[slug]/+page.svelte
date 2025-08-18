@@ -74,7 +74,7 @@
   }
 
   function getImageUrl(imageRef) {
-    if (!imageRef) return null;
+    if (!imageRef) return '/matchstick_question.png'; // デフォルトで問題画像を返す
     if (typeof imageRef === 'string') return imageRef;
     if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
     if (imageRef.asset && imageRef.asset._ref) {
@@ -85,14 +85,14 @@
         return `https://cdn.sanity.io/images/dxl04rd4/production/${id}-${dimensions}.${format}`;
       }
     }
-    // フォールバック：アップロードした画像を直接参照
+    // フォールバック：staticディレクトリの画像を直接参照
     if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_question')) {
-      return '/upload/マッチ棒クイズ_question_0817.png';
+      return '/matchstick_question.png';
     }
     if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_answer')) {
-      return '/upload/マッチ棒クイズ_answer_0817.png';
+      return '/matchstick_answer.png';
     }
-    return null;
+    return '/matchstick_question.png'; // デフォルトで問題画像を返す
   }
 
   // タイトルを改行で分割
