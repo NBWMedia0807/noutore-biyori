@@ -73,11 +73,8 @@
         return `https://cdn.sanity.io/images/dxl04rd4/production/${id}-${dimensions}.${format}`;
       }
     }
-    // フォールバック：アップロードした画像を直接参照
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_answer')) {
-      return '/upload/マッチ棒クイズ_answer_0817.png';
-    }
-    return null;
+    // フォールバック：staticディレクトリの画像を使用
+    return '/matchstick_answer.png';
   }
 
   // タイトルを改行で分割
