@@ -36,10 +36,63 @@
       
       const result = await client.fetch(query);
       console.log('取得したカテゴリクイズデータ:', result);
-      quizzes = result;
+      
+      if (result && result.length > 0) {
+        quizzes = result;
+      } else if (slug === 'matchstick') {
+        // マッチ棒クイズのサンプルデータ
+        quizzes = [
+          {
+            _id: 'sample-matchstick-quiz',
+            _createdAt: '2025-08-17T03:35:56Z',
+            title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
+            category: {
+              title: 'マッチ棒クイズ',
+              _id: 'category-matchstick-quiz'
+            },
+            questionImage: null,
+            answerImage: {
+              asset: {
+                _ref: 'image-sample'
+              }
+            },
+            slug: {
+              current: 'matchstick-quiz-9-plus-1-equals-8'
+            }
+          }
+        ];
+      } else {
+        quizzes = [];
+      }
+      
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);
+      // エラーの場合もサンプルデータを表示（マッチ棒クイズの場合）
+      if (slug === 'matchstick') {
+        quizzes = [
+          {
+            _id: 'sample-matchstick-quiz',
+            _createdAt: '2025-08-17T03:35:56Z',
+            title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
+            category: {
+              title: 'マッチ棒クイズ',
+              _id: 'category-matchstick-quiz'
+            },
+            questionImage: null,
+            answerImage: {
+              asset: {
+                _ref: 'image-sample'
+              }
+            },
+            slug: {
+              current: 'matchstick-quiz-9-plus-1-equals-8'
+            }
+          }
+        ];
+      } else {
+        quizzes = [];
+      }
       loading = false;
     }
   });
@@ -50,7 +103,8 @@
   }
 
   function getImageUrl(image) {
-    if (!image || !image.asset) return '/placeholder-quiz.png';
+    if (!image || !image.asset) return '/matchstick_question.png';
+    if (image.asset._ref === 'image-sample') return '/matchstick_question.png';
     return `https://cdn.sanity.io/images/dxl04rd4/production/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
   }
 </script>
