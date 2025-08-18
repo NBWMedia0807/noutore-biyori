@@ -6,7 +6,8 @@ export const client = createClient({
   projectId: 'dxl04rd4',
   dataset: 'production',
   useCdn: true,
-  apiVersion: '2024-08-17'
+  apiVersion: '2024-08-17',
+  perspective: 'published'
 });
 
 // 画像URL生成用のビルダー
