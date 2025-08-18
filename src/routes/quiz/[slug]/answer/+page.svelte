@@ -14,7 +14,7 @@
     title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？',
     answerImage: {
       asset: {
-        url: 'https://cdn.sanity.io/images/dxl04rd4/production/matchstick_answer_0817.png'
+        url: '/matchstick_answer.png'
       }
     },
     answerExplanation: '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。',
