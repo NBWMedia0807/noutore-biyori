@@ -7,7 +7,8 @@
 
   onMount(async () => {
     try {
-      const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
+      // まずサンプルデータを確認
+      const sampleQuery = `*[_type == "quiz" && slug.current == "sample-quiz"][0] {
         _id,
         title,
         category,
@@ -16,7 +17,24 @@
         slug
       }`;
       
-      quizzes = await client.fetch(query);
+      const sampleQuiz = await client.fetch(sampleQuery);
+      
+      if (sampleQuiz) {
+        quizzes = [sampleQuiz];
+      } else {
+        // サンプルデータがない場合は全クイズを取得
+        const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
+          _id,
+          title,
+          category,
+          questionImage,
+          _createdAt,
+          slug
+        }`;
+        
+        quizzes = await client.fetch(query);
+      }
+      
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);

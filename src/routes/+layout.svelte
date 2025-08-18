@@ -1,11 +1,5 @@
 <script>
   import "../lib/styles/global.css";
-  
-  let isMenuOpen = false;
-  
-  function toggleMenu() {
-    isMenuOpen = !isMenuOpen;
-  }
 </script>
 
 <header>
@@ -22,17 +16,9 @@
 
 <nav class="main-nav">
   <div class="nav-container">
-    <button class="mobile-menu-btn" aria-label="メニュー" on:click={toggleMenu}>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-    </button>
-    <ul class="nav-menu" class:active={isMenuOpen}>
-      <li><a href="/" class="nav-link home-link"><img src="/icons/home-icon.png" alt="ホーム" class="nav-icon" /> ホーム</a></li>
-      <li><a href="/category/matchstick" class="nav-link matchstick-link"><img src="/icons/brain-icon.png" alt="マッチ棒クイズ" class="nav-icon" /> マッチ棒クイズ</a></li>
-      <li><a href="/category/spot-the-difference" class="nav-link difference-link"><img src="/icons/search-icon.png" alt="間違い探し" class="nav-icon" /> 間違い探し</a></li>
-      <li><a href="/about" class="nav-link about-link"><img src="/icons/news-icon.png" alt="サイトについて" class="nav-icon" /> サイトについて</a></li>
-      <li><a href="/contact" class="nav-link contact-link"><img src="/icons/text-icon.png" alt="お問い合わせ" class="nav-icon" /> お問い合わせ</a></li>
+    <ul class="nav-menu">
+      <li><a href="/category/matchstick" class="nav-link matchstick-link">マッチ棒クイズ</a></li>
+      <li><a href="/category/spot-the-difference" class="nav-link difference-link">間違い探し</a></li>
     </ul>
   </div>
 </nav>
@@ -92,39 +78,18 @@
   .nav-link {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
   }
 
   /* カテゴリ別色分け */
-  .home-link {
-    background: var(--light-blue);
-    color: var(--primary-blue);
-  }
-
   .matchstick-link {
-    background: var(--light-purple);
-    color: var(--primary-purple);
+    background: var(--light-amber);
+    color: #92400e;
   }
 
   .difference-link {
-    background: var(--light-green);
-    color: var(--primary-green);
-  }
-
-  .about-link {
-    background: var(--light-green);
-    color: var(--primary-green);
-  }
-
-  .contact-link {
-    background: var(--light-purple);
-    color: var(--primary-purple);
-  }
-
-  .nav-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
+    background: var(--light-orange);
+    color: #9a3412;
   }
 
   @media (max-width: 768px) {

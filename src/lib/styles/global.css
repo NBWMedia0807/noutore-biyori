@@ -105,25 +105,6 @@ header h1 {
     position: relative;
 }
 
-.mobile-menu-btn {
-    display: none;
-    flex-direction: column;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    margin-left: auto;
-}
-
-.hamburger-line {
-    width: 25px;
-    height: 3px;
-    background: var(--dark-gray);
-    margin: 3px 0;
-    transition: 0.3s;
-    border-radius: 2px;
-}
-
 .nav-menu {
     list-style: none;
     display: flex;
@@ -132,16 +113,17 @@ header h1 {
     margin: 0;
     padding: 0;
     transition: all 0.3s ease;
+    gap: 0.5rem;
 }
 
 .nav-menu li {
-    margin: 0 0.25rem;
+    margin: 0;
 }
 
 .nav-menu a {
     color: var(--dark-gray);
     text-decoration: none;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.5rem;
     border-radius: 12px;
     font-weight: 500;
     transition: all 0.3s ease;
@@ -149,27 +131,6 @@ header h1 {
     font-size: 0.9rem;
     position: relative;
     overflow: hidden;
-}
-
-/* カテゴリ別色分け - 薄い黄色系 */
-.home-link {
-    background: var(--light-yellow);
-    color: #856404;
-}
-
-.about-link {
-    background: var(--light-amber);
-    color: #92400e;
-}
-
-.contact-link {
-    background: var(--light-orange);
-    color: #9a3412;
-}
-
-.privacy-link {
-    background: #fef3c7;
-    color: #92400e;
 }
 
 .nav-menu a:hover {
@@ -386,36 +347,6 @@ footer {
 
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
-    .mobile-menu-btn {
-        display: flex;
-    }
-    
-    .nav-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: var(--white);
-        flex-direction: column;
-        padding: 1rem;
-        box-shadow: 0 8px 32px rgba(255, 193, 7, 0.2);
-        transform: translateY(-10px);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        border-radius: 0 0 15px 15px;
-    }
-    
-    .nav-menu.active {
-        transform: translateY(0);
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .nav-menu li {
-        margin: 0.5rem 0;
-    }
-    
     .nav-menu a {
         padding: 1rem;
         font-size: 1rem;
