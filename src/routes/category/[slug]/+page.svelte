@@ -20,9 +20,10 @@
     }
 
     try {
-      // カテゴリ参照を使用してクイズを取得
+      // 実際のデータ構造に合わせたクエリ
       const query = `*[_type == "quiz" && category->title == "${category}"] | order(_createdAt desc) {
         _id,
+        _createdAt,
         title,
         category->{
           title,
@@ -30,11 +31,12 @@
         },
         questionImage,
         answerImage,
-        _createdAt,
         slug
       }`;
       
-      quizzes = await client.fetch(query);
+      const result = await client.fetch(query);
+      console.log('取得したカテゴリクイズデータ:', result);
+      quizzes = result;
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);

@@ -7,9 +7,10 @@
 
   onMount(async () => {
     try {
-      // 全てのクイズを取得（最新順）
+      // 実際のデータ構造に合わせたクエリ
       const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10] {
         _id,
+        _createdAt,
         title,
         category->{
           title,
@@ -17,11 +18,12 @@
         },
         questionImage,
         answerImage,
-        _createdAt,
         slug
       }`;
       
-      quizzes = await client.fetch(query);
+      const result = await client.fetch(query);
+      console.log('取得したクイズデータ:', result);
+      quizzes = result;
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);
