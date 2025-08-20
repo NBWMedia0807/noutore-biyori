@@ -4,46 +4,36 @@
   import { client } from '../../../lib/sanity.js';
 
   let quizzes = [];
-  let loading = false;
+  let loading = true;
   let category = '';
   let categoryTitle = '';
 
   $: slug = $page.params.slug;
 
-  onMount(async () => {
+  $: {
+    // slugが変わるたびにリセット
+    quizzes = [];
+    loading = true;
     if (slug === 'matchstick') {
       category = 'マッチ棒クイズ';
       categoryTitle = 'マッチ棒クイズ';
-      // マッチ棒クイズのサンプルデータを直接設定
-      quizzes = [
-        {
-          _id: 'sample-matchstick-quiz',
-          _createdAt: '2025-08-17T03:35:56Z',
-          title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
-          category: {
-            title: 'マッチ棒クイズ',
-            _id: 'category-matchstick-quiz'
-          },
-          questionImage: null,
-          answerImage: {
-            asset: {
-              _ref: 'image-sample'
-            }
-          },
-          slug: {
-            current: 'matchstick-quiz-9-plus-1-equals-8'
-          }
-        }
-      ];
     } else if (slug === 'spot-the-difference') {
       category = '間違い探し';
       categoryTitle = '間違い探し';
-      quizzes = []; // 間違い探しは記事なし
+    } else {
+      category = '';
+      categoryTitle = '';
     }
+    fetchQuizzes(category);
+  }
 
+  async function fetchQuizzes(currentCategory) {
+    if (!currentCategory) {
+      loading = false;
+      return;
+    }
     try {
-      // 実際のデータ構造に合わせたクエリ
-      const query = `*[_type == "quiz" && category->title == "${category}"] | order(_createdAt desc) {
+      const query = `*[_type == "quiz" && category->title == "${currentCategory}"] | order(_createdAt desc) {
         _id,
         _createdAt,
         title,
@@ -61,63 +51,16 @@
       
       if (result && result.length > 0) {
         quizzes = result;
-      } else if (slug === 'matchstick') {
-        // マッチ棒クイズのサンプルデータ
-        quizzes = [
-          {
-            _id: 'sample-matchstick-quiz',
-            _createdAt: '2025-08-17T03:35:56Z',
-            title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
-            category: {
-              title: 'マッチ棒クイズ',
-              _id: 'category-matchstick-quiz'
-            },
-            questionImage: null,
-            answerImage: {
-              asset: {
-                _ref: 'image-sample'
-              }
-            },
-            slug: {
-              current: 'matchstick-quiz-9-plus-1-equals-8'
-            }
-          }
-        ];
       } else {
         quizzes = [];
       }
-      
       loading = false;
     } catch (error) {
       console.error('クイズの取得に失敗しました:', error);
-      // エラーの場合もサンプルデータを表示（マッチ棒クイズの場合）
-      if (slug === 'matchstick') {
-        quizzes = [
-          {
-            _id: 'sample-matchstick-quiz',
-            _createdAt: '2025-08-17T03:35:56Z',
-            title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
-            category: {
-              title: 'マッチ棒クイズ',
-              _id: 'category-matchstick-quiz'
-            },
-            questionImage: null,
-            answerImage: {
-              asset: {
-                _ref: 'image-sample'
-              }
-            },
-            slug: {
-              current: 'matchstick-quiz-9-plus-1-equals-8'
-            }
-          }
-        ];
-      } else {
-        quizzes = [];
-      }
+      quizzes = [];
       loading = false;
     }
-  });
+  }
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -363,4 +306,6 @@
     }
   }
 </style>
+
+
 

@@ -31,11 +31,10 @@
 
   onMount(async () => {
     try {
-      const slug = $page.params.slug;
+      const quizId = $page.params.id;
       
-      // まずSanityからデータを取得を試行
-      const result = await client.fetch(`*[_id == $id][0]`, { id: slug });
-      
+      // Sanityからデータを取得
+      const result = await client.fetch(`*[_id == $quizId][0]`, { quizId });      
       if (result && result._type === 'quiz') {
         quiz = result;
         console.log('Sanityから取得したクイズ:', quiz);
@@ -163,15 +162,11 @@
 
       <!-- 正解ページへのナビゲーション -->
       <section class="answer-navigation">
-        <a href="/quiz/{quiz._id}/answer" class="answer-link">
-          正解を見る
+        <a href="/quiz/matchstick/article/{quiz._id}/answer" class="answer-link">
         </a>
       </section>
 
-      <!-- ナビゲーション -->
-      <nav class="quiz-nav">
-        <a href="/quiz" class="nav-button">← クイズ一覧に戻る</a>
-      </nav>
+
     </article>
   {:else}
     <div class="error-container">
@@ -406,4 +401,6 @@
     }
   }
 </style>
+
+
 
