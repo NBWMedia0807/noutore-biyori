@@ -97,15 +97,34 @@
     }
   });
 
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-  }
+<script>
+  import { onMount } from 'svelte';
+  import { client, urlFor } from '$lib/sanity.js';
+
+  let quizzes = [];
+  let loading = true;
+
+  onMount(async () => {
+    try {
+      const query = `*[_type == "quiz"] | order(_createdAt desc)[0...10]{
+        _id, _createdAt, title,
+        category->{ title, _id },
+        questionImage, answerImage, slug
+      }`;
+      const result = await client.fetch(query);
+      quizzes = result?.length ? result : [];
+    } catch (e) {
+      console.error('クイズの取得に失敗:', e);
+      quizzes = [];
+    } finally {
+      loading = false;
+    }
+  });
 
   function getImageUrl(image) {
-    if (!image || !image.asset) return '/matchstick_question.png';
+    if (!image?.asset) return '/matchstick_question.png';
     if (image.asset._ref === 'image-sample') return '/matchstick_question.png';
-    return `https://cdn.sanity.io/images/dxl04rd4/production/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
+    return urlFor(image).width(800).url();
   }
 </script>
 
