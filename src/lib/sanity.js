@@ -3,10 +3,10 @@ import imageUrlBuilder from '@sanity/image-url';
 
 // Sanityクライアントの設定
 export const client = createClient({
-  projectId: 'dxl04rd4',
+  projectId: 'quljge22',
   dataset: 'production',
   useCdn: true,
-  apiVersion: '2024-08-17',
+  apiVersion: '22024-01-01',
   perspective: 'published'
 });
 
