@@ -9,11 +9,12 @@ const client = createClient({
   dataset: 'production',
   apiVersion: '2024-01-01',
   useCdn: true,    // 公開データのみを高速取得
+  perspective: 'published',
 });
 
 // slugで記事1件を取得
-const QUERY = `*[_type=="quiz" && slug.current==$slug][0]{
-  _id, title, slug, body, mainImage{asset->{url, metadata}}
+const QUERY = `*[defined(slug.current) && slug.current==$slug][0]{
+  _id, _type, title, slug, body, mainImage{asset->{url, metadata}}
 }`;
 
 export const load: PageServerLoad = async ({ params }) => {
