@@ -55,7 +55,6 @@ jobs:
           else
             echo "No test script found, skipping..."
           fi
-        continue-on-error: false
 
       - name: Build project
         run: pnpm run build
