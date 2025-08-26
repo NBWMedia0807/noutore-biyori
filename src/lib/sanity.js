@@ -1,71 +1,23 @@
+// src/lib/sanity.js（全置き換え）
 import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 
-// Sanityクライアントの設定
+// 環境変数の取得とフォールバック処理
+const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID;
+const dataset = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
+
+// projectIdが未定義の場合は警告
+if (!projectId) {
+  console.warn('PUBLIC_SANITY_PROJECT_ID is not defined. Using default: quljge22');
+}
+
 export const client = createClient({
-  projectId: 'quljge22',
-  dataset: 'production',
-  useCdn: true,
-  apiVersion: '22024-01-01',
+  projectId: projectId || 'quljge22',
+  dataset,
+  apiVersion: '2025-08-26',  // 今日の日付（YYYY-MM-DD）
+  useCdn: true,              // CDNを明示的に有効化
   perspective: 'published'
 });
 
-// 画像URL生成用のビルダー
 const builder = imageUrlBuilder(client);
-
-export function urlFor(source) {
-  return builder.image(source);
-}
-
-// クイズ一覧を取得
-export async function getQuizzes() {
-  const query = `*[_type == "quiz"] | order(publishedAt desc) {
-    _id,
-    title,
-    slug,
-    mainImage,
-    difficulty,
-    publishedAt,
-    category->{
-      title,
-      description
-    }
-  }`;
-  
-  return await client.fetch(query);
-}
-
-// 特定のクイズを取得
-export async function getQuiz(slug) {
-  const query = `*[_type == "quiz" && slug.current == $slug][0] {
-    _id,
-    title,
-    slug,
-    mainImage,
-    problemDescription,
-    hint,
-    answerImage,
-    answerExplanation,
-    closingMessage,
-    difficulty,
-    publishedAt,
-    category->{
-      title,
-      description
-    }
-  }`;
-  
-  return await client.fetch(query, { slug });
-}
-
-// カテゴリ一覧を取得
-export async function getCategories() {
-  const query = `*[_type == "category"] | order(title asc) {
-    _id,
-    title,
-    description
-  }`;
-  
-  return await client.fetch(query);
-}
-
+export const urlFor = (src) => builder.image(src);
