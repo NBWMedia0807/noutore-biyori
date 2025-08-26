@@ -23,6 +23,10 @@ importers:
       vite:
         specifier: ^7.1.0
         version: 7.1.3(@types/node@24.3.0)
+    devDependencies:
+      svelte:
+        specifier: ^5.38.3
+        version: 5.38.3
 
 packages:
 
