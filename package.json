@@ -8,7 +8,9 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo \"no tests yet\" && exit 0"
+"test": "echo \"no tests yet\" && exit 0",
+"format": "pnpm dlx prettier --write .",
+"format:check": "pnpm dlx prettier --check ."
   },
   "repository": {
     "type": "git",
