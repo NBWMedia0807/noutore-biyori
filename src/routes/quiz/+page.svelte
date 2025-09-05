@@ -1,43 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import { client } from '$lib/sanity.js';
-
-  let quizzes = [];
-  let loading = true;
-  let error = null;
-
-  onMount(async () => {
-    try {
-      // 最もシンプルなクエリで全ドキュメントを取得
-      const result = await client.fetch('*');
-      console.log('取得した全データ:', result);
-      
-      // quizタイプのドキュメントをフィルタリング
-      const quizData = result.filter(doc => doc._type === 'quiz');
-      
-      if (quizData && quizData.length > 0) {
-        quizzes = quizData;
-        console.log('フィルタリングしたクイズデータ:', quizzes);
-      } else {
-        // データが見つからない場合は、手動でサンプルデータを表示
-        quizzes = [{
-          _id: 'sample-quiz',
-          _type: 'quiz',
-          title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？'
-        }];
-      }
-      loading = false;
-    } catch (err) {
-      console.error('データの取得に失敗:', err);
-      // エラーの場合もサンプルデータを表示
-      quizzes = [{
-        _id: 'sample-quiz',
-        _type: 'quiz',
-        title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？'
-      }];
-      loading = false;
-    }
-  });
+  export let data;
+  const { quizzes = [] } = data;
 </script>
 
 <svelte:head>
@@ -50,27 +13,28 @@
     <h1 class="section-title">🧩 クイズ一覧</h1>
   </div>
 
-  {#if loading}
-    <div class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>クイズを読み込み中...</p>
-    </div>
+  {#if quizzes.length === 0}
+    <p>まだクイズが投稿されていません。</p>
   {:else}
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href="/quiz/{quiz._id}" class="quiz-link">
+          <a href="/quiz/{quiz.slug}" class="quiz-link">
             <div class="quiz-content">
-              <h2 class="quiz-title">{quiz.title || '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？'}</h2>
-              
+              <h2 class="quiz-title">{quiz.title}</h2>
+
+              {#if quiz.mainImageUrl}
+                <img src={quiz.mainImageUrl} alt={quiz.title} style="max-width:100%;height:auto" />
+              {/if}
+
               <div class="quiz-category">
                 <span class="category-tag">マッチ棒クイズ</span>
               </div>
-              
+
               <p class="quiz-description">
                 マッチ棒1本だけを動かして正しい式に直してください。頭の体操にぴったりです！
               </p>
-              
+
               <div class="quiz-meta">
                 <span class="quiz-type">🧩 クイズ</span>
                 <span class="quiz-action">挑戦する →</span>
@@ -100,29 +64,6 @@
     font-weight: 700;
     color: var(--dark-gray);
     margin: 0;
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    gap: 1rem;
-  }
-
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--light-gray);
-    border-top: 4px solid var(--primary-yellow);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
   }
 
   .quiz-grid {
@@ -164,10 +105,6 @@
     line-height: 1.4;
   }
 
-  .quiz-category {
-    margin-bottom: 1rem;
-  }
-
   .category-tag {
     background: var(--primary-yellow);
     color: #856404;
@@ -198,25 +135,4 @@
     color: var(--primary-yellow);
     font-weight: 500;
   }
-
-  /* レスポンシブデザイン */
-  @media (max-width: 768px) {
-    .quiz-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .quiz-content {
-      padding: 1rem;
-    }
-
-    .quiz-title {
-      font-size: 1.1rem;
-    }
-
-    .section-title {
-      font-size: 1.5rem;
-    }
-  }
 </style>
-
