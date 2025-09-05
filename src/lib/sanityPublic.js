@@ -1,4 +1,5 @@
 // src/lib/sanityPublic.js
+import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 
 // ✅ ブラウザから読める “VITE_” 変数を使う
@@ -9,7 +10,15 @@ if (!projectId) {
   console.error('VITE_SANITY_PROJECT_ID is missing');
 }
 
-const builder = imageUrlBuilder({ projectId, dataset });
+// 読み取り専用クライアント（トークン不要）
+const client = createClient({
+  projectId,
+  dataset,
+  apiVersion: '2023-05-03',
+  useCdn: true, // ブラウザ側は CDN でOK
+});
 
-// 画像URLを作るだけ（トークン不要）
+const builder = imageUrlBuilder(client);
+
+// 画像URLを作るだけ
 export const urlFor = (source) => builder.image(source);
