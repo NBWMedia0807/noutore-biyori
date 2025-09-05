@@ -1,0 +1,23 @@
+// studio/schemaTypes/quiz.js
+export default {
+  name: 'quiz',
+  title: 'クイズ',
+  type: 'document',
+  fields: [
+    { name: 'title', title: 'タイトル', type: 'string', validation: R => R.required() },
+    {
+      name: 'slug',
+      title: 'スラッグ',
+      type: 'slug',
+      options: { source: 'title', maxLength: 96 },
+      validation: R => R.required()
+    },
+    { name: 'category', title: 'カテゴリ', type: 'string' },
+    { name: 'problemDescription', title: '問題説明', type: 'text' },
+    { name: 'hint', title: 'ヒント', type: 'text' },
+    { name: 'mainImage', title: '問題画像（Main Image）', type: 'image', options: {hotspot: true} },
+    { name: 'answerImage', title: '正解画像（Answer Image）', type: 'image', options: {hotspot: true} },
+    { name: 'answerExplanation', title: '正解の解説', type: 'text' },
+    { name: 'closingMessage', title: '締めテキスト', type: 'string' }
+  ]
+}
