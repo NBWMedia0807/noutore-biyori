@@ -1,23 +1,20 @@
-// src/lib/sanity.js（全置き換え）
+// src/lib/sanity.js
 import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 
-// 環境変数の取得とフォールバック処理
-const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID;
-const dataset = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
-
-// projectIdが未定義の場合は警告
-if (!projectId) {
-  console.warn('PUBLIC_SANITY_PROJECT_ID is not defined. Using default: quljge22');
-}
+const projectId  = process.env.SANITY_PROJECT_ID;
+const dataset    = process.env.SANITY_DATASET || 'production';
+const apiVersion = process.env.SANITY_API_VERSION || '2023-05-03';
+const token      = process.env.SANITY_API_TOKEN; // 読み取り用（サーバのみで使用）
 
 export const client = createClient({
-  projectId: projectId || 'quljge22',
+  projectId,
   dataset,
-  apiVersion: '2025-08-26',  // 今日の日付（YYYY-MM-DD）
-  useCdn: true,              // CDNを明示的に有効化
+  apiVersion,
+  useCdn: false,
+  token,           // サーバ側の +page.server.js からのみ使う
   perspective: 'published'
 });
 
 const builder = imageUrlBuilder(client);
-export const urlFor = (src) => builder.image(src);
+export const urlFor = (source) => builder.image(source);
