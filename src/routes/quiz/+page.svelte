@@ -22,20 +22,19 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <!-- slug があれば slug を使う、なければ _id -->
-          <a href="/quiz/{quiz.slug || quiz._id}" class="quiz-link">
+          <a href={`/quiz/${quiz.slug}`} class="quiz-link">
             <div class="quiz-content">
-              <h2 class="quiz-title">
-                {quiz.title || '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？'}
-              </h2>
-
               {#if quiz.mainImage?.asset?.url}
                 <img
                   src={quiz.mainImage.asset.url}
                   alt={quiz.title}
-                  style="max-width:100%;height:auto;border-radius:12px;margin-bottom:1rem;"
+                  style="max-width:100%;height:auto;border-radius:12px;margin-bottom:1rem"
                 />
               {/if}
+
+              <h2 class="quiz-title">
+                {quiz.title || '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？'}
+              </h2>
 
               <div class="quiz-category">
                 <span class="category-tag">マッチ棒クイズ</span>
@@ -150,7 +149,6 @@
     font-weight: 500;
   }
 
-  /* レスポンシブデザイン */
   @media (max-width: 768px) {
     .quiz-grid {
       grid-template-columns: 1fr;
