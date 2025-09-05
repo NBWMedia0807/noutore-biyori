@@ -1,21 +1,37 @@
 // src/routes/quiz/[slug]/+page.server.js
+import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity.js';
 
-const QUERY = `
-*[_type=="quiz" && slug.current==$slug][0]{
+export const prerender = false;
+export const csr = true;
+
+// slug.current と _id のどちらでもヒットするように
+const QUERY = /* groq */ `
+*[
+  _type == "quiz" &&
+  (
+    slug.current == $slug ||
+    _id == $slug
+  )
+][0]{
+  _id,
   title,
-  // 画像は .svelte 側の書き方に合わせて asset->url まで展開
-  mainImage{asset->},
-  // 本文（任意）：リッチテキストでなければ string / HTML を想定
-  body,
-  // 追加で使うならここに他フィールドも列挙OK
+  "slug": coalesce(slug.current, _id),
+  "mainImageUrl": mainImage.asset->url,
+  body
 }
 `;
 
 export async function load({ params }) {
-  const quiz = await client.fetch(QUERY, { slug: params.slug });
-  if (!quiz) {
-    return { status: 404, error: new Error('Not found') };
+  try {
+    const quiz = await client.fetch(QUERY, { slug: params.slug });
+    console.log('[quiz/[slug]/+page.server] slug:', params.slug, 'found:', !!quiz);
+    if (!quiz) {
+      throw error(404, 'Not found');
+    }
+    return { quiz };
+  } catch (err) {
+    console.error('[quiz/[slug]/+page.server] failed:', err);
+    throw error(500, 'Failed to load');
   }
-  return { quiz };
 }
