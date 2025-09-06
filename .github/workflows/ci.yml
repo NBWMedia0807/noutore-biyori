@@ -6,39 +6,74 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (20) with pnpm cache
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Enable corepack & install
+      # pnpm を確実に使えるように（corepack → 失敗時 npm -g）
+      - name: Enable corepack & install pnpm fallback
         run: |
-          corepack enable
-          pnpm install --frozen-lockfile
+          set -eux
+          corepack enable || true
+          if ! command -v pnpm >/dev/null 2>&1; then
+            npm i -g pnpm@9
+          fi
+          pnpm -v
 
-      # あれば実行、無ければスキップ
-      - name: Lint (best effort)
-        run: pnpm run -s lint || echo "skip lint"
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+        # lockfile が無ければ緩める
+        continue-on-error: true
 
-      - name: Typecheck (best effort)
-        run: pnpm run -s check || echo "skip typecheck"
+      # ---- optional scripts（あれば実行、無ければスキップ）----
+      - name: Lint (if exists)
+        run: |
+          if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
+            pnpm run lint
+          else
+            echo "No lint script – skip"
+          fi
 
+      - name: Typecheck (if exists)
+        run: |
+          if jq -e '.scripts.typecheck' package.json >/dev/null 2>&1; then
+            pnpm run typecheck
+          elif jq -e '.scripts.check' package.json >/dev/null 2>&1; then
+            pnpm run check
+          else
+            echo "No type script – skip"
+          fi
+
+      - name: Test (if exists)
+        run: |
+          if jq -e '.scripts.test' package.json >/dev/null 2>&1; then
+            pnpm run test
+          else
+            echo "No test script – skip"
+          fi
+
+      # ---- 必須：ビルド ----
       - name: Build
-        run: pnpm run -s build
+        run: pnpm build
         env:
-          # Vite/SvelteKit のビルドに必要な公開用ENVも渡しておくと安全
-          VITE_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
-          VITE_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          NODE_ENV: production
 
-      - name: Sanity connectivity check
+      # ---- Sanity 疎通（必須）----
+      - name: Sanity check
         run: node scripts/check-sanity.mjs
         env:
           SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
