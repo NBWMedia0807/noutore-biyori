@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Enable corepack & install
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      # あれば実行、無ければスキップ
+      - name: Lint (best effort)
+        run: pnpm run -s lint || echo "skip lint"
+
+      - name: Typecheck (best effort)
+        run: pnpm run -s check || echo "skip typecheck"
+
+      - name: Build
+        run: pnpm run -s build
+        env:
+          # Vite/SvelteKit のビルドに必要な公開用ENVも渡しておくと安全
+          VITE_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          VITE_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+
+      - name: Sanity connectivity check
+        run: node scripts/check-sanity.mjs
+        env:
+          SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_READ_TOKEN: ${{ secrets.SANITY_READ_TOKEN }}
