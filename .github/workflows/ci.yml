@@ -18,61 +18,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node (20) with pnpm cache
+      # 先に Node を入れる（ここでは cache は使わない）
+      - name: Setup Node (20)
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
 
-      # pnpm を確実に使えるように（corepack → 失敗時 npm -g）
-      - name: Enable corepack & install pnpm fallback
+      # ← ここで pnpm 本体を入れる（公式アクション）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false   # 後で自分で install する
+
+      - name: Show versions
         run: |
-          set -eux
-          corepack enable || true
-          if ! command -v pnpm >/dev/null 2>&1; then
-            npm i -g pnpm@9
-          fi
+          node -v
           pnpm -v
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile
-        # lockfile が無ければ緩める
-        continue-on-error: true
+        run: pnpm install --frozen-lockfile || pnpm install
 
-      # ---- optional scripts（あれば実行、無ければスキップ）----
       - name: Lint (if exists)
         run: |
-          if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
-            pnpm run lint
-          else
-            echo "No lint script – skip"
-          fi
+          if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then pnpm run lint; else echo "No lint script – skip"; fi
 
       - name: Typecheck (if exists)
         run: |
-          if jq -e '.scripts.typecheck' package.json >/dev/null 2>&1; then
-            pnpm run typecheck
-          elif jq -e '.scripts.check' package.json >/dev/null 2>&1; then
-            pnpm run check
-          else
-            echo "No type script – skip"
-          fi
+          if jq -e '.scripts.typecheck' package.json >/dev/null 2>&1; then pnpm run typecheck;
+          elif jq -e '.scripts.check' package.json >/dev/null 2>&1; then pnpm run check;
+          else echo "No type script – skip"; fi
 
       - name: Test (if exists)
         run: |
-          if jq -e '.scripts.test' package.json >/dev/null 2>&1; then
-            pnpm run test
-          else
-            echo "No test script – skip"
-          fi
+          if jq -e '.scripts.test' package.json >/dev/null 2>&1; then pnpm run test; else echo "No test – skip"; fi
 
-      # ---- 必須：ビルド ----
       - name: Build
         run: pnpm build
         env:
           NODE_ENV: production
 
-      # ---- Sanity 疎通（必須）----
       - name: Sanity check
         run: node scripts/check-sanity.mjs
         env:
