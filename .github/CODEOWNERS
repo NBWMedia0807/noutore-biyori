@@ -1,0 +1,3 @@
+# 重要領域：あなたの承認必須
+/src/lib/sanity/**  @your-github-id
+/src/routes/quiz/** @your-github-id
