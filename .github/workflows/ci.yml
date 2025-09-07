@@ -18,18 +18,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 先に Node を入れる（ここでは cache は使わない）
-      - name: Setup Node (20)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # ← ここで pnpm 本体を入れる（公式アクション）
+      # 先に pnpm 本体を入れる（公式アクション）
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false   # 後で自分で install する
+
+      # pnpm セットアップ後に Node を入れる（cache が使える）
+      - name: Setup Node (20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
       - name: Show versions
         run: |
