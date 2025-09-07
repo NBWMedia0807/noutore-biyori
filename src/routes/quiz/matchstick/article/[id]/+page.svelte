@@ -282,36 +282,12 @@
     transform: translateY(-2px);
   }
 
-  .quiz-nav {
-    padding: 2rem;
-    text-align: center;
-  }
-
-  .nav-button,
-  .back-button {
-    background: var(--primary-yellow);
-    color: #856404;
-    text-decoration: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    display: inline-block;
-  }
-
-  .nav-button:hover,
-  .back-button:hover {
-    background: var(--primary-amber);
-    transform: translateY(-2px);
-  }
-
   /* レスポンシブデザイン */
   @media (max-width: 768px) {
     .quiz-header,
     .problem-section,
     .hint-section,
-    .answer-navigation,
-    .quiz-nav {
+    .answer-navigation {
       padding: 1.5rem;
     }
 

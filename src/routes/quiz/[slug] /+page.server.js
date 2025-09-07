@@ -1,8 +1,22 @@
 // /src/routes/quiz/[slug]/+page.server.js
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity.js';
 
 export const prerender = false;
+
+async function getSanityClient() {
+  try {
+    // Check if Sanity client is properly configured
+    if (!process.env.SANITY_PROJECT_ID) {
+      return null;
+    }
+    
+    const { client } = await import('$lib/sanity.js');
+    return client;
+  } catch (e) {
+    console.error('Failed to load Sanity client:', e);
+    return null;
+  }
+}
 
 // slug.current か _id のどちらでも取れるように両対応
 const QUERY = /* groq */ `
@@ -19,6 +33,13 @@ const QUERY = /* groq */ `
 
 export const load = async ({ params }) => {
   try {
+    const client = await getSanityClient();
+    
+    if (!client) {
+      console.warn('[quiz/[slug]+page.server] Sanity not configured, returning 404');
+      throw error(404, 'Not found');
+    }
+    
     const quiz = await client.fetch(QUERY, { slug: params.slug });
     if (!quiz) throw error(404, 'Not found');
     return { quiz };
@@ -28,7 +49,7 @@ export const load = async ({ params }) => {
     if (e.status) {
       throw e;
     }
-    // Only throw 500 for actual fetch errors
-    throw error(500, 'Failed to load quiz');
+    // For any other error, return 404 instead of 500
+    throw error(404, 'Not found');
   }
 };
