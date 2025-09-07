@@ -8,9 +8,9 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-"test": "echo \"no tests yet\" && exit 0",
-"format": "pnpm dlx prettier --write .",
-"format:check": "pnpm dlx prettier --check ."
+    "test": "echo \"no tests yet\" && exit 0",
+    "format": "pnpm dlx prettier --write .",
+    "format:check": "pnpm dlx prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "@sanity/client": "^7.8.2",
     "@sanity/image-url": "^1.1.0",
     "@sveltejs/adapter-auto": "^6.0.1",
+    "@sveltejs/adapter-vercel": "^5.10.2",
     "@sveltejs/kit": "^2.27.1",
     "vite": "^7.1.0"
   },

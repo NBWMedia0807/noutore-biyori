@@ -1,0 +1,7 @@
+{
+  "framework": "sveltekit",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".svelte-kit/output/client",
+  "installCommand": "npm ci",
+  "regions": ["nrt1"]
+}
