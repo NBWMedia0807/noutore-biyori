@@ -1,5 +1,5 @@
 // /src/routes/quiz/[slug]/+page.server.js
-import { error } from '@sveltejs/kit';
+import { error, isHttpError } from '@sveltejs/kit';
 import { client } from '$lib/sanity.js';
 
 export const prerender = false;
@@ -23,6 +23,11 @@ export const load = async ({ params }) => {
     if (!quiz) throw error(404, 'Not found');
     return { quiz };
   } catch (e) {
+    // If it's already an HTTP error (like our 404), re-throw it as-is
+    if (isHttpError(e)) {
+      throw e;
+    }
+    // Only convert unexpected errors to 500
     console.error('[quiz/[slug]+page.server] fetch failed', e);
     throw error(500, 'Failed to load quiz');
   }
