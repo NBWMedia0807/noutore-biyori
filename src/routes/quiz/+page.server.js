@@ -17,10 +17,10 @@ const QUERY = /* groq */ `
 export const load = async () => {
   try {
     const quizzes = await client.fetch(QUERY);
-    console.log(`[quiz/+page.server] quizzes: ${quizzes?.length ?? 0}`);
-    return { quizzes };
+    console.log(`[quiz] Loaded ${quizzes?.length ?? 0} quizzes`);
+    return { quizzes: quizzes || [] };
   } catch (e) {
-    console.error('[quiz/+page.server] fetch failed', e);
+    console.error('[quiz] Fetch failed:', e.message);
     return { quizzes: [] };
   }
 };
