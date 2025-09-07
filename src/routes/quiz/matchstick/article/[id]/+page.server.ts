@@ -1,4 +1,4 @@
-// /src/routes/quiz/[slug]/+page.server.js
+// /src/routes/quiz/matchstick/article/[id]/+page.server.ts
 import { error } from '@sveltejs/kit';
 
 export const prerender = false;
@@ -18,16 +18,22 @@ async function getSanityClient() {
   }
 }
 
-// slug.current か _id のどちらでも取れるように両対応
+// Fetch quiz data by ID
 const QUERY = /* groq */ `
-*[_type == "quiz" && (slug.current == $slug || _id == $slug)][0]{
+*[_type == "quiz" && _id == $quizId][0]{
   _id,
+  _type,
   title,
-  "slug": slug.current,
-  body,
   mainImage{
     asset->{ url, metadata }
-  }
+  },
+  problemDescription,
+  hint,
+  answerImage{
+    asset->{ url, metadata }
+  },
+  answerExplanation,
+  closingMessage
 }
 `;
 
@@ -36,20 +42,27 @@ export const load = async ({ params }) => {
     const client = await getSanityClient();
     
     if (!client) {
-      console.warn('[quiz/[slug]+page.server] Sanity not configured, returning 404');
-      throw error(404, 'Not found');
+      console.warn('[matchstick/article/[id]+page.server] Sanity not configured, returning 404');
+      throw error(404, 'Quiz not found');
     }
     
-    const quiz = await client.fetch(QUERY, { slug: params.slug });
-    if (!quiz) throw error(404, 'Not found');
+    const quiz = await client.fetch(QUERY, { quizId: params.id });
+    
+    if (!quiz) {
+      throw error(404, 'Quiz not found');
+    }
+    
+    // Return the quiz data to the page
     return { quiz };
   } catch (e) {
-    console.error('[quiz/[slug]+page.server] fetch failed', e);
+    console.error('[matchstick/article/[id]+page.server] fetch failed', e);
+    
     // If it's already an error from SvelteKit (like the 404 above), re-throw it
     if (e.status) {
       throw e;
     }
-    // For any other error, return 404 instead of 500
-    throw error(404, 'Not found');
+    
+    // For any other error, return 404 instead of 500 to avoid exposing internal errors
+    throw error(404, 'Quiz not found');
   }
 };
