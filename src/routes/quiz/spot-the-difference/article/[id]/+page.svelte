@@ -1,14 +1,11 @@
 <script>
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import { client } from '$lib/sanity.js';
-
-  let quiz = null;
-  let loading = true;
-  let error = null;
+  export let data;
+  
+  // Get quiz data from the server-side load function
+  $: quiz = data.quiz;
   let showHint = false;
 
-  // サンプルデータ
+  // サンプルデータ (fallback for missing fields)
   const sampleQuiz = {
     _id: 'sample-quiz',
     _type: 'quiz',
@@ -28,30 +25,6 @@
     answerExplanation: '間違いは全部で3つありました。左上の雲の形、中央の木の葉の数、右下の花の色の違いです。',
     closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
   };
-
-  onMount(async () => {
-    try {
-      const quizId = $page.params.id;
-      
-      // Sanityからデータを取得
-      const result = await client.fetch(`*[_id == $quizId][0]`, { quizId });
-      
-      if (result && result._type === 'quiz') {
-        quiz = result;
-        console.log('Sanityから取得したクイズ:', quiz);
-      } else {
-        // Sanityからデータが取得できない場合はサンプルデータを使用
-        quiz = sampleQuiz;
-        console.log('サンプルデータを使用:', quiz);
-      }
-      loading = false;
-    } catch (err) {
-      console.error('クイズデータの取得に失敗:', err);
-      // エラーの場合もサンプルデータを使用
-      quiz = sampleQuiz;
-      loading = false;
-    }
-  });
 
   function toggleHint() {
     showHint = !showHint;
@@ -108,73 +81,60 @@
 </svelte:head>
 
 <main>
-  {#if loading}
-    <div class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>クイズを読み込み中...</p>
-    </div>
-  {:else if quiz}
-    <article class="quiz-article">
-      <!-- ヘッダー -->
-      <header class="quiz-header">
-        <div class="breadcrumb">
-          <a href="/quiz">← クイズ一覧</a>
+  <article class="quiz-article">
+    <!-- ヘッダー -->
+    <header class="quiz-header">
+      <div class="breadcrumb">
+        <a href="/quiz">← クイズ一覧</a>
+      </div>
+      
+      <div class="category-tag">
+        間違い探し
+      </div>
+      
+      <h1 class="quiz-title">{@html formatTitle(quiz?.title || sampleQuiz.title)}</h1>
+    </header>
+
+    <!-- 問題セクション -->
+    <section class="problem-section">
+      <h2 class="section-title">問題</h2>
+      
+      {#if getImageUrl(quiz?.mainImage || sampleQuiz.mainImage)}
+        <div class="quiz-image">
+          <img 
+            src={getImageUrl(quiz?.mainImage || sampleQuiz.mainImage)}
+            alt="問題画像"
+            loading="lazy"
+          />
         </div>
-        
-        <div class="category-tag">
-          間違い探し
+      {/if}
+      
+      <div class="problem-text">
+        {renderPortableText(quiz?.problemDescription) || quiz?.problemDescription || sampleQuiz.problemDescription}
+      </div>
+    </section>
+
+    <!-- ヒントセクション -->
+    <section class="hint-section">
+      <button class="hint-button" on:click={toggleHint}>
+        ヒントを{showHint ? '隠す' : '見る'}
+      </button>
+      
+      {#if showHint}
+        <div class="hint-content">
+          <h3>ヒント</h3>
+          <p>{renderPortableText(quiz?.hint) || quiz?.hint || sampleQuiz.hint}</p>
         </div>
-        
-        <h1 class="quiz-title">{@html formatTitle(quiz.title)}</h1>
-      </header>
+      {/if}
+    </section>
 
-      <!-- 問題セクション -->
-      <section class="problem-section">
-        <h2 class="section-title">問題</h2>
-        
-        {#if getImageUrl(quiz.mainImage)}
-          <div class="quiz-image">
-            <img 
-              src={getImageUrl(quiz.mainImage)}
-              alt="問題画像"
-              loading="lazy"
-            />
-          </div>
-        {/if}
-        
-        <div class="problem-text">
-          {renderPortableText(quiz.problemDescription) || quiz.problemDescription || '2つの画像を見比べて、隠された間違いを全て見つけてください。'}
-        </div>
-      </section>
-
-      <!-- ヒントセクション -->
-      <section class="hint-section">
-        <button class="hint-button" on:click={toggleHint}>
-          ヒントを{showHint ? '隠す' : '見る'}
-        </button>
-        
-        {#if showHint}
-          <div class="hint-content">
-            <h3>ヒント</h3>
-            <p>{renderPortableText(quiz.hint) || quiz.hint || '細部に注目してみましょう。色や形、配置など、わずかな違いが隠されています。'}</p>
-          </div>
-        {/if}
-      </section>
-
-      <!-- 正解ページへのナビゲーション -->
-      <section class="answer-navigation">
-        <a href="/quiz/spot-the-difference/article/{quiz._id}/answer" class="answer-link">
-        </a>
-      </section>
-
-
-    </article>
-  {:else}
-    <div class="error-container">
-      <h2>クイズが見つかりませんでした</h2>
-      <a href="/quiz" class="back-button">← クイズ一覧に戻る</a>
-    </div>
-  {/if}
+    <!-- 正解ページへのナビゲーション -->
+    <section class="answer-navigation">
+      <a href="/quiz/spot-the-difference/article/{quiz?._id || sampleQuiz._id}/answer" class="answer-link">
+        正解を見る
+      </a>
+    </section>
+  </article>
 </main>
 
 <style>
@@ -182,38 +142,6 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 1rem;
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    gap: 1rem;
-  }
-
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--light-gray);
-    border-top: 4px solid var(--primary-yellow);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .error-container {
-    text-align: center;
-    padding: 2rem;
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 8px;
-    margin: 2rem 0;
   }
 
   .quiz-article {

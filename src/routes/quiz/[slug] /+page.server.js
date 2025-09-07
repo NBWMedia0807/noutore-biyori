@@ -24,6 +24,11 @@ export const load = async ({ params }) => {
     return { quiz };
   } catch (e) {
     console.error('[quiz/[slug]+page.server] fetch failed', e);
+    // If it's already an error from SvelteKit (like the 404 above), re-throw it
+    if (e.status) {
+      throw e;
+    }
+    // Only throw 500 for actual fetch errors
     throw error(500, 'Failed to load quiz');
   }
 };
