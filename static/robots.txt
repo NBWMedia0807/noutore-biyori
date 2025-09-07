@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+# あれば: Disallow: /studio
+Sitemap: https://www.noutorebiyori.com/sitemap.xml
