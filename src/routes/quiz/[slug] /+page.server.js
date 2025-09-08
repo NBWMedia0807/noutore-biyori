@@ -28,7 +28,7 @@ export const load = async ({ params }) => {
       throw e;
     }
     // Only convert unexpected errors to 500
-    console.error('[quiz/[slug]+page.server] fetch failed', e);
+    console.error('[quiz/[slug]+page.server] fetch failed:', e.message || 'Unknown error');
     throw error(500, 'Failed to load quiz');
   }
 };
