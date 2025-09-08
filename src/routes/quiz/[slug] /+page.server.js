@@ -19,16 +19,23 @@ const QUERY = /* groq */ `
 
 export const load = async ({ params }) => {
   try {
+    // ── 一時デバッグログ（どの slug が来たか）
+    console.log('[quiz] incoming slug', params.slug);
+
     const quiz = await client.fetch(QUERY, { slug: params.slug });
+
+    // ── 取れた/取れないの判定をログ出し
+    console.log('[quiz] fetched?', Boolean(quiz));
+
     if (!quiz) throw error(404, 'Not found');
     return { quiz };
   } catch (e) {
-    // If it's already an HTTP error (like our 404), re-throw it as-is
+    // 既に HttpError（404/500…）ならそのまま再スロー
     if (isHttpError(e)) {
       throw e;
     }
-    // Only convert unexpected errors to 500
-    console.error('[quiz/[slug]+page.server] fetch failed', e);
+    // 想定外の例外だけ 500 にする（スタックは漏らさない）
+    console.error('[quiz/[slug]+page.server] fetch failed', e?.message ?? e);
     throw error(500, 'Failed to load quiz');
   }
 };
