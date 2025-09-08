@@ -1,6 +1,8 @@
 // src/routes/quiz/[slug]/+page.server.js
-export const prerender = false;        // このページは SSR で実行
-export const runtime = 'nodejs';       // Vercel で Node 実行（ログが確実に出る）
+export const prerender = false;                 // このページは SSR 実行
+
+// ★ SvelteKit v2 は runtime ではなく config に書く
+export const config = { runtime: 'nodejs' };    // Vercel で Node 実行（ログが確実に出る）
 
 import { error, isHttpError } from '@sveltejs/kit';
 import { client } from '$lib/sanity.js';
@@ -17,17 +19,17 @@ const QUERY = /* groq */ `
 
 export const load = async ({ params }) => {
   const slug = params.slug;
-  console.log('[quiz/[slug]] incoming slug:', slug);   // ← Vercel Logs で必ず見える
+  console.log('[quiz/[slug]] incoming slug:', slug); // ← Vercel Logs で必ず見える
 
   try {
     const quiz = await client.fetch(QUERY, { slug });
     const fetched = Boolean(quiz);
-    console.log('[quiz/[slug]] fetched?', fetched);    // true / false が出る
+    console.log('[quiz/[slug]] fetched?', fetched);  // true / false
 
     if (!quiz) throw error(404, 'Not found');
     return { quiz };
   } catch (e) {
-    if (isHttpError(e)) throw e;                       // 404 などはそのまま返す
+    if (isHttpError(e)) throw e;                      // 404 等はそのまま返す
     console.error('[quiz/[slug]] unexpected error:', e);
     throw error(500, 'Failed to load quiz');
   }
