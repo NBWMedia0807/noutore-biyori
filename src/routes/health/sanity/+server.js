@@ -1,0 +1,21 @@
+// src/routes/health/sanity/+server.js
+import { json } from '@sveltejs/kit';
+import { createClient } from '@sanity/client';
+import { env } from '$env/dynamic/private'; // ← ここがポイント
+
+const sanity = createClient({
+  projectId: env.SANITY_PROJECT_ID,
+  dataset: env.SANITY_DATASET || 'production',
+  apiVersion: env.SANITY_API_VERSION || '2023-10-01',
+  token: env.SANITY_READ_TOKEN,
+  useCdn: false
+});
+
+export async function GET() {
+  try {
+    const doc = await sanity.fetch('*[0]{_id,_type}');
+    return json({ ok: Boolean(doc) });
+  } catch (e) {
+    return json({ ok: false, error: String(e) }, { status: 500 });
+  }
+}

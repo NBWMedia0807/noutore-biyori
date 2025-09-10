@@ -12,7 +12,13 @@ export default {
       options: { source: 'title', maxLength: 96 },
       validation: R => R.required()
     },
-    { name: 'category', title: 'カテゴリ', type: 'string' },
+    {
+      name: 'category',
+      title: 'カテゴリ',
+      type: 'reference',
+      to: [{ type: 'category' }],
+      validation: R => R.required()
+    },
     { name: 'problemDescription', title: '問題説明', type: 'text' },
     { name: 'hint', title: 'ヒント', type: 'text' },
     { name: 'mainImage', title: '問題画像（Main Image）', type: 'image', options: {hotspot: true} },

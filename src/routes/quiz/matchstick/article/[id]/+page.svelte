@@ -1,10 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import { client } from '$lib/sanity.js';
-
-  let quiz = null;
-  let loading = true;
+  export let data;
+  let { quiz } = data;
   let error = null;
   let showHint = false;
 
@@ -29,28 +25,7 @@
     closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
   };
 
-  onMount(async () => {
-    try {
-      const quizId = $page.params.id;
-      
-      // Sanityからデータを取得
-      const result = await client.fetch(`*[_id == $quizId][0]`, { quizId });      
-      if (result && result._type === 'quiz') {
-        quiz = result;
-        console.log('Sanityから取得したクイズ:', quiz);
-      } else {
-        // Sanityからデータが取得できない場合はサンプルデータを使用
-        quiz = sampleQuiz;
-        console.log('サンプルデータを使用:', quiz);
-      }
-      loading = false;
-    } catch (err) {
-      console.error('クイズデータの取得に失敗:', err);
-      // エラーの場合もサンプルデータを使用
-      quiz = sampleQuiz;
-      loading = false;
-    }
-  });
+  // サーバー取得済み。フェイル時はサンプルを表示（サーバ側で404にしています）
 
   function toggleHint() {
     showHint = !showHint;
@@ -73,25 +48,10 @@
   }
 
   function getImageUrl(imageRef) {
-    if (!imageRef) return '/matchstick_question.png'; // デフォルトで問題画像を返す
+    if (!imageRef) return '/matchstick_question.png';
     if (typeof imageRef === 'string') return imageRef;
     if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
-    if (imageRef.asset && imageRef.asset._ref) {
-      // Sanity画像URLを構築
-      const ref = imageRef.asset._ref;
-      const [, id, dimensions, format] = ref.match(/^image-([a-f\d]+)-(\d+x\d+)-(\w+)$/) || [];
-      if (id && dimensions && format) {
-        return `https://cdn.sanity.io/images/dxl04rd4/production/${id}-${dimensions}.${format}`;
-      }
-    }
-    // フォールバック：staticディレクトリの画像を直接参照
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_question')) {
-      return '/matchstick_question.png';
-    }
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_answer')) {
-      return '/matchstick_answer.png';
-    }
-    return '/matchstick_question.png'; // デフォルトで問題画像を返す
+    return '/matchstick_question.png';
   }
 
   // タイトルを改行で分割
@@ -107,12 +67,7 @@
 </svelte:head>
 
 <main>
-  {#if loading}
-    <div class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>クイズを読み込み中...</p>
-    </div>
-  {:else if quiz}
+  {#if quiz}
     <article class="quiz-article">
       <!-- ヘッダー -->
       <header class="quiz-header">
@@ -401,6 +356,5 @@
     }
   }
 </style>
-
 
 
