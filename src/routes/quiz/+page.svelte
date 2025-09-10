@@ -37,7 +37,7 @@
               </h2>
 
               <div class="quiz-category">
-                <span class="category-tag">マッチ棒クイズ</span>
+                <span class="category-tag">{quiz.category?.title ?? 'クイズ'}</span>
               </div>
 
               <p class="quiz-description">

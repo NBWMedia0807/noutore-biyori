@@ -3,10 +3,10 @@ import fs from 'fs';
 
 // Sanityクライアントの設定
 const client = createClient({
-  projectId: 'dxl04rd4',
-  dataset: 'production',
+  projectId: process.env.SANITY_PROJECT_ID || 'quljge22',
+  dataset: process.env.SANITY_DATASET || 'production',
   useCdn: false,
-  apiVersion: '2024-08-17',
+  apiVersion: process.env.SANITY_API_VERSION || '2024-08-17',
   token: process.env.SANITY_AUTH_TOKEN
 });
 
@@ -201,4 +201,3 @@ if (process.env.SANITY_AUTH_TOKEN) {
   console.error('❌ SANITY_AUTH_TOKEN環境変数が設定されていません');
   process.exit(1);
 }
-

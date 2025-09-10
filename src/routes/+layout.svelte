@@ -17,8 +17,16 @@
 <nav class="main-nav">
   <div class="nav-container">
     <ul class="nav-menu">
-      <li><a href="/category/matchstick" class="nav-link matchstick-link">マッチ棒クイズ</a></li>
-      <li><a href="/category/spot-the-difference" class="nav-link difference-link">間違い探し</a></li>
+      <li>
+        <a href="/category/matchstick" class="nav-link matchstick-link" sveltekit:prefetch data-sveltekit-reload>
+          マッチ棒クイズ
+        </a>
+      </li>
+      <li>
+        <a href="/category/spot-the-difference" class="nav-link difference-link" sveltekit:prefetch data-sveltekit-reload>
+          間違い探し
+        </a>
+      </li>
     </ul>
   </div>
 </nav>
@@ -110,4 +118,3 @@
     }
   }
 </style>
-

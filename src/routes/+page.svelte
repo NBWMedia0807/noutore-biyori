@@ -3,14 +3,14 @@
   import { urlFor } from '$lib/sanityPublic.js';
 </script>
 
-<h1 style="margin:16px 0;">脳トレ日和｜マッチ棒クイズ</h1>
+<h1 style="margin:16px 0;text-align:center;">新着記事</h1>
 
 {#if !data.quizzes?.length}
   <p>まだクイズが投稿されていません。</p>
 {:else}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
     {#each data.quizzes as q}
-      <a href={`/quiz/matchstick/article/${q.slug}`} style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
+      <a href={`/quiz/${q.slug}`} style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
         <img
           src={q.mainImage ? urlFor(q.mainImage).width(600).height(360).fit('crop').url() : '/fallback.png'}
           alt={q.title}

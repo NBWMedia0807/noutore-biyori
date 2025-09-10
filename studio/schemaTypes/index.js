@@ -1,3 +1,5 @@
 // studio/schemaTypes/index.js
 import quiz from './quiz'
-export default [quiz]
+import category from './category'
+
+export default [quiz, category]

@@ -1,66 +1,12 @@
 <script>
-  import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { client } from '../../../lib/sanity.js';
-
+  export let data;
   let quizzes = [];
-  let loading = true;
-  let category = '';
   let categoryTitle = '';
-
   $: slug = $page.params.slug;
 
-  $: {
-    // slugが変わるたびにリセット
-    quizzes = [];
-    loading = true;
-    if (slug === 'matchstick') {
-      category = 'マッチ棒クイズ';
-      categoryTitle = 'マッチ棒クイズ';
-    } else if (slug === 'spot-the-difference') {
-      category = '間違い探し';
-      categoryTitle = '間違い探し';
-    } else {
-      category = '';
-      categoryTitle = '';
-    }
-    fetchQuizzes(category);
-  }
-
-  async function fetchQuizzes(currentCategory) {
-    if (!currentCategory) {
-      loading = false;
-      return;
-    }
-    try {
-      const query = `*[_type == "quiz" && category->title == "${currentCategory}"] | order(_createdAt desc) {
-        _id,
-        _createdAt,
-        title,
-        category->{
-          title,
-          _id
-        },
-        questionImage,
-        answerImage,
-        slug
-      }`;
-      
-      const result = await client.fetch(query);
-      console.log('取得したカテゴリクイズデータ:', result);
-      
-      if (result && result.length > 0) {
-        quizzes = result;
-      } else {
-        quizzes = [];
-      }
-      loading = false;
-    } catch (error) {
-      console.error('クイズの取得に失敗しました:', error);
-      quizzes = [];
-      loading = false;
-    }
-  }
+  $: quizzes = data?.quizzes ?? [];
+  $: categoryTitle = data?.categoryTitle ?? '';
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -69,8 +15,8 @@
 
   function getImageUrl(image) {
     if (!image || !image.asset) return '/matchstick_question.png';
-    if (image.asset._ref === 'image-sample') return '/matchstick_question.png';
-    return `https://cdn.sanity.io/images/dxl04rd4/production/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
+    if (image.asset.url) return image.asset.url;
+    return '/matchstick_question.png';
   }
 </script>
 
@@ -79,32 +25,25 @@
   <meta name="description" content="{categoryTitle}の一覧ページです。楽しく脳を鍛える{categoryTitle}をお楽しみください。">
 </svelte:head>
 
-<!-- カテゴリヘッダー -->
-<section class="category-header">
-  <div class="category-info">
-    <h1 class="category-title">{categoryTitle}</h1>
-    <p class="category-description">
-      {#if slug === 'matchstick'}
-        マッチ棒を動かして正しい式を作るパズルゲームです。論理的思考力を鍛えましょう。
-      {:else if slug === 'spot-the-difference'}
-        2つの画像の違いを見つけるゲームです。観察力と集中力を鍛えましょう。
-      {/if}
-    </p>
-    <div class="quiz-count">
-      {#if !loading}
-        全{quizzes.length}問
-      {/if}
+{#key slug}
+  <!-- カテゴリヘッダー -->
+  <section class="category-header" style="text-align:center;">
+    <div class="category-info">
+      <h1 class="category-title">{categoryTitle}</h1>
+      <p class="category-description">
+        {#if slug === 'matchstick'}
+          マッチ棒を動かして正しい式を作るパズルゲームです。論理的思考力を鍛えましょう。
+        {:else if slug === 'spot-the-difference'}
+          2つの画像の違いを見つけるゲームです。観察力と集中力を鍛えましょう。
+        {/if}
+      </p>
+      <div class="quiz-count">全{quizzes.length}問</div>
     </div>
-  </div>
-</section>
+  </section>
 
 <!-- クイズ一覧 -->
 <section class="quiz-list-section">
-  {#if loading}
-    <div class="loading">
-      <p>クイズを読み込み中...</p>
-    </div>
-  {:else if quizzes.length === 0}
+  {#if quizzes.length === 0}
     <div class="no-quizzes">
       <p>まだ{categoryTitle}が投稿されていません。</p>
       <p>新しいクイズをお楽しみに！</p>
@@ -113,10 +52,10 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href="/quiz/{quiz.slug.current}" class="quiz-link">
+          <a href="/quiz/{quiz.slug}" class="quiz-link">
             <div class="quiz-image">
-              <img src="{getImageUrl(quiz.questionImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
-              <div class="quiz-category">{quiz.category?.title || categoryTitle}</div>
+              <img src="{getImageUrl(quiz.mainImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
+              <div class="quiz-category">{quiz.category?.title ?? categoryTitle}</div>
             </div>
             <div class="quiz-content">
               <div class="quiz-date">{formatDate(quiz._createdAt)}</div>
@@ -127,7 +66,8 @@
       {/each}
     </div>
   {/if}
-</section>
+  </section>
+{/key}
 
 <style>
   /* カテゴリヘッダー */
@@ -306,6 +246,3 @@
     }
   }
 </style>
-
-
-
