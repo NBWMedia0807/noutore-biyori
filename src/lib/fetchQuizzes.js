@@ -8,7 +8,7 @@ export async function fetchAllQuizzes() {
       title,
       "slug": slug.current,
       category->{ _id, title },
-      "mainImage": 問題画像{ asset->{ url, metadata } },
+      "mainImage": "問題画像"{ asset->{ url, metadata } },
       problemDescription,
       _createdAt
     }
@@ -32,7 +32,7 @@ export async function fetchQuizBySlug(slug) {
       category->{ _id, title },
       problemDescription,
       hint,
-      "mainImage": 問題画像{ asset->{ url, metadata } },
+      "mainImage": "問題画像"{ asset->{ url, metadata } },
       answerImage{ asset->{ url, metadata } },
       answerExplanation,
       closingMessage,
@@ -56,7 +56,7 @@ export async function fetchQuizzesByCategory(category) {
       title,
       "slug": slug.current,
       category->{ _id, title },
-      "mainImage": 問題画像{ asset->{ url, metadata } },
+      "mainImage": "問題画像"{ asset->{ url, metadata } },
       problemDescription,
       _createdAt
     }
