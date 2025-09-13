@@ -18,12 +18,12 @@
   <div class="nav-container">
     <ul class="nav-menu">
       <li>
-        <a href="/category/matchstick" class="nav-link matchstick-link" sveltekit:prefetch data-sveltekit-reload>
+        <a href="/category/matchstick" class="nav-link matchstick-link" data-sveltekit-preload-data>
           マッチ棒クイズ
         </a>
       </li>
       <li>
-        <a href="/category/spot-the-difference" class="nav-link difference-link" sveltekit:prefetch data-sveltekit-reload>
+        <a href="/category/spot-the-difference" class="nav-link difference-link" data-sveltekit-preload-data>
           間違い探し
         </a>
       </li>
