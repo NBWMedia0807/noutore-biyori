@@ -7,7 +7,7 @@ const QUIZZES_QUERY = /* groq */ `
   title,
   "slug": slug.current,
   category->{ _id, title },
-  mainImage{
+  "mainImage": 問題画像{
     asset->{
       _id,
       url,

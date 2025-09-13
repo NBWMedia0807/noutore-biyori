@@ -15,7 +15,7 @@ const QUERY = /* groq */ `
   category->{ _id, title },
   problemDescription,
   hint,
-  mainImage{ asset->{ url, metadata } },
+  "mainImage": 問題画像{ asset->{ url, metadata } },
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
   closingMessage
