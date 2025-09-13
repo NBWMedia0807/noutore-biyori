@@ -14,11 +14,19 @@ if (!projectId) {
 const client = createClient({
   projectId,
   dataset,
-  apiVersion: '2023-05-03',
+  apiVersion: '2024-01-01',
   useCdn: true, // ブラウザ側は CDN でOK
 });
 
 const builder = imageUrlBuilder(client);
 
 // 画像URLを作るだけ
-export const urlFor = (source) => builder.image(source);
+export const urlFor = (source) => {
+  if (!source) return null;
+  try {
+    return builder.image(source);
+  } catch (error) {
+    console.error('Error generating image URL:', error);
+    return null;
+  }
+};
