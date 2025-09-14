@@ -1,6 +1,10 @@
 <script>
-  export let data;
-  let { quiz } = data;
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { client } from '$lib/sanity.js';
+
+  let quiz = null;
+  let loading = true;
   let error = null;
   let showHint = false;
 
@@ -25,7 +29,29 @@
     closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
   };
 
-  // サーバー取得済み。フェイル時はサンプルを表示（サーバ側で404にしています）
+  onMount(async () => {
+    try {
+      const slug = $page.params.slug;
+      
+      // まずSanityからデータを取得を試行
+      const result = await client.fetch(`*[_id == $id][0]`, { id: slug });
+      
+      if (result && result._type === 'quiz') {
+        quiz = result;
+        console.log('Sanityから取得したクイズ:', quiz);
+      } else {
+        // Sanityからデータが取得できない場合はサンプルデータを使用
+        quiz = sampleQuiz;
+        console.log('サンプルデータを使用:', quiz);
+      }
+      loading = false;
+    } catch (err) {
+      console.error('クイズデータの取得に失敗:', err);
+      // エラーの場合もサンプルデータを使用
+      quiz = sampleQuiz;
+      loading = false;
+    }
+  });
 
   function toggleHint() {
     showHint = !showHint;
@@ -48,7 +74,7 @@
   }
 
   function getImageUrl(imageRef) {
-    if (!imageRef) return '/matchstick_question.png';
+    if (!imageRef) return '/matchstick_question.png'; // デフォルトで問題画像を返す
     if (typeof imageRef === 'string') return imageRef;
     if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
     if (imageRef.asset && imageRef.asset._ref) {
@@ -84,7 +110,12 @@
 </svelte:head>
 
 <main>
-  {#if quiz}
+  {#if loading}
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>クイズを読み込み中...</p>
+    </div>
+  {:else if quiz}
     <article class="quiz-article">
       <!-- ヘッダー -->
       <header class="quiz-header">
@@ -134,7 +165,8 @@
 
       <!-- 正解ページへのナビゲーション -->
       <section class="answer-navigation">
-        <a href="/quiz/matchstick/article/{quiz._id}/answer" class="answer-link">
+        <a href="/quiz/{quiz._id}/answer" class="answer-link">
+          正解を見る
         </a>
       </section>
 
@@ -373,5 +405,3 @@
     }
   }
 </style>
-
-

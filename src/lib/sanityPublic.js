@@ -10,11 +10,16 @@ if (!projectId) {
   console.error('VITE_SANITY_PROJECT_ID is missing');
 }
 
+// APIバージョンは環境変数を参照（デフォルト: 2024-01-01）
+const apiVersion =
+  (typeof process !== 'undefined' && process.env && process.env.SANITY_API_VERSION) ||
+  '2024-01-01';
+
 // 読み取り専用クライアント（トークン不要）
 const client = createClient({
   projectId,
   dataset,
-  apiVersion: '2024-01-01',
+  apiVersion,
   useCdn: true, // ブラウザ側は CDN でOK
 });
 

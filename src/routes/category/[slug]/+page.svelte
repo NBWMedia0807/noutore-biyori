@@ -13,21 +13,13 @@
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
   }
 
-  import { urlFor } from '$lib/sanityPublic.js';
+  const PUBLIC_PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID;
+  const PUBLIC_DATASET = import.meta.env.VITE_SANITY_DATASET || 'production';
 
   function getImageUrl(image) {
-    if (!image) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDYwMCAzNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjMwMCIgeT0iMTgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOUI5QkEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCI+44Kk44Oh44O844K4</text>Cjwvc3ZnPgo=';
-    
-    try {
-      const imageUrl = urlFor(image);
-      if (imageUrl) {
-        return imageUrl.width(400).height(300).fit('crop').url();
-      }
-    } catch (error) {
-      console.error('Error generating image URL:', error);
-    }
-    
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDYwMCAzNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjMwMCIgeT0iMTgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOUI5QkEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCI+44Kk44Oh44O844K4</text>Cjwvc3ZnPgo=';
+    if (!image || !image.asset) return '/matchstick_question.png';
+    if (image.asset._ref === 'image-sample') return '/matchstick_question.png';
+    return `https://cdn.sanity.io/images/${PUBLIC_PROJECT_ID}/${PUBLIC_DATASET}/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
   }
 </script>
 
@@ -257,3 +249,4 @@
     }
   }
 </style>
+
