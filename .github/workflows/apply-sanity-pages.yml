@@ -15,23 +15,11 @@ jobs:
 
       - name: Write files
         run: |
-          mkdir -p src/lib
           mkdir -p src/routes/quiz/matchstick/article/[slug]/answer
 
-          cat > src/lib/sanity.js <<'EOF'
-          import { createClient } from '@sanity/client';
-          import imageUrlBuilder from '@sanity/image-url';
-          const projectId  = process.env.SANITY_PROJECT_ID;
-          const dataset    = process.env.SANITY_DATASET || 'production';
-          const apiVersion = process.env.SANITY_API_VERSION || '2023-05-03';
-          const token      = process.env.SANITY_API_TOKEN;
-          export const client = createClient({ projectId, dataset, apiVersion, useCdn:false, token, perspective:'published' });
-          const builder = imageUrlBuilder(client);
-          export const urlFor = (source) => builder.image(source);
-          EOF
-
+          # サーバ側は既存のサーバ用クライアントを使用
           cat > src/routes/+page.server.js <<'EOF'
-          import { client } from '$lib/sanity.js';
+          import { client } from '$lib/sanity.server.js';
           const QUERY = `
           *[_type=="quiz" && defined(slug.current)]{
             title, "slug": slug.current, mainImage, _updatedAt
@@ -40,8 +28,9 @@ jobs:
           export async function load(){ const quizzes=await client.fetch(QUERY); return { quizzes }; }
           EOF
 
+          # ブラウザ側は公開用クライアントのビルダーのみ使用（トークンは使わない）
           cat > src/routes/+page.svelte <<'EOF'
-          <script> export let data; import { urlFor } from '$lib/sanity.js'; </script>
+          <script> export let data; import { urlFor } from '$lib/sanityPublic.js'; </script>
           <h1 style="margin:16px 0;">脳トレ日和｜マッチ棒クイズ</h1>
           {#if !data.quizzes?.length}
             <p>まだクイズが投稿されていません。</p>
@@ -59,7 +48,7 @@ jobs:
 
           mkdir -p "src/routes/quiz/matchstick/article/[slug]"
           cat > "src/routes/quiz/matchstick/article/[slug]/+page.server.js" <<'EOF'
-          import { client } from '$lib/sanity.js';
+          import { client } from '$lib/sanity.server.js';
           const QUERY = `
           *[_type=="quiz" && slug.current==$slug][0]{
             title, mainImage, problemDescription, hint, answerImage, answerExplanation, closingMessage
@@ -68,7 +57,7 @@ jobs:
           EOF
 
           cat > "src/routes/quiz/matchstick/article/[slug]/+page.svelte" <<'EOF'
-          <script> export let data; import { urlFor } from '$lib/sanity.js'; let showHint=false; </script>
+          <script> export let data; import { urlFor } from '$lib/sanityPublic.js'; let showHint=false; </script>
           <a href="/" style="display:inline-block;margin:8px 0;">← TOPへ戻る</a>
           <h1 style="margin:8px 0 12px;">{data.doc.title}</h1>
           {#if data.doc.mainImage}<img src={urlFor(data.doc.mainImage).width(900).url()} alt={data.doc.title} style="width:100%;max-width:900px;border-radius:12px" />{/if}
@@ -79,13 +68,13 @@ jobs:
           EOF
 
           cat > "src/routes/quiz/matchstick/article/[slug]/answer/+page.server.js" <<'EOF'
-          import { client } from '$lib/sanity.js';
+          import { client } from '$lib/sanity.server.js';
           const QUERY = `*[_type=="quiz" && slug.current==$slug][0]{ title, answerImage, answerExplanation, closingMessage }`;
           export async function load({ params }){ const doc=await client.fetch(QUERY,{slug:params.slug}); if(!doc) return {status:404,error:new Error('Not found')}; return { doc }; }
           EOF
 
           cat > "src/routes/quiz/matchstick/article/[slug]/answer/+page.svelte" <<'EOF'
-          <script> export let data; import { urlFor } from '$lib/sanity.js'; </script>
+          <script> export let data; import { urlFor } from '$lib/sanityPublic.js'; </script>
           <a href="../" style="display:inline-block;margin:8px 0;">← 問題へ戻る</a>
           <h1 style="margin:8px 0 12px;">{data.doc.title}｜解答</h1>
           {#if data.doc.answerImage}<img src={urlFor(data.doc.answerImage).width(900).url()} alt="解答画像" style="width:100%;max-width:900px;border-radius:12px" />{/if}
