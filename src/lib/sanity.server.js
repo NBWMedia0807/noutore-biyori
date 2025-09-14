@@ -8,9 +8,9 @@ export const client = createClient({
   dataset: env.SANITY_DATASET || 'production',
   apiVersion: env.SANITY_API_VERSION || '2024-01-01',
   token: env.SANITY_READ_TOKEN,
-  useCdn: false
+  useCdn: false,
+  perspective: 'published'
 });
 
 const builder = imageUrlBuilder(client);
 export const urlFor = (source) => builder.image(source);
-

@@ -8,7 +8,8 @@ const sanity = createClient({
   dataset: env.SANITY_DATASET || 'production',
   apiVersion: process.env.SANITY_API_VERSION || '2024-01-01',
   token: env.SANITY_READ_TOKEN,
-  useCdn: false
+  useCdn: false,
+  perspective: 'published'
 });
 
 export async function GET() {
