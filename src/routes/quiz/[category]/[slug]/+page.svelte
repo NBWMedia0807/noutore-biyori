@@ -5,11 +5,17 @@
   function renderPortableText(content) {
     if (!content) return '';
     if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .filter((b) => b?._type === 'block')
+        .map((b) => b?.children?.filter((c) => c?._type === 'span')?.map((c) => c.text).join('') || '')
+        .join('\n');
+    }
     return '';
   }
 
   function textOrPortable(content) {
-    return typeof content === 'string' ? content : '';
+    return typeof content === 'string' ? content : renderPortableText(content);
   }
 </script>
 
@@ -49,4 +55,3 @@
     <p style="color:#9ca3af;font-size:.75rem;">__dataSource: {data.__dataSource}</p>
   {/if}
 </main>
-
