@@ -4,7 +4,7 @@ import sanityClient from '@sanity/client';
 const client = sanityClient({
   projectId: process.env.SANITY_PROJECT_ID,
   dataset: process.env.SANITY_DATASET,
-  apiVersion: '2025-01-01', // 日付は任意の新しいバージョン
+  apiVersion: process.env.SANITY_API_VERSION || '2024-01-01',
   useCdn: false,
   token: process.env.SANITY_READ_TOKEN,
 });

@@ -3,11 +3,11 @@ import fs from 'fs';
 
 // Sanityクライアントの設定
 const client = createClient({
-  projectId: process.env.SANITY_PROJECT_ID || 'quljge22',
+  projectId: process.env.SANITY_PROJECT_ID,
   dataset: process.env.SANITY_DATASET || 'production',
   useCdn: false,
-  apiVersion: process.env.SANITY_API_VERSION || '2024-08-17',
-  token: process.env.SANITY_AUTH_TOKEN
+  apiVersion: process.env.SANITY_API_VERSION || '2024-01-01',
+  token: process.env.SANITY_AUTH_TOKEN || process.env.SANITY_WRITE_TOKEN
 });
 
 // 画像をアップロードする関数
