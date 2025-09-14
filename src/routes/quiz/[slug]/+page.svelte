@@ -13,8 +13,8 @@
   }
 
   function textOrPortable(content) {
-    const s = typeof content === 'string' ? content : renderPortableText(content);
-    return s || '';
+    // Studioに入力された文字列のみ表示（旧Portable Text配列は無視）
+    return typeof content === 'string' ? content : '';
   }
 </script>
 
