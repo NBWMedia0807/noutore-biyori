@@ -5,26 +5,7 @@
   let error = null;
   let showHint = false;
 
-  // サンプルデータ
-  const sampleQuiz = {
-    _id: 'sample-quiz',
-    _type: 'quiz',
-    title: '【間違い探し】隠された間違いを見つけよう！',
-    mainImage: {
-      asset: {
-        url: '/spot_the_difference_question.png'
-      }
-    },
-    problemDescription: '2つの画像を見比べて、隠された間違いを全て見つけてください。',
-    hint: '細部に注目してみましょう。色や形、配置など、わずかな違いが隠されています。',
-    answerImage: {
-      asset: {
-        url: '/spot_the_difference_answer.png'
-      }
-    },
-    answerExplanation: '間違いは全部で3つありました。左上の雲の形、中央の木の葉の数、右下の花の色の違いです。',
-    closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
-  };
+  // サンプルデータは使用しません（Sanity のデータのみを使用）
 
   // サーバーで取得済み。フォールバックはサーバー側で404にします。
 
