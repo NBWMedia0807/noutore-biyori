@@ -1,5 +1,6 @@
-// Sanityから1件取得して quiz で返す（サーバ専用クライアントを使用）
-import { error } from '@sveltejs/kit';
+// Sanityから1件取得して quiz を返す（サーバ専用クライアントを使用）
+export const prerender = false;
+import { json } from '@sveltejs/kit';
 import { client } from '$lib/sanity.server.js';
 
 const QUERY = /* groq */ `
@@ -18,9 +19,19 @@ const QUERY = /* groq */ `
 }
 `;
 
-export const load = async ({ params }) => {
+export const load = async (event) => {
+  const { params, setHeaders } = event;
+  // キャッシュさせない（Sanity更新の即時反映を優先）
+  setHeaders({ 'cache-control': 'no-store, no-cache, must-revalidate' });
+
   const slug = params.slug;
-  const doc = await client.fetch(QUERY, { slug });
-  if (!doc) throw error(404, 'Not found');
-  return { quiz: doc };
+  let doc = null;
+  try {
+    doc = await client.fetch(QUERY, { slug });
+  } catch (e) {
+    doc = null;
+  }
+  // 失敗時は空表示（スタブにしない）
+  const __dataSource = doc ? 'sanity' : 'stub';
+  return { quiz: doc, __dataSource };
 };

@@ -63,4 +63,7 @@
 
   <!-- 補助情報 -->
   <p style="color:#6b7280;font-size:.9rem;">slug: <code>{quiz.slug}</code></p>
+  {#if data.__dataSource}
+    <p style="color:#9ca3af;font-size:.75rem;">__dataSource: {data.__dataSource}</p>
+  {/if}
 </main>
