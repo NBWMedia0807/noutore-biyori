@@ -7,11 +7,13 @@ const QUERY = /* groq */ `
   (!defined(category._ref) && category == $category)
 )][0]{
   _id,
+  _updatedAt,
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
   mainImage{ asset->{ url, metadata } },
   problemDescription,
+  hints,
   hint
 }`;
 
@@ -24,4 +26,3 @@ export const load = async ({ params, setHeaders }) => {
   if (!doc) throw error(404, 'Not found');
   return { quiz: doc, __dataSource: 'sanity' };
 };
-

@@ -6,8 +6,10 @@ import { client } from '$lib/sanity.server.js';
 const QUERY = /* groq */ `
 *[_type == "quiz" && (slug.current == $slug || _id == $slug)][0]{
   _id,
+  _updatedAt,
   title,
   "slug": slug.current,
+  category->{ title, "slug": slug.current },
   // Studio 側の日本語フィールド(問題画像)にも対応
   "mainImage": {
     "asset": {
@@ -15,6 +17,7 @@ const QUERY = /* groq */ `
     }
   },
   problemDescription,
+  hints,
   hint
 }
 `;
