@@ -12,7 +12,7 @@ if (!projectId) {
 
 // APIバージョンは環境変数を参照（デフォルト: 2024-01-01）
 const apiVersion =
-  (typeof process !== 'undefined' && process.env && process.env.SANITY_API_VERSION) ||
+  (import.meta.env (typeof process !== 'undefined' && process.env && process.env.SANITY_API_VERSION)(typeof process !== 'undefined' && process.env && process.env.SANITY_API_VERSION) import.meta.env.VITE_SANITY_API_VERSION) ||
   '2024-01-01';
 
 // 読み取り専用クライアント（トークン不要）
