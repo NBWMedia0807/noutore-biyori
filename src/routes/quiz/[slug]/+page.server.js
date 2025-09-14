@@ -7,12 +7,11 @@ const QUERY = /* groq */ `
   _id,
   title,
   "slug": slug.current,
-  // Studio 側の日本語フィールドを mainImage に寄せる
-  "mainImage": coalesce(
-    select(defined(mainImage), mainImage),
-    select(defined(問題画像), "問題画像")
-  ){
-    asset->{ url, metadata }
+  // Studio 側の日本語フィールド(問題画像)にも対応
+  "mainImage": {
+    "asset": {
+      "url": coalesce(mainImage.asset->url, ["問題画像"].asset->url)
+    }
   },
   problemDescription,
   hint
