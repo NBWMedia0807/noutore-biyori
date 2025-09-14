@@ -6,7 +6,7 @@ const QUIZZES_QUERY = /* groq */ `
   _id,
   title,
   "slug": slug.current,
-  category->{ _id, title },
+  category->{ _id, title, "slug": slug.current },
   mainImage,
   // SSR用のサムネイルURL（asset参照がない場合の保険）
   "thumbnailUrl": mainImage.asset->url,

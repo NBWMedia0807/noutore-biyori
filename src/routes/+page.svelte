@@ -23,7 +23,8 @@
 {:else}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
     {#each data.quizzes as q}
-      <a href={`/quiz/${q.slug}`} style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
+        <a href={q?.category?.slug ? `/quiz/${q.category.slug}/${q.slug}` : `/quiz/${q.slug}`}
+           style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
         {#if getImageUrl(q)}
           <img
             src={getImageUrl(q)}
