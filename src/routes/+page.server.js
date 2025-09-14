@@ -8,6 +8,8 @@ const QUIZZES_QUERY = /* groq */ `
   "slug": slug.current,
   category->{ _id, title },
   mainImage,
+  // SSR用のサムネイルURL（asset参照がない場合の保険）
+  "thumbnailUrl": mainImage.asset->url,
   problemDescription
 }`;
 
