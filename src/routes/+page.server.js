@@ -9,7 +9,6 @@ const QUIZZES_QUERY = /* groq */ `
   category->{ _id, title },
   mainImage,
   problemDescription
-  problemDescription
 }`;
 
 export const load = async () => {

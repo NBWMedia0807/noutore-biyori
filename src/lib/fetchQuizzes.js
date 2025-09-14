@@ -8,7 +8,7 @@ export async function fetchAllQuizzes() {
       title,
       "slug": slug.current,
       category->{ _id, title },
-      mainImage, asset->{ url, metadata } },
+      mainImage,
       problemDescription,
       _createdAt
     }
@@ -32,8 +32,8 @@ export async function fetchQuizBySlug(slug) {
       category->{ _id, title },
       problemDescription,
       hint,
-      mainImage, asset->{ url, metadata } },
-      answerImage{ asset->{ url, metadata } },
+      mainImage,
+      answerImage,
       answerExplanation,
       closingMessage,
       _createdAt
@@ -56,7 +56,7 @@ export async function fetchQuizzesByCategory(category) {
       title,
       "slug": slug.current,
       category->{ _id, title },
-      mainImage, asset->{ url, metadata } },
+      mainImage,
       problemDescription,
       _createdAt
     }
