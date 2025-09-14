@@ -17,7 +17,7 @@
     return s || '';
   }
 
-  const defaultClosing = 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
+  // Sanity以外の文言は表示しない
 </script>
 
 <svelte:head>
@@ -40,13 +40,14 @@
     </section>
   {/if}
 
-  <!-- ⑦ 締め文（デフォルト） -->
-  <section style="margin:16px 0;">
-    <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(quiz.closingMessage) || defaultClosing}</p>
-  </section>
+  <!-- ⑦ 締め文（Sanityに入稿があれば表示） -->
+  {#if textOrPortable(quiz.closingMessage)}
+    <section style="margin:16px 0;">
+      <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(quiz.closingMessage)}</p>
+    </section>
+  {/if}
 
   <div style="margin-top:24px;text-align:center;">
     <a href={`/quiz/${quiz.slug}`} style="display:inline-block;background:#ffc107;color:#856404;text-decoration:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;">← 問題へ戻る</a>
   </div>
 </main>
-
