@@ -13,8 +13,15 @@
   }
 
   function textOrPortable(content) {
-    // Studioに入力された文字列のみ表示（旧Portable Text配列は無視）
-    return typeof content === 'string' ? content : '';
+    // Studioの文字列 or Portable Text 配列をレンダリング
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .filter((b) => b?._type === 'block')
+        .map((b) => b.children?.filter((c) => c?._type === 'span')?.map((c) => c.text).join('') || '')
+        .join('\n');
+    }
+    return '';
   }
 </script>
 
