@@ -13,7 +13,8 @@ const QUIZZES_QUERY = /* groq */ `
   problemDescription
 }`;
 
-export const load = async () => {
+export const load = async ({ setHeaders }) => {
+  setHeaders({ 'cache-control': 'no-store' });
   try {
     console.log('[+page.server.js] Fetching quizzes from Sanity...');
     const quizzes = await client.fetch(QUIZZES_QUERY);
