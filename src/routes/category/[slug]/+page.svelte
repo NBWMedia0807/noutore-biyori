@@ -13,13 +13,12 @@
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
   }
 
-  const PUBLIC_PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID;
-  const PUBLIC_DATASET = import.meta.env.VITE_SANITY_DATASET || 'production';
+  import { urlFor } from '$lib/sanityPublic.js';
 
   function getImageUrl(image) {
-    if (!image || !image.asset) return '/matchstick_question.png';
-    if (image.asset._ref === 'image-sample') return '/matchstick_question.png';
-    return `https://cdn.sanity.io/images/${PUBLIC_PROJECT_ID}/${PUBLIC_DATASET}/${image.asset._ref.replace('image-', '').replace('-png', '.png').replace('-jpg', '.jpg').replace('-jpeg', '.jpeg')}`;
+    if (!image || !image.asset) return '';
+    if (image.asset.url) return image.asset.url;
+    try { return urlFor(image).width(600).height(360).fit('crop').url(); } catch { return ''; }
   }
 </script>
 
@@ -57,7 +56,9 @@
         <article class="quiz-card">
           <a href="/quiz/{quiz.slug}" class="quiz-link">
             <div class="quiz-image">
-              <img src="{getImageUrl(quiz.mainImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
+              {#if getImageUrl(quiz.mainImage || quiz.answerImage)}
+                <img src="{getImageUrl(quiz.mainImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
+              {/if}
               <div class="quiz-category">{quiz.category?.title ?? categoryTitle}</div>
             </div>
             <div class="quiz-content">
@@ -249,4 +250,3 @@
     }
   }
 </style>
-
