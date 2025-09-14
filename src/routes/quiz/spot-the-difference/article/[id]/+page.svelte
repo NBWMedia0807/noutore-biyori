@@ -1,5 +1,6 @@
 <script>
   export let data;
+  import { urlFor } from '$lib/sanityPublic.js';
   let { quiz } = data;
   let error = null;
   let showHint = false;
@@ -48,27 +49,13 @@
   }
 
   function getImageUrl(imageRef) {
-    if (!imageRef) return '/spot_the_difference_question.png';
+    if (!imageRef) return '';
     if (typeof imageRef === 'string') return imageRef;
     if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
     if (imageRef.asset && imageRef.asset._ref) {
-      // Sanity画像URLを構築
-      const ref = imageRef.asset._ref;
-      const [, id, dimensions, format] = ref.match(/^image-([a-f\d]+)-(\d+x\d+)-(\w+)$/) || [];
-      if (id && dimensions && format) {
-        const PUBLIC_PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID;
-        const PUBLIC_DATASET = import.meta.env.VITE_SANITY_DATASET || 'production';
-        return `https://cdn.sanity.io/images/${PUBLIC_PROJECT_ID}/${PUBLIC_DATASET}/${id}-${dimensions}.${format}`;
-      }
+      try { return urlFor(imageRef).width(900).url(); } catch { return ''; }
     }
-    // フォールバック：staticディレクトリの画像を直接参照
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('spot_the_difference_question')) {
-      return '/spot_the_difference_question.png';
-    }
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('spot_the_difference_answer')) {
-      return '/spot_the_difference_answer.png';
-    }
-    return '/spot_the_difference_question.png'; // デフォルトで問題画像を返す
+    return '';
   }
 
   // タイトルを改行で分割
@@ -373,5 +360,3 @@
     }
   }
 </style>
-
-

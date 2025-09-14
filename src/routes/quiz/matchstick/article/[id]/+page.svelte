@@ -1,31 +1,9 @@
 <script>
   export let data;
+  import { urlFor } from '$lib/sanityPublic.js';
   let { quiz } = data;
   let error = null;
   let showHint = false;
-
-  // サンプルデータ
-  const sampleQuiz = {
-    _id: 'sample-quiz',
-    _type: 'quiz',
-    title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？',
-    mainImage: {
-      asset: {
-        url: '/matchstick_question.png'
-      }
-    },
-    problemDescription: 'マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で"どの1本を動かすか"がポイントです。',
-    hint: 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。',
-    answerImage: {
-      asset: {
-        url: '/matchstick_answer.png'
-      }
-    },
-    answerExplanation: '右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。',
-    closingMessage: 'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
-  };
-
-  // サーバー取得済み。フェイル時はサンプルを表示（サーバ側で404にしています）
 
   function toggleHint() {
     showHint = !showHint;
@@ -48,27 +26,13 @@
   }
 
   function getImageUrl(imageRef) {
-    if (!imageRef) return '/matchstick_question.png';
+    if (!imageRef) return '';
     if (typeof imageRef === 'string') return imageRef;
     if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
     if (imageRef.asset && imageRef.asset._ref) {
-      // Sanity画像URLを構築
-      const ref = imageRef.asset._ref;
-      const [, id, dimensions, format] = ref.match(/^image-([a-f\d]+)-(\d+x\d+)-(\w+)$/) || [];
-      if (id && dimensions && format) {
-        const PUBLIC_PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID;
-        const PUBLIC_DATASET = import.meta.env.VITE_SANITY_DATASET || 'production';
-        return `https://cdn.sanity.io/images/${PUBLIC_PROJECT_ID}/${PUBLIC_DATASET}/${id}-${dimensions}.${format}`;
-      }
+      try { return urlFor(imageRef).width(900).url(); } catch { return ''; }
     }
-    // フォールバック：staticディレクトリの画像を直接参照
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_question')) {
-      return '/matchstick_question.png';
-    }
-    if (imageRef.asset && imageRef.asset.url && imageRef.asset.url.includes('matchstick_answer')) {
-      return '/matchstick_answer.png';
-    }
-    return '/matchstick_question.png'; // デフォルトで問題画像を返す
+    return '';
   }
 
   // タイトルを改行で分割
@@ -373,5 +337,3 @@
     }
   }
 </style>
-
-
