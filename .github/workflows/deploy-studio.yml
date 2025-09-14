@@ -1,0 +1,40 @@
+name: Deploy Sanity Studio
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: Studio hostname (without .sanity.studio)
+        required: false
+        default: noutore-biyori-studio-main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (studio)
+        working-directory: studio
+        run: |
+          npm i -g pnpm
+          pnpm install --no-frozen-lockfile
+
+      - name: Sanity login (token)
+        run: npx -y sanity@latest login --with-token
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+
+      - name: Deploy Studio
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          npx -y sanity@latest deploy "${{ github.event.inputs.host }}" --project quljge22 --dataset production --no-open
+
