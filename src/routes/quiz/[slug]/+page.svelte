@@ -46,21 +46,27 @@
   {/if}
 
   <!-- 問題説明 -->
-  {#if textOrPortable(quiz.problemDescription)}
+  {#if (data.problemText && data.problemText.length) || textOrPortable(quiz.problemDescription)}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">問題の補足</h2>
-      <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(quiz.problemDescription)}</p>
+      <p style="white-space:pre-line;line-height:1.8;">{data.problemText || textOrPortable(quiz.problemDescription)}</p>
     </section>
   {/if}
 
   <!-- ④ ヒント（ここでページ区切り） -->
-  {#if Array.isArray(quiz.hints) && quiz.hints.length}
+  {#if (Array.isArray(data.hintsText) && data.hintsText.length) || (Array.isArray(quiz.hints) && quiz.hints.length)}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">ヒント</h2>
       <div style="margin-top:.5rem;background:#f8f9fa;padding:1rem;border-left:4px solid #ffc107;border-radius:8px;">
-        {#each quiz.hints as h}
-          <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(h)}</p>
-        {/each}
+        {#if Array.isArray(data.hintsText) && data.hintsText.length}
+          {#each data.hintsText as h}
+            <p style="white-space:pre-line;line-height:1.8;">{h}</p>
+          {/each}
+        {:else}
+          {#each quiz.hints as h}
+            <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(h)}</p>
+          {/each}
+        {/if}
       </div>
     </section>
   {:else if textOrPortable(quiz.hint)}
