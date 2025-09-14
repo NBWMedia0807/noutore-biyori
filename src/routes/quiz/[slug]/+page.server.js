@@ -1,24 +1,27 @@
-// 最小構成。Sanityから1件取得して doc で返す
+// Sanityから1件取得して quiz で返す（サーバ専用クライアントを使用）
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity.js';
+import { client } from '$lib/sanity.server.js';
 
 const QUERY = /* groq */ `
 *[_type == "quiz" && (slug.current == $slug || _id == $slug)][0]{
   _id,
   title,
   "slug": slug.current,
-  mainImage{asset->{url}},
-  body
+  // Studio 側の日本語フィールドを mainImage に寄せる
+  "mainImage": coalesce(
+    select(defined(mainImage), mainImage),
+    select(defined(問題画像), "問題画像")
+  ){
+    asset->{ url, metadata }
+  },
+  problemDescription,
+  hint
 }
 `;
 
 export const load = async ({ params }) => {
   const slug = params.slug;
-  console.log('[quiz/[slug]] incoming slug:', slug);
-
   const doc = await client.fetch(QUERY, { slug });
-  console.log('[quiz/[slug]] fetched?', Boolean(doc));
-
   if (!doc) throw error(404, 'Not found');
-  return { doc };
+  return { quiz: doc };
 };
