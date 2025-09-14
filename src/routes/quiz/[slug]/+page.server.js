@@ -36,5 +36,22 @@ export const load = async (event) => {
   }
   // 失敗時は空表示（スタブにしない）
   const __dataSource = doc ? 'sanity' : 'stub';
-  return { quiz: doc, __dataSource };
+  // SSR用のプレーンテキスト化（PT配列→文字列）
+  const ptToText = (v) => {
+    if (!v) return '';
+    if (typeof v === 'string') return v;
+    if (Array.isArray(v)) {
+      return v
+        .filter((b) => b && b._type === 'block')
+        .map((b) => (b.children || [])
+          .filter((c) => c && c._type === 'span')
+          .map((c) => c.text)
+          .join(''))
+        .join('\n');
+    }
+    return '';
+  };
+  const problemText = doc ? ptToText(doc.problemDescription) : '';
+  const hintsText = doc && Array.isArray(doc.hints) ? doc.hints.map(ptToText).filter(Boolean) : [];
+  return { quiz: doc, __dataSource, problemText, hintsText };
 };
