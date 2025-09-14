@@ -3,14 +3,12 @@
   import { urlFor } from '$lib/sanityPublic.js';
   
   function getImageUrl(quiz) {
-    // 1) 参照があれば builder で最適化URL
-    if (quiz?.mainImage && quiz.mainImage.asset && !quiz.mainImage.asset.url) {
-      try {
-        return urlFor(quiz.mainImage).width(600).height(360).fit('crop').url();
-      } catch {}
-    }
-    // 2) SSRで付与したサムネイルURLをフォールバック
+    // 1) SSRで付与したサムネイルURLを最優先（サーバ側の正確なURL）
     if (quiz?.thumbnailUrl) return quiz.thumbnailUrl;
+    // 2) 参照があれば builder で最適化URL
+    if (quiz?.mainImage && quiz.mainImage.asset && !quiz.mainImage.asset.url) {
+      try { return urlFor(quiz.mainImage).width(600).height(360).fit('crop').url(); } catch {}
+    }
     // 3) さらにフォールバック: そのままURLがあれば利用
     if (quiz?.mainImage?.asset?.url) return quiz.mainImage.asset.url;
     // 4) 何も無ければプレースホルダ
