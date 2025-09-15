@@ -60,4 +60,9 @@
     </section>
   {/if}
 
+  <!-- 正解ページへの誘導 -->
+  <div style="text-align:center;margin:24px 0;">
+    <a href={`/quiz/${quiz.category?.slug}/${quiz.slug}/answer`} style="display:inline-block;background:#ffc107;color:#856404;text-decoration:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;">正解を見る →</a>
+  </div>
+
 </main>
