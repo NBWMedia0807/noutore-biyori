@@ -7,8 +7,9 @@ import schemaTypes from './schemaTypes'
 export default defineConfig({
   name: 'noutore-biyori-studio',
   title: 'noutore-biyori',
-  projectId: process.env.SANITY_PROJECT_ID,
-  dataset: process.env.SANITY_DATASET || 'production',
+  // Hardcode to avoid env dependency during hosted deploys
+  projectId: 'quljge22',
+  dataset: 'production',
   plugins: [deskTool(), visionTool()],
   schema: { types: schemaTypes }
 })
