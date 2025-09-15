@@ -35,12 +35,8 @@
     </section>
   {/if}
 
-  {#if data.__dataSource}
-    <p style="color:#9ca3af;font-size:.75rem;">__dataSource: {data.__dataSource}</p>
-  {/if}
 
   <div style="text-align:center;margin:24px 0;">
     <a href={`/quiz/${quiz.category?.slug}/${quiz.slug}`} style="text-decoration:none;">← 問題に戻る</a>
   </div>
 </main>
-
