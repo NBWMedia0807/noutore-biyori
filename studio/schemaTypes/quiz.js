@@ -47,10 +47,7 @@ export default {
     {
       name: 'closingMessage',
       title: '締めテキスト',
-      type: 'string',
-      description: '未入力時は既定文を利用します。',
-      initialValue:
-        'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！'
+      type: 'string'
     }
   ]
 }
