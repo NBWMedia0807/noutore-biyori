@@ -60,7 +60,4 @@
     </section>
   {/if}
 
-  {#if data.__dataSource}
-    <p style="color:#9ca3af;font-size:.75rem;">__dataSource: {data.__dataSource}</p>
-  {/if}
 </main>
