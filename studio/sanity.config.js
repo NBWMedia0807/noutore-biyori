@@ -9,7 +9,7 @@ export default defineConfig({
   title: 'noutore-biyori',
   // Hardcode to avoid env dependency during hosted deploys
   projectId: 'quljge22',
-  dataset: 'production',
+  dataset: 'live',
   plugins: [deskTool(), visionTool()],
   schema: { types: schemaTypes }
 })
