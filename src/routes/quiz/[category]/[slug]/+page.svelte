@@ -28,7 +28,6 @@
   }
 
   $: hintTexts = [
-    ...normalizePortableArray(quiz?.hint),
     ...normalizePortableArray(quiz?.hints)
   ]
     .map((entry) => textOrPortable(entry)?.trim())
