@@ -72,9 +72,9 @@ async function seed() {
       mainImage: q2Main,
       answerImage: q2Ans,
       problemDescription: pt('マッチ棒1本だけを別の場所へ移動して、式「8＋2＝6」を正しい等式に直してください。画像の中で“どの1本を動かすか”がポイントです。'),
-      hints: [],
+      hint: [],
       answerExplanation: pt('左の「8」から右上の縦1本を抜き、右の「6」の右上に移します。左は 8→6、右は 6→8。よって式は 6＋2＝8 となり、正解です。'),
-      closingMessage: ''
+      closingMessage: []
     },
     {
       _id: 'matchstick-quiz-1',
@@ -85,9 +85,9 @@ async function seed() {
       mainImage: q1Main,
       answerImage: q1Ans,
       problemDescription: pt('マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で“どの1本を動かすか”がポイントです。'),
-      hints: [],
+      hint: [],
       answerExplanation: pt('右の「8」から左下の縦1本を抜き、それを左の「9」の左下に移します。よって式は 8＋1＝9 となり、正解です。'),
-      closingMessage: ''
+      closingMessage: []
     }
   ]
 

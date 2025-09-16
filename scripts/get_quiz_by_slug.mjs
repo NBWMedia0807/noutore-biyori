@@ -11,7 +11,7 @@ if(!slug){ console.error('usage: node scripts/get_quiz_by_slug.mjs <slug>'); pro
 const q=`*[_type=='quiz' && slug.current==$slug][0]{
   _id,_type,_updatedAt,title,"slug":slug.current,
   category->{title,"slug":slug.current},
-  problemDescription, hints, hint,
+  problemDescription, hint,
   mainImage{asset->{url}}, answerImage{asset->{url}}, answerExplanation
 }`
 const doc = await client.fetch(q,{slug})

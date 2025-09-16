@@ -12,7 +12,7 @@ export default {
       name: 'title',
       title: 'タイトル',
       type: 'string',
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required()
     },
     {
       name: 'slug',
@@ -22,7 +22,7 @@ export default {
         source: 'title',
         maxLength: 96
       },
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required()
     },
     {
       name: 'mainImage',
@@ -31,7 +31,7 @@ export default {
       options: {
         hotspot: true
       },
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required()
     },
     {
       name: 'problemDescription',
@@ -40,20 +40,37 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: [{ title: '標準', value: 'normal' }],
           lists: [],
           marks: {
-            decorators: [{title: 'Strong', value: 'strong'}, {title: 'Emphasis', value: 'em'}],
+            decorators: [
+              { title: '太字', value: 'strong' },
+              { title: '斜体', value: 'em' }
+            ],
             annotations: []
           }
         }
       ]
     },
     {
-      name: 'adCode1',
-      title: 'レクタングル広告コード1',
-      type: 'text',
-      description: 'AdSenseなどの広告コードをここに貼り付けます。'
+      name: 'hint',
+      title: 'ヒント',
+      description: '必要に応じて複数のヒントを追加できます。',
+      type: 'array',
+      of: [
+        {
+          type: 'block',
+          styles: [{ title: '標準', value: 'normal' }],
+          lists: [],
+          marks: {
+            decorators: [
+              { title: '太字', value: 'strong' },
+              { title: '斜体', value: 'em' }
+            ],
+            annotations: []
+          }
+        }
+      ]
     },
     {
       name: 'answerImage',
@@ -62,25 +79,41 @@ export default {
       options: {
         hotspot: true
       },
-      description: '2ページ目に表示される正解画像です。'
-    },
-    {
-      name: 'adCode2',
-      title: 'レクタングル広告コード2',
-      type: 'text',
-      description: 'AdSenseなどの広告コードをここに貼り付けます。空白の場合は表示されません。'
+      validation: (Rule) => Rule.required()
     },
     {
       name: 'answerExplanation',
-      title: '正解への補足テキスト',
+      title: '解説文',
       type: 'array',
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: [{ title: '標準', value: 'normal' }],
           lists: [],
           marks: {
-            decorators: [{title: 'Strong', value: 'strong'}, {title: 'Emphasis', value: 'em'}],
+            decorators: [
+              { title: '太字', value: 'strong' },
+              { title: '斜体', value: 'em' }
+            ],
+            annotations: []
+          }
+        }
+      ]
+    },
+    {
+      name: 'closingMessage',
+      title: '締め文',
+      type: 'array',
+      of: [
+        {
+          type: 'block',
+          styles: [{ title: '標準', value: 'normal' }],
+          lists: [],
+          marks: {
+            decorators: [
+              { title: '太字', value: 'strong' },
+              { title: '斜体', value: 'em' }
+            ],
             annotations: []
           }
         }
@@ -90,8 +123,8 @@ export default {
       name: 'category',
       title: 'カテゴリ',
       type: 'reference',
-      to: [{type: 'category'}],
-      validation: Rule => Rule.required()
+      to: [{ type: 'category' }],
+      validation: (Rule) => Rule.required()
     }
   ]
 };
@@ -110,7 +143,17 @@ export const categorySchema = {
       name: 'title',
       title: 'タイトル',
       type: 'string',
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required()
+    },
+    {
+      name: 'slug',
+      title: 'スラッグ',
+      type: 'slug',
+      options: {
+        source: 'title',
+        maxLength: 96
+      },
+      validation: (Rule) => Rule.required()
     },
     {
       name: 'description',
@@ -126,19 +169,16 @@ export const categorySchema = {
 
   例:
   import {defineConfig} from 'sanity'
-  import {schemaTypes} from './schemas'
   import quiz from './schemas/quiz'
   import category from './schemas/category'
 
   export default defineConfig({
     // ...その他の設定
     schema: {
-      types: schemaTypes.concat([
+      types: [
         quiz,
         category
-      ]),
-    },
+      ]
+    }
   })
 */
-
-
