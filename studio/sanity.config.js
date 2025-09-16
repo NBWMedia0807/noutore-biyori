@@ -2,7 +2,7 @@
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
 import {visionTool} from '@sanity/vision'
-import schemaTypes from './schemaTypes'
+import {schemaTypes} from './schemas'
 
 export default defineConfig({
   name: 'noutore-biyori-studio',

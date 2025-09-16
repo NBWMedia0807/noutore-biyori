@@ -83,7 +83,7 @@ async function uploadQuizData() {
           style: 'normal'
         }
       ],
-      hint: [
+      hints: [
         {
           _type: 'block',
           _key: 'hint1',

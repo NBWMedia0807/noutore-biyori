@@ -1,13 +1,10 @@
-/*
-  Sanity Studioのschemasディレクトリに以下のファイルを配置してください。
-  例: `schemas/quiz.js`
-*/
-
+// studio/schemas/quiz.js
 export default {
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
   fields: [
+    // ── 基本情報 ─────────────────────────
     {
       name: 'title',
       title: 'タイトル',
@@ -18,24 +15,21 @@ export default {
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',
-      options: {
-        source: 'title',
-        maxLength: 96
-      },
+      options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required()
     },
+
+    // ── 問題 ─────────────────────────────
     {
       name: 'mainImage',
       title: '問題画像',
       type: 'image',
-      options: {
-        hotspot: true
-      },
+      options: { hotspot: true },
       validation: (Rule) => Rule.required()
     },
     {
       name: 'problemDescription',
-      title: '問題の補足',
+      title: '問題文',
       type: 'array',
       of: [
         {
@@ -53,8 +47,8 @@ export default {
       ]
     },
     {
-      name: 'hint',
-      title: 'ヒント',
+      name: 'hints',
+      title: 'ヒント（複数可）',
       description: '必要に応じて複数のヒントを追加できます。',
       type: 'array',
       of: [
@@ -78,13 +72,13 @@ export default {
       description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
       type: 'text'
     },
+
+    // ── 解答 ─────────────────────────────
     {
       name: 'answerImage',
       title: '正解画像',
       type: 'image',
-      options: {
-        hotspot: true
-      },
+      options: { hotspot: true },
       validation: (Rule) => Rule.required()
     },
     {
@@ -131,6 +125,8 @@ export default {
         }
       ]
     },
+
+    // ── カテゴリ ─────────────────────────
     {
       name: 'category',
       title: 'カテゴリ',
@@ -139,58 +135,4 @@ export default {
       validation: (Rule) => Rule.required()
     }
   ]
-};
-
-/*
-  Sanity Studioのschemasディレクトリに以下のファイルを配置してください。
-  例: `schemas/category.js`
-*/
-
-export const categorySchema = {
-  name: 'category',
-  title: 'カテゴリ',
-  type: 'document',
-  fields: [
-    {
-      name: 'title',
-      title: 'タイトル',
-      type: 'string',
-      validation: (Rule) => Rule.required()
-    },
-    {
-      name: 'slug',
-      title: 'スラッグ',
-      type: 'slug',
-      options: {
-        source: 'title',
-        maxLength: 96
-      },
-      validation: (Rule) => Rule.required()
-    },
-    {
-      name: 'description',
-      title: '説明',
-      type: 'text'
-    }
-  ]
-};
-
-/*
-  Sanity Studioの`sanity.config.js`または`sanity.config.ts`の`schema`定義に、
-  上記で作成したスキーマを追加してください。
-
-  例:
-  import {defineConfig} from 'sanity'
-  import quiz from './schemas/quiz'
-  import category from './schemas/category'
-
-  export default defineConfig({
-    // ...その他の設定
-    schema: {
-      types: [
-        quiz,
-        category
-      ]
-    }
-  })
-*/
+}

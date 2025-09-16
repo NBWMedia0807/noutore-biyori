@@ -31,7 +31,7 @@ export async function fetchQuizBySlug(slug) {
       "slug": slug.current,
       category->{ _id, title },
       problemDescription,
-      hint,
+      "hints": coalesce(hints, hint),
       adCode1,
       mainImage,
       answerImage,

@@ -11,7 +11,7 @@ const Q = /* groq */ `
   "slug": slug.current,
   category->{ _id, title },
   problemDescription,
-  hint,
+  "hints": coalesce(hints, hint),
   adCode1,
   mainImage{ asset->{ url, metadata } },
   answerImage{ asset->{ url, metadata } },

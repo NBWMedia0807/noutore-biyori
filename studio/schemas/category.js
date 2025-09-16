@@ -1,4 +1,4 @@
-// studio/schemaTypes/category.js
+// studio/schemas/category.js
 export default {
   name: 'category',
   title: 'カテゴリ',

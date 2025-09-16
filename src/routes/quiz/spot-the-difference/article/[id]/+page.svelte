@@ -44,6 +44,10 @@
     if (!title) return '';
     return title.replace('【間違い探し】', '【間違い探し】<br>');
   }
+
+  $: hintText =
+    renderPortableText(quiz?.hints) ||
+    (typeof quiz?.hints === 'string' ? quiz.hints : '');
 </script>
 
 <svelte:head>
@@ -95,7 +99,7 @@
         {#if showHint}
           <div class="hint-content">
             <h3>ヒント</h3>
-            <p>{renderPortableText(quiz.hint) || quiz.hint || '細部に注目してみましょう。色や形、配置など、わずかな違いが隠されています。'}</p>
+            <p>{hintText || '細部に注目してみましょう。色や形、配置など、わずかな違いが隠されています。'}</p>
           </div>
         {/if}
       </section>
