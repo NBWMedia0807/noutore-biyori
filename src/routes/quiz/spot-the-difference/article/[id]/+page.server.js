@@ -12,9 +12,11 @@ const Q = /* groq */ `
   category->{ _id, title },
   problemDescription,
   hint,
+  adCode1,
   mainImage{ asset->{ url, metadata } },
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
+  adCode2,
   closingMessage,
   _createdAt
 }`;

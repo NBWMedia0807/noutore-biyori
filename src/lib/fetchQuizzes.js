@@ -32,9 +32,11 @@ export async function fetchQuizBySlug(slug) {
       category->{ _id, title },
       problemDescription,
       hint,
+      adCode1,
       mainImage,
       answerImage,
       answerExplanation,
+      adCode2,
       closingMessage,
       _createdAt
     }
