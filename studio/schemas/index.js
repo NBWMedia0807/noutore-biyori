@@ -1,5 +1,7 @@
 // studio/schemas/index.js
-import quiz from './quiz'
-import category from './category'
+import quiz from './quiz.js'
+import category from './category.js'
 
 export const schemaTypes = [quiz, category]
+
+export default schemaTypes
