@@ -2,9 +2,13 @@
   export let data;
   const { quiz } = data;
 
+  const FALLBACK_CLOSING_MESSAGE =
+    'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
+
   function renderPT(content){
     if (!content) return '';
     if (typeof content === 'string') return content;
+    if (content?._type === 'block') return renderPT([content]);
     if (Array.isArray(content)){
       return content
         .filter(b=>b?._type==='block')
@@ -13,6 +17,10 @@
     }
     return '';
   }
+
+  $: closingText =
+    renderPT(quiz?.closingMessage) ||
+    (typeof quiz?.closingMessage === 'string' ? quiz.closingMessage : '');
 </script>
 
 <svelte:head>
@@ -35,6 +43,10 @@
     </section>
   {/if}
 
+  <section style="margin:16px 0;">
+    <h2 style="font-size:1.25rem;margin:.5rem 0;">締め文</h2>
+    <p style="white-space:pre-line;line-height:1.8;">{closingText || FALLBACK_CLOSING_MESSAGE}</p>
+  </section>
 
   <div style="text-align:center;margin:24px 0;">
     <a
