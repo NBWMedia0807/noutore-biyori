@@ -141,3 +141,6 @@ vite.config.ts.timestamp-*
 .vercel
 
 *.zip
+
+# Sanity Studio
+studio/schemas/sanity.config.ts
