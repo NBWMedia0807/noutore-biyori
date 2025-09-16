@@ -1,26 +1,16 @@
 <script>
+  import { textOrPortable } from '$lib/portableText.js';
+
   export let data;
   const { quiz } = data;
 
   const FALLBACK_CLOSING_MESSAGE =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
-  function renderPT(content){
-    if (!content) return '';
-    if (typeof content === 'string') return content;
-    if (content?._type === 'block') return renderPT([content]);
-    if (Array.isArray(content)){
-      return content
-        .filter(b=>b?._type==='block')
-        .map(b=> b.children?.filter(c=>c?._type==='span')?.map(c=>c.text).join('') || '')
-        .join('\n');
-    }
-    return '';
-  }
-
-  $: closingText =
-    renderPT(quiz?.closingMessage) ||
-    (typeof quiz?.closingMessage === 'string' ? quiz.closingMessage : '');
+  $: answerExplanationText = textOrPortable(quiz?.answerExplanation);
+  $: hasAnswerExplanation = Boolean(answerExplanationText?.trim());
+  $: closingTextValue = textOrPortable(quiz?.closingMessage)?.trim();
+  $: closingText = closingTextValue || FALLBACK_CLOSING_MESSAGE;
 </script>
 
 <svelte:head>
@@ -36,16 +26,16 @@
     </div>
   {/if}
 
-  {#if renderPT(quiz.answerExplanation)}
+  {#if hasAnswerExplanation}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">解説</h2>
-      <p style="white-space:pre-line;line-height:1.8;">{renderPT(quiz.answerExplanation)}</p>
+      <p style="white-space:pre-line;line-height:1.8;">{answerExplanationText}</p>
     </section>
   {/if}
 
   <section style="margin:16px 0;">
     <h2 style="font-size:1.25rem;margin:.5rem 0;">締め文</h2>
-    <p style="white-space:pre-line;line-height:1.8;">{closingText || FALLBACK_CLOSING_MESSAGE}</p>
+    <p style="white-space:pre-line;line-height:1.8;">{closingText}</p>
   </section>
 
   <div style="text-align:center;margin:24px 0;">
