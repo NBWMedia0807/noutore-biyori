@@ -17,7 +17,8 @@ const q=`*[_type=='quiz' && slug.current==$slug][0]{
     defined(hint) => [hint],
     []
   ),
-  mainImage{asset->{url}}, answerImage{asset->{url}}, answerExplanation
+  mainImage{asset->{url}}, answerImage{asset->{url}}, answerExplanation,
+  closingMessage
 }`
 const doc = await client.fetch(q,{slug})
 console.log(JSON.stringify(doc,null,2))
