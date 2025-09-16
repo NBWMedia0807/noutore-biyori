@@ -40,6 +40,10 @@
     if (!title) return '';
     return title.replace('【マッチ棒クイズ】', '【マッチ棒クイズ】<br>');
   }
+
+  $: hintText =
+    renderPortableText(quiz?.hints) ||
+    (typeof quiz?.hints === 'string' ? quiz.hints : '');
 </script>
 
 <svelte:head>
@@ -91,7 +95,7 @@
         {#if showHint}
           <div class="hint-content">
             <h3>ヒント</h3>
-            <p>{renderPortableText(quiz.hint) || quiz.hint || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
+            <p>{hintText || 'まず右側の数字を観察。その下半分に、動かせそうな"余裕のある1本"があります。見つけた1本を左側の数字に移すと形が整います。'}</p>
           </div>
         {/if}
       </section>
