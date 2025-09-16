@@ -13,7 +13,9 @@ const QUERY = /* groq */ `
   category->{ title, "slug": slug.current },
   mainImage{ asset->{ url, metadata } },
   problemDescription,
-  hint
+  hint,
+  adCode1,
+  adCode2
 }`;
 
 export const prerender = false;

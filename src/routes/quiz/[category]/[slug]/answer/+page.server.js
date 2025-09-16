@@ -10,7 +10,10 @@ const QUERY = /* groq */ `
   "slug": slug.current,
   category->{ title, "slug": slug.current },
   answerImage{ asset->{ url, metadata } },
-  answerExplanation
+  answerExplanation,
+  adCode1,
+  adCode2,
+  closingMessage
 }`;
 
 export const prerender = false;

@@ -66,6 +66,12 @@ export default {
         }
       ]
     },
+    {
+      name: 'adCode1',
+      title: 'レクタングル広告コード1',
+      description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
+      type: 'text'
+    },
 
     // ── 解答 ─────────────────────────────
     {
@@ -77,7 +83,7 @@ export default {
     },
     {
       name: 'answerExplanation',
-      title: '解説文',
+      title: '正解への補足テキスト',
       type: 'array',
       of: [
         {
@@ -93,6 +99,12 @@ export default {
           }
         }
       ]
+    },
+    {
+      name: 'adCode2',
+      title: 'レクタングル広告コード2',
+      description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
+      type: 'text'
     },
     {
       name: 'closingMessage',
