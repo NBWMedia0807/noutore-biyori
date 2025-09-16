@@ -1,31 +1,8 @@
 <script>
+  import { normalizePortableArray, textOrPortable } from '$lib/portableText.js';
+
   export let data;
   const { quiz } = data;
-
-  function renderPortableText(content) {
-    if (!content) return '';
-    if (typeof content === 'string') return content;
-    if (content?._type === 'block') return renderPortableText([content]);
-    if (Array.isArray(content)) {
-      return content
-        .filter((b) => b?._type === 'block')
-        .map((b) => b?.children?.filter((c) => c?._type === 'span')?.map((c) => c.text).join('') || '')
-        .join('\n');
-    }
-    return '';
-  }
-
-  function textOrPortable(content) {
-    if (!content) return '';
-    if (typeof content === 'string') return content;
-    return renderPortableText(content);
-  }
-
-  function normalizePortableArray(value) {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    return [value];
-  }
 
   $: hintTexts = [
     ...normalizePortableArray(quiz?.hints)

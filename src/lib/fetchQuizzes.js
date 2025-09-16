@@ -31,7 +31,11 @@ export async function fetchQuizBySlug(slug) {
       "slug": slug.current,
       category->{ _id, title },
       problemDescription,
-      hints,
+      "hints": select(
+        defined(hints) => hints,
+        defined(hint) => [hint],
+        []
+      ),
       adCode1,
       mainImage,
       answerImage,
