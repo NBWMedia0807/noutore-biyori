@@ -12,10 +12,7 @@ const mk = (projectId: string) =>
     perspective: 'published'
   });
 
-const clients = [
-  { label: 'quljge22', client: mk('quljge22') },
-  { label: 'dxl04rd4', client: mk('dxl04rd4') }, // 画像で使われていたID
-];
+const clients = [{ label: 'quljge22', client: mk('quljge22') }];
 
 const Q = `*[defined(slug.current) && slug.current==$slug][0]{_id,_type,title,slug,_updatedAt}`;
 
