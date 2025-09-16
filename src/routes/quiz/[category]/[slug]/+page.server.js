@@ -13,7 +13,6 @@ const QUERY = /* groq */ `
   category->{ title, "slug": slug.current },
   mainImage{ asset->{ url, metadata } },
   problemDescription,
-  hints,
   hint
 }`;
 

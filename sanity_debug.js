@@ -27,10 +27,14 @@ async function debugSanityData() {
       _type,
       _createdAt,
       title,
-      slug,
-      category,
-      questionImage,
-      answerImage
+      "slug": slug.current,
+      category->{ title, "slug": slug.current },
+      mainImage,
+      problemDescription,
+      hint,
+      answerImage,
+      answerExplanation,
+      closingMessage
     }`);
     console.log(`クイズ数: ${quizzes.length}`);
     console.log(JSON.stringify(quizzes, null, 2));
@@ -64,10 +68,14 @@ async function debugSanityData() {
     const sampleQuiz = await client.fetch(`*[_type == "quiz" && slug.current == "sample-quiz"][0]{
       _id,
       title,
-      slug,
-      category,
-      questionImage,
-      answerImage
+      "slug": slug.current,
+      category->{ title, "slug": slug.current },
+      mainImage,
+      problemDescription,
+      hint,
+      answerImage,
+      answerExplanation,
+      closingMessage
     }`);
     console.log(JSON.stringify(sampleQuiz, null, 2));
 

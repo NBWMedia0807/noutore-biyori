@@ -5,6 +5,7 @@
   function renderPortableText(content) {
     if (!content) return '';
     if (typeof content === 'string') return content;
+    if (content?._type === 'block') return renderPortableText([content]);
     if (Array.isArray(content)) {
       return content
         .filter((b) => b?._type === 'block')
@@ -15,8 +16,23 @@
   }
 
   function textOrPortable(content) {
-    return typeof content === 'string' ? content : renderPortableText(content);
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    return renderPortableText(content);
   }
+
+  function normalizePortableArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return [value];
+  }
+
+  $: hintTexts = [
+    ...normalizePortableArray(quiz?.hint),
+    ...normalizePortableArray(quiz?.hints)
+  ]
+    .map((entry) => textOrPortable(entry)?.trim())
+    .filter(Boolean);
 </script>
 
 <svelte:head>
@@ -42,20 +58,13 @@
   {/if}
 
   <!-- ヒント -->
-  {#if Array.isArray(quiz.hints) && quiz.hints.length}
+  {#if hintTexts.length}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">ヒント</h2>
       <div style="margin-top:.5rem;background:#f8f9fa;padding:1rem;border-left:4px solid #ffc107;border-radius:8px;">
-        {#each quiz.hints as h}
-          <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(h)}</p>
+        {#each hintTexts as hintText, index (index)}
+          <p style="white-space:pre-line;line-height:1.8;">{hintText}</p>
         {/each}
-      </div>
-    </section>
-  {:else if textOrPortable(quiz.hint)}
-    <section style="margin:16px 0;">
-      <h2 style="font-size:1.25rem;margin:.5rem 0;">ヒント</h2>
-      <div style="margin-top:.5rem;background:#f8f9fa;padding:1rem;border-left:4px solid #ffc107;border-radius:8px;">
-        <p style="white-space:pre-line;line-height:1.8;">{textOrPortable(quiz.hint)}</p>
       </div>
     </section>
   {/if}
