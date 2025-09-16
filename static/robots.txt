@@ -1,2 +1,14 @@
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://yoursite.com/sitemap.xml
+
+# Allow all search engines to crawl all content
+Crawl-delay: 1
+
+# Disallow crawling of any error pages or admin areas if they exist
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.tmp$
+Disallow: /*.log$
