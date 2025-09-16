@@ -17,15 +17,21 @@
     if (!content) return '';
     if (typeof content === 'string') return content;
     if (!Array.isArray(content)) return '';
-    
+
     return content
-      .filter(block => block._type === 'block')
-      .map(block => 
-        block.children
-          ?.filter(child => child._type === 'span')
-          ?.map(child => child.text)
-          ?.join('') || ''
-      )
+      .map((block) => {
+        if (typeof block === 'string') return block;
+        if (block?._type === 'block') {
+          return (
+            block.children
+              ?.filter((child) => child?._type === 'span')
+              ?.map((child) => child.text)
+              ?.join('') || ''
+          );
+        }
+        return '';
+      })
+      .filter(Boolean)
       .join('\n');
   }
 

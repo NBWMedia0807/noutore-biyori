@@ -31,7 +31,11 @@ async function debugSanityData() {
       category->{ title, "slug": slug.current },
       mainImage,
       problemDescription,
-      hint,
+      "hints": select(
+        defined(hints) => hints,
+        defined(hint) => [hint],
+        []
+      ),
       adCode1,
       answerImage,
       answerExplanation,
@@ -74,7 +78,11 @@ async function debugSanityData() {
       category->{ title, "slug": slug.current },
       mainImage,
       problemDescription,
-      hint,
+      "hints": select(
+        defined(hints) => hints,
+        defined(hint) => [hint],
+        []
+      ),
       adCode1,
       answerImage,
       answerExplanation,

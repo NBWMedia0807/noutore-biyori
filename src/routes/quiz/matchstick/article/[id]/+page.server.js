@@ -11,7 +11,11 @@ const Q = /* groq */ `
   "slug": slug.current,
   category->{ _id, title },
   problemDescription,
-  hint,
+  "hints": select(
+    defined(hints) => hints,
+    defined(hint) => [hint],
+    []
+  ),
   adCode1,
   mainImage{ asset->{ url, metadata } },
   answerImage{ asset->{ url, metadata } },
