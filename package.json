@@ -5,12 +5,17 @@
   "main": "script.js",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "predev": "node scripts/preflight.mjs",
+    "dev": "pnpm run dev:all",
+    "dev:all": "npm-run-all --parallel dev:web dev:studio",
+    "dev:web": "vite dev --host 0.0.0.0 --port 5173",
+    "dev:studio": "pnpm --dir studio dev -- --host 0.0.0.0 --port 3333",
     "build": "vite build",
     "preview": "vite preview",
-"test": "echo \"no tests yet\" && exit 0",
-"format": "pnpm dlx prettier --write .",
-"format:check": "pnpm dlx prettier --check ."
+    "postcreate": "pnpm install && pnpm --dir studio install",
+    "test": "echo \"no tests yet\" && exit 0",
+    "format": "pnpm dlx prettier --write .",
+    "format:check": "pnpm dlx prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -31,6 +36,8 @@
     "vite": "^7.1.0"
   },
   "devDependencies": {
+    "npm-run-all": "npm:npm-run-all2@^6.2.2",
+    "rimraf": "^6.0.1",
     "svelte": "^5.38.3"
   }
 }

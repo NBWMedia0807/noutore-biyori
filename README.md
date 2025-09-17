@@ -3,16 +3,44 @@
 
 ## セットアップ
 
-```bash
-# 環境変数ファイルを作成
-cp .env.local.example .env.local
+### 環境変数ファイルの作成
 
-# 依存関係をインストール
+```bash
+cp .env.local.example .env.local
+```
+
+### 依存関係のインストール
+
+```bash
+# ルートの依存関係をインストール
 pnpm install
 
-# 開発サーバーを起動
+# Sanity Studio 側の依存関係もインストール
+pnpm --dir studio install
+```
+
+Codespaces や Dev Container で開いた場合は、`.devcontainer/devcontainer.json` の `postCreateCommand` により `pnpm run postcreate` が実行され、上記のインストール処理が自動で行われます。ローカルでの初回セットアップ時に手動でまとめて行う場合は以下を実行してください。
+
+```bash
+pnpm run postcreate
+```
+
+## 開発サーバーの起動
+
+以下のコマンドで SvelteKit（ポート 5173）と Sanity Studio（ポート 3333）が同時に立ち上がります。
+
+```bash
 pnpm dev
 ```
+
+必要に応じて片方だけ起動したい場合は次のコマンドを利用できます。
+
+```bash
+pnpm run dev:web     # SvelteKit のみ起動
+pnpm run dev:studio  # Sanity Studio のみ起動
+```
+
+開発サーバー起動前に `scripts/preflight.mjs` が実行され、必須環境変数と Git 作業ツリーの状態、Sanity 関連の迷子ファイルをチェックします。エラー内容を解消した上で再度コマンドを実行してください。
 
 ### 環境変数について
 
