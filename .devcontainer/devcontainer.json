@@ -2,18 +2,20 @@
   "name": "noutore-biyori",
   "image": "mcr.microsoft.com/devcontainers/node:20",
   "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/pnpm:2": {}
   },
   "forwardPorts": [5173, 3333],
   "portsAttributes": {
     "5173": {
       "label": "SvelteKit Dev Server",
-      "onAutoForward": "notify"
+      "onAutoForward": "openBrowser"
     },
     "3333": {
       "label": "Sanity Studio",
-      "onAutoForward": "notify"
+      "onAutoForward": "openBrowser"
     }
   },
-  "postCreateCommand": "pnpm run postcreate"
+  "postCreateCommand": "corepack enable && pnpm i && pnpm run postcreate"
 }

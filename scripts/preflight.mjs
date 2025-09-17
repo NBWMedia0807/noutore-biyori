@@ -5,6 +5,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+const PREFIX = '[preflight]';
+
 const requiredEnv = ['SANITY_PROJECT_ID', 'SANITY_DATASET', 'SANITY_API_VERSION'];
 const missing = requiredEnv.filter((key) => {
   const value = process.env[key];
@@ -12,7 +14,7 @@ const missing = requiredEnv.filter((key) => {
 });
 
 if (missing.length > 0) {
-  console.error(`必須環境変数が未設定です: ${missing.join(', ')}`);
+  console.error(`${PREFIX} ❌ 必須環境変数が未設定です: ${missing.join(', ')}`);
   process.exit(1);
 }
 
@@ -30,7 +32,7 @@ if (existsSync(schemaDir)) {
 
   if (strayFiles.length > 0) {
     console.error(
-      `studio/schemas 内で Sanity の設定ファイルと思われる迷子ファイルを検出しました: ${strayFiles.join(', ')}`
+      `${PREFIX} ❌ studio/schemas 内で Sanity の設定ファイルと思われる迷子ファイルを検出しました: ${strayFiles.join(', ')}`
     );
     process.exit(1);
   }
@@ -43,10 +45,12 @@ try {
   }).trim();
 
   if (result.length > 0) {
-    console.warn('git clean -fdX -n の結果、削除対象となるファイルが見つかりました:\n' + result);
+    console.warn(`${PREFIX} ⚠️ git clean -fdX -n の結果、削除対象となるファイルが見つかりました:\n${result}`);
   } else {
-    console.warn('git clean -fdX -n の結果、削除対象はありません。');
+    console.warn(`${PREFIX} ⚠️ git clean -fdX -n の結果、削除対象はありません。`);
   }
 } catch (error) {
-  console.warn('git clean -fdX -n の実行に失敗しました。', error);
+  console.warn(`${PREFIX} ⚠️ git clean -fdX -n の実行に失敗しました: ${error.message}`);
 }
+
+console.info(`${PREFIX} ✅ OK`);
