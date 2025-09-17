@@ -20,12 +20,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const schemaDir = path.join(repoRoot, 'studio', 'schemas');
+const strayPattern = /^sanity\..*\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/u;
 
 if (existsSync(schemaDir)) {
   const strayFiles = readdirSync(schemaDir, { withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
-    .filter((name) => /^sanity\..*\.ts$/u.test(name));
+    .filter((name) => strayPattern.test(name));
 
   if (strayFiles.length > 0) {
     console.error(
