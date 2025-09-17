@@ -1,16 +1,16 @@
 {
   "name": "noutore-biyori",
   "version": "1.0.0",
-  "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
+  "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（SvelteKit/Vercel対応版）です。",
   "main": "script.js",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-"test": "echo \"no tests yet\" && exit 0",
-"format": "pnpm dlx prettier --write .",
-"format:check": "pnpm dlx prettier --check ."
+    "dev": "svelte-kit dev",
+    "build": "svelte-kit build",
+    "preview": "svelte-kit preview",
+    "test": "echo \"no tests yet\" && exit 0",
+    "format": "pnpm dlx prettier --write .",
+    "format:check": "pnpm dlx prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,7 @@
   "dependencies": {
     "@sanity/client": "^7.8.2",
     "@sanity/image-url": "^1.1.0",
-    "@sveltejs/adapter-auto": "^6.0.1",
+    "@sveltejs/adapter-vercel": "^5.10.2",
     "@sveltejs/kit": "^2.27.1",
     "vite": "^7.1.0"
   },
