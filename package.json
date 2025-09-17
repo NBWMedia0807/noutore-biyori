@@ -4,6 +4,7 @@
   "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
   "main": "script.js",
   "type": "module",
+  "packageManager": "pnpm@10.0.0",
   "scripts": {
     "predev": "node scripts/preflight.mjs",
     "dev": "pnpm run dev:all",
