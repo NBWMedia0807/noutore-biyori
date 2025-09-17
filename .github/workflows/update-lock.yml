@@ -3,6 +3,9 @@ name: Update lockfile
 on:
   workflow_dispatch:   # 手動実行ボタンで起動
 
+permissions:
+  contents: write
+
 jobs:
   update-lock:
     runs-on: ubuntu-latest
