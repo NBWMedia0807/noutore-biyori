@@ -89,3 +89,24 @@ gh secret set SANITY_API_VERSION -b "2024-01-01"
 gh secret set SANITY_READ_TOKEN -b "$SANITY_READ_TOKEN"
 gh secret set SANITY_WRITE_TOKEN -b "$SANITY_WRITE_TOKEN"
 ```
+
+## デプロイ運用
+
+### Vercel（SvelteKit フロントエンド）
+
+- ビルドコマンドは `pnpm run build`（内部で `svelte-kit build` のみを実行）です。Sanity Studio のビルド処理は含めていません。
+- ルートディレクトリをプロジェクトのルートに指定し、出力ディレクトリはデフォルトの `.svelte-kit` / `build` を利用してください。
+- 必要な環境変数（`VITE_SANITY_PROJECT_ID`、`VITE_SANITY_DATASET` など）は Vercel の Project Settings > Environment Variables に登録します。
+- デプロイ後のログは Vercel の Deployments 画面から確認できます（例: `https://vercel.com/<team>/<project>/<deployment>`）。
+
+### Sanity Studio（Sanity Hosting）
+
+- Studio 側の依存関係をインストール後、以下でデプロイします。
+
+```bash
+pnpm -C studio exec sanity deploy
+```
+
+- デプロイ前に Sanity プロジェクト設定から本番ドメインを CORS の許可リストへ追加してください。
+- デプロイが完了するとホスティング URL が表示されます（例: `https://<project-id>.sanity.studio/`）。
+- Vercel の本番サイトと相互に通信する場合、必要に応じて追加の CORS 設定を行ってください。

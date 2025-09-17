@@ -11,7 +11,7 @@
     "dev:web": "svelte-kit dev --host 0.0.0.0 --port 5173",
     "dev:studio": "sanity dev --cwd studio --host 0.0.0.0 --port 3333",
     "build": "svelte-kit build",
-    "preview": "vite preview",
+    "preview": "svelte-kit preview",
     "postcreate": "pnpm --dir studio install",
     "test": "echo \"no tests yet\" && exit 0",
     "format": "pnpm dlx prettier --write .",
