@@ -27,10 +27,23 @@ jobs:
       - name: Install dependencies (update lockfile)
         run: pnpm install --no-frozen-lockfile
 
+      - name: Check for lockfile changes
+        id: lockfile_status
+        run: |
+          if git status --porcelain pnpm-lock.yaml | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit updated lockfile
+        if: steps.lockfile_status.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add pnpm-lock.yaml
-          git commit -m "chore: update pnpm-lock.yaml via Actions" || echo "No changes"
-          git push origin HEAD:${{ inputs.target_ref }}
+          git commit -m "chore: update pnpm-lock.yaml via Actions"
+
+      - name: Push changes
+        if: steps.lockfile_status.outputs.changed == 'true'
+        run: git push origin HEAD:${{ inputs.target_ref }}
