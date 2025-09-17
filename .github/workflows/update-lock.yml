@@ -1,7 +1,12 @@
 name: Update lockfile
 
 on:
-  workflow_dispatch:   # 手動実行ボタンで起動
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: 'Branch to update lockfile on'
+        required: true
+        default: 'main'
 
 permissions:
   contents: write
@@ -9,9 +14,10 @@ permissions:
 jobs:
   update-lock:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
 
       - name: Enable Corepack and setup pnpm
         run: |
@@ -27,4 +33,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add pnpm-lock.yaml
           git commit -m "chore: update pnpm-lock.yaml via Actions" || echo "No changes"
-          git push
+          git push origin HEAD:${{ inputs.target_ref }}
