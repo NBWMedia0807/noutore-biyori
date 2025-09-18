@@ -4,6 +4,7 @@
   "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
   "main": "script.js",
   "type": "module",
+  
   "scripts": {
     "dev": "vite dev",
     "build": "svelte-kit build",
