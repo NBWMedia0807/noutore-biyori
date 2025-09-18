@@ -4,16 +4,10 @@
   "description": "脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。",
   "main": "script.js",
   "type": "module",
-  "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "predev": "node scripts/preflight.mjs",
-    "dev": "pnpm run dev:all",
-    "dev:all": "run-p dev:studio dev:web",
-    "dev:web": "svelte-kit dev --host 0.0.0.0 --port 5173",
-    "dev:studio": "sanity dev --cwd studio --host 0.0.0.0 --port 3333",
+    "dev": "vite dev",
     "build": "svelte-kit build",
     "preview": "svelte-kit preview",
-    "postcreate": "pnpm --dir studio install",
     "test": "echo \"no tests yet\" && exit 0",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check ."
@@ -37,9 +31,7 @@
     "vite": "^7.1.0"
   },
   "devDependencies": {
-    "@sanity/cli": "^3.64.0",
-    "npm-run-all2": "^6.2.2",
-    "rimraf": "^6.0.1",
-    "svelte": "^5.38.3"
+    "svelte": "^5.38.3",
+    "@sveltejs/adapter-vercel": "^5.10.2"
   }
 }
