@@ -1,0 +1,58 @@
+name: Update lockfile
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to update pnpm-lock.yaml on'
+        required: true
+        default: 'codex/add-devcontainer-for-codespaces'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Ensure up-to-date with remote
+        run: |
+          git fetch origin ${{ inputs.target_branch }}
+          git rebase origin/${{ inputs.target_branch }} || git rebase --abort
+
+      - name: Setup pnpm 10
+        run: |
+          corepack enable
+          corepack prepare pnpm@10 --activate
+          pnpm -v
+          node -v
+
+      - name: Refresh lockfile only
+        run: pnpm install --lockfile-only
+
+      - name: Commit changes if any
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml; then
+            git add pnpm-lock.yaml
+            git commit -m "chore: update pnpm-lock.yaml via Actions"
+          else
+            echo "No changes in pnpm-lock.yaml"
+          fi
+
+      - name: Push back to branch
+        if: always()
+        run: |
+          # 競合で失敗しないように明示的にブランチを指定
+          git push origin HEAD:${{ inputs.target_branch }} || echo "Nothing to push"
