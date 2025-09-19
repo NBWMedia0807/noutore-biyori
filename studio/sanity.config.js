@@ -11,5 +11,5 @@ export default defineConfig({
   projectId: 'quljge22',
   dataset: 'production',
   plugins: [deskTool(), visionTool()],
-  schema: { types }
+  schema: { types: schemaTypes }
 })
