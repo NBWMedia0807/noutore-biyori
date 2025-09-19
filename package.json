@@ -6,8 +6,9 @@
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "svelte-kit dev",
-    "build": "svelte-kit build",
-    "preview": "svelte-kit preview",
+    "prebuild": "pnpm exec svelte-kit --version && pnpm exec svelte-kit --help",
+    "build": "pnpm exec svelte-kit build",
+    "preview": "pnpm exec svelte-kit preview",
     "test": "echo \"no tests yet\" && exit 0",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check ."
@@ -24,14 +25,14 @@
   },
   "homepage": "https://github.com/NBWMedia0807/noutore-biyori#readme",
   "dependencies": {
-    "@sanity/client": "^7.9.0",
-    "@sanity/image-url": "^1.1.0",
-    "@sveltejs/kit": "^2.36.2",
-    "vite": "^7.1.3"
+    "@sanity/client": "7.9.0",
+    "@sanity/image-url": "1.1.0",
+    "@sveltejs/kit": "2.36.2",
+    "vite": "7.1.3"
   },
   "devDependencies": {
-    "svelte": "^5.38.3",
-    "@sveltejs/adapter-vercel": "^5.10.2"
+    "svelte": "5.38.3",
+    "@sveltejs/adapter-vercel": "5.10.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
