@@ -3,16 +3,44 @@
 
 ## セットアップ
 
-```bash
-# 環境変数ファイルを作成
-cp .env.local.example .env.local
+### 環境変数ファイルの作成
 
-# 依存関係をインストール
+```bash
+cp .env.local.example .env.local
+```
+
+### 依存関係のインストール
+
+```bash
+# ルートの依存関係をインストール
 pnpm install
 
-# 開発サーバーを起動
+# Sanity Studio 側の依存関係もインストール
+pnpm --dir studio install
+```
+
+Codespaces や Dev Container で開いた場合は、`.devcontainer/devcontainer.json` の `postCreateCommand` により `pnpm run postcreate` が実行され、上記のインストール処理が自動で行われます。ローカルでの初回セットアップ時に手動でまとめて行う場合は以下を実行してください。
+
+```bash
+pnpm run postcreate
+```
+
+## 開発サーバーの起動
+
+以下のコマンドで SvelteKit（ポート 5173）と Sanity Studio（ポート 3333）が同時に立ち上がります。
+
+```bash
 pnpm dev
 ```
+
+必要に応じて片方だけ起動したい場合は次のコマンドを利用できます。
+
+```bash
+pnpm run dev:web     # SvelteKit のみ起動
+pnpm run dev:studio  # Sanity Studio のみ起動
+```
+
+開発サーバー起動前に `scripts/preflight.mjs` が実行され、必須環境変数と Git 作業ツリーの状態、Sanity 関連の迷子ファイルをチェックします。エラー内容を解消した上で再度コマンドを実行してください。
 
 ### 環境変数について
 
@@ -61,3 +89,24 @@ gh secret set SANITY_API_VERSION -b "2024-01-01"
 gh secret set SANITY_READ_TOKEN -b "$SANITY_READ_TOKEN"
 gh secret set SANITY_WRITE_TOKEN -b "$SANITY_WRITE_TOKEN"
 ```
+
+## デプロイ運用
+
+### Vercel（SvelteKit フロントエンド）
+
+- ビルドコマンドは `pnpm run build`（内部で `svelte-kit build` のみを実行）です。Sanity Studio のビルド処理は含めていません。
+- ルートディレクトリをプロジェクトのルートに指定し、出力ディレクトリはデフォルトの `.svelte-kit` / `build` を利用してください。
+- 必要な環境変数（`VITE_SANITY_PROJECT_ID`、`VITE_SANITY_DATASET` など）は Vercel の Project Settings > Environment Variables に登録します。
+- デプロイ後のログは Vercel の Deployments 画面から確認できます（例: `https://vercel.com/<team>/<project>/<deployment>`）。
+
+### Sanity Studio（Sanity Hosting）
+
+- Studio 側の依存関係をインストール後、以下でデプロイします。
+
+```bash
+pnpm -C studio exec sanity deploy
+```
+
+- デプロイ前に Sanity プロジェクト設定から本番ドメインを CORS の許可リストへ追加してください。
+- デプロイが完了するとホスティング URL が表示されます（例: `https://<project-id>.sanity.studio/`）。
+- Vercel の本番サイトと相互に通信する場合、必要に応じて追加の CORS 設定を行ってください。
