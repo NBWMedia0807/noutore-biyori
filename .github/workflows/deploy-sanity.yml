@@ -12,6 +12,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+codex/automate-sanity-schema-deployment-nkog5n
+    env:
+      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+      SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+main
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +26,52 @@ jobs:
         with:
           node-version: 20
 
+codex/automate-sanity-schema-deployment-nkog5n
+      - name: Setup pnpm 10.15
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+          pnpm --version
+
+      - name: Install studio dependencies
+        working-directory: studio
+        run: pnpm install --frozen-lockfile
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${SANITY_AUTH_TOKEN}" ]; then
+            echo "SANITY_AUTH_TOKEN is not configured" >&2
+            exit 1
+          fi
+
+      - name: Deploy schema definitions
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          pnpm exec sanity schema deploy \
+            --workspace noutore-biyori-studio
+
+      - name: Deploy Studio bundle
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          pnpm exec sanity deploy \
+            --no-open \
+            --yes \
+            --schema-required
+
+      - name: Show configured Studio host
+        run: |
+          node --input-type=module <<'EOF'
+          import config from './studio/sanity.config.js'
+          if (!config?.studioHost) {
+            console.error('studioHost is not defined in sanity.config.js')
+            process.exit(1)
+          }
+          console.log(`Deployed Sanity Studio to https://${config.studioHost}.sanity.studio/`)
+          EOF
       - name: Install pnpm
         run: npm install -g pnpm
 
@@ -43,3 +94,4 @@ jobs:
           --project quljge22
           --dataset production
           --no-open
+main
