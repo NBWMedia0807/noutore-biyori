@@ -12,9 +12,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+codex/automate-sanity-schema-deployment-nkog5n
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
       SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+main
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,6 +26,7 @@ jobs:
         with:
           node-version: 20
 
+codex/automate-sanity-schema-deployment-nkog5n
       - name: Setup pnpm 10.15
         run: |
           corepack enable
@@ -69,3 +72,26 @@ jobs:
           }
           console.log(`Deployed Sanity Studio to https://${config.studioHost}.sanity.studio/`)
           EOF
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies (studio)
+        working-directory: studio
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Authenticate with Sanity
+        run: npx -y sanity@latest login --with-token
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+
+      - name: Deploy schema to Sanity
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: >-
+          npx -y sanity@latest deploy
+          noutore-biyori-studio-main
+          --project quljge22
+          --dataset production
+          --no-open
+main
