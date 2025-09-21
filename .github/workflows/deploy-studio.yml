@@ -11,6 +11,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,21 +22,35 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+          pnpm --version
+
       - name: Install deps (studio)
         working-directory: studio
-        run: |
-          npm i -g pnpm
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Sanity login (token)
-        run: npx -y sanity@latest login --with-token
-        env:
-          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+      - name: Check required secrets
+        run: |
+          if [ -z "${SANITY_AUTH_TOKEN}" ]; then
+            echo "SANITY_AUTH_TOKEN is not configured" >&2
+            exit 1
+          fi
+
+      - name: Deploy schema definitions
+        working-directory: studio
+        run: |
+          pnpm exec sanity schema deploy \
+            --workspace noutore-biyori-studio
 
       - name: Deploy Studio
         working-directory: studio
-        env:
-          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
         run: |
-          npx -y sanity@latest deploy "${{ github.event.inputs.host }}" --project quljge22 --dataset production --no-open
+          pnpm exec sanity deploy \
+            "${{ github.event.inputs.host }}" \
+            --no-open \
+            --yes \
+            --schema-required
 
