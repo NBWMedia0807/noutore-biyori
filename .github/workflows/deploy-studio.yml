@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+    defaults:
+      run:
+        working-directory: studio
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,20 +21,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
       - name: Install dependencies
-        working-directory: studio
         run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile
+          if [ -f package-lock.json ]; then
+            npm ci
           else
-            pnpm install
+            npm install
           fi
 
       - name: Deploy Sanity Studio
-        working-directory: studio
-        run: npx sanity deploy --project quljge22 --dataset production --yes
+        run: |
+          npx --yes sanity@latest deploy \
+            --project quljge22 \
+            --dataset production \
+            --non-interactive \
+            --yes
