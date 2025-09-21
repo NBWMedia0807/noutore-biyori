@@ -27,6 +27,15 @@ jobs:
       - name: Install deps (studio)
         working-directory: studio
         run: pnpm install --frozen-lockfile
+codex/automate-sanity-schema-deployment-itrh5i
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${SANITY_AUTH_TOKEN}" ]; then
+            echo "SANITY_AUTH_TOKEN is not configured" >&2
+            exit 1
+          fi
+
 
       - name: Check required secrets
         run: |
@@ -42,11 +51,14 @@ jobs:
         run: |
           pnpm exec sanity schema deploy \
             --workspace noutore-biyori-studio
+main
 
-      - name: Deploy Studio
-        working-directory: studio
+      - name: Deploy Sanity Studio from repo config
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+codex/automate-sanity-schema-deployment-itrh5i
+        run: node scripts/deploy-sanity-studio.mjs
+
         run: |
           pnpm exec sanity deploy \
             --no-open \
@@ -63,4 +75,5 @@ jobs:
           }
           console.log(`Deployed Sanity Studio to https://${config.studioHost}.sanity.studio/`)
           EOF
+main
 
