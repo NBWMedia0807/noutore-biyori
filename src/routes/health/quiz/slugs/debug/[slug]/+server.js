@@ -6,7 +6,7 @@ const sanity = createClient({
   projectId: env.SANITY_PROJECT_ID,
   dataset: env.SANITY_DATASET || 'production',
   apiVersion: process.env.SANITY_API_VERSION || '2024-01-01',
-  token: env.SANITY_READ_TOKEN,
+  token: env.SANITY_READ_TOKEN || env.SANITY_WRITE_TOKEN || env.SANITY_AUTH_TOKEN,
   useCdn: false
 });
 
