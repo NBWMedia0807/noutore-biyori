@@ -1,4 +1,4 @@
-name: Deploy Sanity schema
+name: Deploy Sanity Studio 
 
 on:
   push:
