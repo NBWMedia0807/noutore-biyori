@@ -16,6 +16,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check for merge conflict markers
+        run: |
+          if git grep -n '<<<<<<<'; then
+            echo 'コンフリクトマーカー (<<<<<<<) が残っています。' >&2
+            exit 1
+          fi
+          if git grep -n '>>>>>>>'; then
+            echo 'コンフリクトマーカー (>>>>>>>) が残っています。' >&2
+            exit 1
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
