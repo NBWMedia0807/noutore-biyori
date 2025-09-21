@@ -5,7 +5,16 @@ import { env } from '$env/dynamic/private';
 
 const nodeEnv = env.NODE_ENV || 'production';
 const previewFlag = (env.SANITY_PREVIEW_DRAFTS || env.SANITY_PREVIEW || '').toLowerCase() === 'true';
-const authToken = env.SANITY_READ_TOKEN || env.SANITY_WRITE_TOKEN || env.SANITY_AUTH_TOKEN;
+
+const tokenCandidates = [
+  env.SANITY_READ_TOKEN,
+  env.SANITY_WRITE_TOKEN,
+  env.SANITY_AUTH_TOKEN,
+  env.SANITY_DEPLOY_TOKEN,
+  env.SANITY_API_TOKEN
+];
+
+const authToken = tokenCandidates.find((value) => typeof value === 'string' && value.trim().length > 0) || undefined;
 const hasToken = Boolean(authToken);
 const enablePreviewDrafts = hasToken && (previewFlag || nodeEnv !== 'production');
 
