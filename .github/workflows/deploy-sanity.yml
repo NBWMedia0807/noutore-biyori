@@ -12,6 +12,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+codex/fix-deployment-issues-for-sanity-studio-wrwhxr
+
+codex/fix-deployment-issues-for-sanity-studio-gkhqn1
+
+codex/fix-deployment-issues-for-sanity-studio-anrlel
+
+    env:
+      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+main
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,9 +47,37 @@ jobs:
       - name: Deploy Sanity Studio (hosted)
         working-directory: studio
         run: |
+codex/fix-deployment-issues-for-sanity-studio-wrwhxr
+
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      - name: Install deps (studio)
+        working-directory: studio
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy Sanity Studio (hosted)
+        working-directory: studio
+codex/fix-deployment-issues-for-sanity-studio-gkhqn1
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+
+codex/fix-deployment-issues-for-sanity-studio-anrlel
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+main
+
           npx --yes sanity@latest deploy \
             --project quljge22 \
             --dataset production \
             --host noutore-biyori-studio-main \
+codex/fix-deployment-issues-for-sanity-studio-wrwhxr
             --token ${{ secrets.SANITY_AUTH_TOKEN }} \
+
+codex/fix-deployment-issues-for-sanity-studio-gkhqn1
+            --token "$SANITY_AUTH_TOKEN" \
+
+codex/fix-deployment-issues-for-sanity-studio-anrlel
+            --token "$SANITY_AUTH_TOKEN" \
+main
             --yes
