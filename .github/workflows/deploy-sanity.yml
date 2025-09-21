@@ -21,18 +21,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Setup pnpm 10.15
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+          pnpm --version
 
-      - name: Install dependencies (studio)
+      - name: Install studio dependencies
         working-directory: studio
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Deploy schema to Sanity
         working-directory: studio
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
         run: |
+          if [ -z "${SANITY_AUTH_TOKEN}" ]; then
+            echo "SANITY_AUTH_TOKEN is not configured" >&2
+            exit 1
+          fi
+
           pnpm exec sanity deploy \
             --no-open \
             --yes \

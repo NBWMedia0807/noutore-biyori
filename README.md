@@ -114,6 +114,7 @@ pnpm -C studio exec sanity deploy
 #### GitHub Actions による自動デプロイ
 
 - `main` ブランチへのプッシュ、または手動トリガー（`workflow_dispatch`）で `.github/workflows/deploy-sanity.yml` が実行され、Sanity Studio が自動的に再デプロイされます。
-- リポジトリの Secrets に `SANITY_AUTH_TOKEN` を登録してください。Sanity の [Manage project tokens](https://www.sanity.io/manage) から **Deploy Studio** 権限以上を持つトークンを発行し、`Settings > Secrets and variables > Actions > New repository secret` で `SANITY_AUTH_TOKEN` として保存します。
+- ワークフロー内では `corepack` を使って `pnpm@10.15.0` を有効化し、`studio` ディレクトリの依存関係を `pnpm install --frozen-lockfile` で再現したうえで `sanity deploy` を実行します。ロックファイルに未反映の変更があると失敗するため、事前に `pnpm --dir studio install` をローカルで実行して差分をコミットしてください。
+- リポジトリの Secrets に `SANITY_AUTH_TOKEN` を登録してください。Sanity の [Manage project tokens](https://www.sanity.io/manage) から **Deploy Studio** 権限以上を持つトークンを発行し、`Settings > Secrets and variables > Actions > New repository secret` で `SANITY_AUTH_TOKEN` として保存します。シークレットが未設定の場合はワークフローが失敗し、ログに「SANITY_AUTH_TOKEN is not configured」と表示されます。
 - ワークフローでは `sanity.cli.js` に定義した `projectId: quljge22` / `dataset: production` / `studioHost: noutore-biyori-studio-main` を用いて `sanity deploy` を実行し、ホストを含めて非対話でデプロイします。トークンは `--token` オプション経由で CLI に渡されるため、Secrets の更新後は手動トリガーでも即座に反映できます。
 - GitHub Actions の実行が成功したら、Sanity Studio のホスティング URL（例: `https://noutore-biyori-studio-main.sanity.studio/`）を開き、スキーマの更新内容（フィールド追加/変更など）が反映されているか確認してください。
