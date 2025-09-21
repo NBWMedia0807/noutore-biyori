@@ -110,3 +110,10 @@ pnpm -C studio exec sanity deploy
 - デプロイ前に Sanity プロジェクト設定から本番ドメインを CORS の許可リストへ追加してください。
 - デプロイが完了するとホスティング URL が表示されます（例: `https://<project-id>.sanity.studio/`）。
 - Vercel の本番サイトと相互に通信する場合、必要に応じて追加の CORS 設定を行ってください。
+
+#### GitHub Actions による自動デプロイ
+
+- `main` ブランチへのプッシュ、または手動トリガー（`workflow_dispatch`）で `.github/workflows/deploy-sanity.yml` が実行され、Sanity Studio が自動的に再デプロイされます。
+- リポジトリの Secrets に `SANITY_AUTH_TOKEN` を登録してください。Sanity の [Manage project tokens](https://www.sanity.io/manage) から **Deploy Studio** 権限以上を持つトークンを発行し、`Settings > Secrets and variables > Actions > New repository secret` で `SANITY_AUTH_TOKEN` として保存します。
+- ワークフローでは `sanity.cli.js` に定義した `projectId: quljge22` / `dataset: production` / `studioHost: noutore-biyori-studio-main` を用いて `sanity deploy` を実行し、ホストを含めて非対話でデプロイします。トークンは `--token` オプション経由で CLI に渡されるため、Secrets の更新後は手動トリガーでも即座に反映できます。
+- GitHub Actions の実行が成功したら、Sanity Studio のホスティング URL（例: `https://noutore-biyori-studio-main.sanity.studio/`）を開き、スキーマの更新内容（フィールド追加/変更など）が反映されているか確認してください。

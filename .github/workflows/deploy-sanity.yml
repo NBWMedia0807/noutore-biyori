@@ -1,0 +1,39 @@
+name: Deploy Sanity schema
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'studio/**'
+      - '.github/workflows/deploy-sanity.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies (studio)
+        working-directory: studio
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Deploy schema to Sanity
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          pnpm exec sanity deploy \
+            --no-open \
+            --yes \
+            --token "$SANITY_AUTH_TOKEN"
