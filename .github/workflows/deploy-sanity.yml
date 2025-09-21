@@ -41,23 +41,18 @@ jobs:
             exit 1
           fi
 
-      - name: Authenticate Sanity CLI
+      - name: Deploy schema definitions
         working-directory: studio
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-        run: |
-          pnpm exec sanity login \
-            --provider token \
-            --token "${SANITY_AUTH_TOKEN}"
-
-      - name: Deploy schema definitions
-        working-directory: studio
         run: |
           pnpm exec sanity schema deploy \
             --workspace noutore-biyori-studio
 
       - name: Deploy Studio bundle
         working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
         run: |
           pnpm exec sanity deploy \
             --no-open \
