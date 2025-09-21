@@ -2,17 +2,13 @@ name: Deploy Sanity Studio
 
 on:
   workflow_dispatch:
-    inputs:
-      host:
-        description: Studio hostname (without .sanity.studio)
-        required: false
-        default: noutore-biyori-studio-main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+      SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +35,15 @@ jobs:
             exit 1
           fi
 
+      - name: Authenticate Sanity CLI
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          pnpm exec sanity login \
+            --provider token \
+            --token "${SANITY_AUTH_TOKEN}"
+
       - name: Deploy schema definitions
         working-directory: studio
         run: |
@@ -49,8 +54,18 @@ jobs:
         working-directory: studio
         run: |
           pnpm exec sanity deploy \
-            "${{ github.event.inputs.host }}" \
             --no-open \
             --yes \
             --schema-required
+
+      - name: Show configured Studio host
+        run: |
+          node --input-type=module <<'EOF'
+          import config from './studio/sanity.config.js'
+          if (!config?.studioHost) {
+            console.error('studioHost is not defined in sanity.config.js')
+            process.exit(1)
+          }
+          console.log(`Deployed Sanity Studio to https://${config.studioHost}.sanity.studio/`)
+          EOF
 

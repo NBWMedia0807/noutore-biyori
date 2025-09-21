@@ -115,7 +115,8 @@ pnpm -C studio exec sanity deploy --schema-required
 #### GitHub Actions による自動デプロイ
 
 - `main` ブランチへのプッシュ、または手動トリガー（`workflow_dispatch`）で `.github/workflows/deploy-sanity.yml` が実行され、Sanity Studio が自動的に再デプロイされます。
-- ワークフロー内では `corepack` を使って `pnpm@10.15.0` を有効化し、`studio` ディレクトリの依存関係を `pnpm install --frozen-lockfile` で再現したうえで `sanity schema deploy` → `sanity deploy --schema-required` の順に実行します。ロックファイルに未反映の変更があると失敗するため、事前に `pnpm --dir studio install` をローカルで実行して差分をコミットしてください。
-- リポジトリの Secrets に `SANITY_AUTH_TOKEN` を登録してください。Sanity の [Manage project tokens](https://www.sanity.io/manage) から **Deploy Studio** 権限以上を持つトークンを発行し、`Settings > Secrets and variables > Actions > New repository secret` で `SANITY_AUTH_TOKEN` として保存します。シークレットが未設定の場合はワークフローが失敗し、ログに「SANITY_AUTH_TOKEN is not configured」と表示されます。
-- ワークフローでは `sanity.cli.js` に定義した `projectId: quljge22` / `dataset: production` / `studioHost: noutore-biyori-studio-main` を用いて各コマンドを非対話で実行します。トークンは `SANITY_AUTH_TOKEN` 環境変数経由で読み取られ、Secrets の更新後は手動トリガーでも即座に反映できます。
-- GitHub Actions の実行が成功したら、Sanity Studio のホスティング URL（例: `https://noutore-biyori-studio-main.sanity.studio/`）を開き、スキーマの更新内容（フィールド追加/変更など）が反映されているか確認してください。
+- ワークフロー内では `corepack` を使って `pnpm@10.15.0` を有効化し、`studio` ディレクトリの依存関係を `pnpm install --frozen-lockfile` で再現したうえで `sanity login --provider token --token $SANITY_AUTH_TOKEN` で CLI 認証 → `sanity schema deploy` → `sanity deploy --schema-required` の順に実行します。ロックファイルに未反映の変更があると失敗するため、事前に `pnpm --dir studio install` をローカルで実行して差分をコミットしてください。
+- リポジトリの Secrets に `SANITY_AUTH_TOKEN` を登録してください。Sanity の [Manage project tokens](https://www.sanity.io/manage) から **Deploy Studio (Token only)** 権限のトークンを発行し、`Settings > Secrets and variables > Actions > New repository secret` で `SANITY_AUTH_TOKEN` として保存します。シークレットが未設定の場合はワークフローが失敗し、ログに「SANITY_AUTH_TOKEN is not configured」と表示されます。CLI が内部で参照する `SANITY_DEPLOY_TOKEN` も同じ値が自動的に渡されます。
+- ワークフローでは `sanity.config.js` / `sanity.cli.js` に定義した `projectId: quljge22` / `dataset: production` / `studioHost: noutore-biyori-studio-main` を用いて各コマンドを非対話で実行します。
+- デプロイ完了後に GitHub Actions のログへ `Deployed Sanity Studio to https://noutore-biyori-studio-main.sanity.studio/` が出力されます。ホスト名は `studio/sanity.config.js` の `studioHost` を参照しているため、ログにこの行が出ていれば設定どおりのホストへ配信されています。
+- 念のため手動で確認する場合は、Sanity Studio のホスティング URL（例: `https://noutore-biyori-studio-main.sanity.studio/`）を開き、スキーマの更新内容（フィールド追加/変更など）が反映されているか確認してください。ブラウザキャッシュが残っている場合はハードリロードやクエリ文字列を付与して再読み込みしてください。
