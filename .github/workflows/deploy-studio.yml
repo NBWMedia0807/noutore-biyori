@@ -9,18 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+codex/update-hosted-studio-schema-and-deploy-1yuwxb
+    defaults:
+      run:
+        working-directory: studio
 codex/update-hosted-studio-schema-and-deploy-lxp2uw
     defaults:
       run:
         working-directory: studio
         
 main
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+codex/update-hosted-studio-schema-and-deploy-1yuwxb
+      - name: Check for merge conflict markers
+        working-directory: .
+
 codex/update-hosted-studio-schema-and-deploy-lxp2uw
       - name: Check for merge conflict markers
+main
         run: |
           if git grep -n '<<<<<<<'; then
             echo 'コンフリクトマーカー (<<<<<<<) が残っています。' >&2
@@ -35,6 +45,11 @@ codex/update-hosted-studio-schema-and-deploy-lxp2uw
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+codex/update-hosted-studio-schema-and-deploy-1yuwxb
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+
+main
 
       - name: Install dependencies
         run: |
@@ -43,6 +58,22 @@ codex/update-hosted-studio-schema-and-deploy-lxp2uw
           else
             npm install
           fi
+codex/update-hosted-studio-schema-and-deploy-1yuwxb
+
+      - name: Verify Sanity auth token
+        run: |
+          if [ -z "${SANITY_AUTH_TOKEN}" ]; then
+            echo 'SANITY_AUTH_TOKEN が設定されていません。' >&2
+            exit 1
+          fi
+
+      - name: Deploy Sanity Studio
+        run: |
+          npx --yes sanity@latest deploy \
+            --project quljge22 \
+            --dataset production \
+            --non-interactive \
+            --yes
 
       - name: Deploy Sanity Studio
         run: |
