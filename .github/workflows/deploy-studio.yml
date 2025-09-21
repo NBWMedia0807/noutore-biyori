@@ -5,38 +5,28 @@ on:
 
 jobs:
   deploy:
+    name: Deploy
     runs-on: ubuntu-latest
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-      SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
-      SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
-      SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.15.0 --activate
-          pnpm --version
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
-      - name: Install deps (studio)
+      - name: Install dependencies
         working-directory: studio
         run: pnpm install --frozen-lockfile
 
-      - name: Check required tokens
-        run: |
-          if [ -n "${SANITY_AUTH_TOKEN}" ] || [ -n "${SANITY_DEPLOY_TOKEN}" ] || [ -n "${SANITY_API_TOKEN}" ] || [ -n "${SANITY_WRITE_TOKEN}" ]; then
-            exit 0
-          fi
-          echo "Sanity deploy token is not configured (SANITY_AUTH_TOKEN / SANITY_DEPLOY_TOKEN / SANITY_API_TOKEN / SANITY_WRITE_TOKEN のいずれかを設定してください)" >&2
-          exit 1
-
-      - name: Deploy Sanity Studio from repo config
-        run: node scripts/deploy-sanity-studio.mjs
+      - name: Deploy Sanity Studio
+        working-directory: studio
+        run: npx sanity deploy --project quljge22 --dataset production --yes
