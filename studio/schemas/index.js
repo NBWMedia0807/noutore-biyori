@@ -2,6 +2,5 @@
 import quiz from './quiz.js'
 import category from './category.js'
 
-export const schemaTypes = [quiz, category]
-
-export default schemaTypes
+// Sanity Studio で使うスキーマをまとめて default export
+export default [quiz, category]

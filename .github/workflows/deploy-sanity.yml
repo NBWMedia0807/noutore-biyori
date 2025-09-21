@@ -30,19 +30,3 @@ jobs:
         run: |
           corepack enable
           corepack prepare pnpm@10.15.0 --activate
-          pnpm --version
-
-      - name: Install studio dependencies
-        working-directory: studio
-        run: pnpm install --frozen-lockfile
-
-      - name: Check required tokens
-        run: |
-          if [ -n "${SANITY_AUTH_TOKEN}" ] || [ -n "${SANITY_DEPLOY_TOKEN}" ] || [ -n "${SANITY_API_TOKEN}" ] || [ -n "${SANITY_WRITE_TOKEN}" ]; then
-            exit 0
-          fi
-          echo "Sanity deploy token is not configured (SANITY_AUTH_TOKEN / SANITY_DEPLOY_TOKEN / SANITY_API_TOKEN / SANITY_WRITE_TOKEN のいずれかを設定してください)" >&2
-          exit 1
-
-      - name: Deploy Sanity Studio from repo config
-        run: node scripts/deploy-sanity-studio.mjs
