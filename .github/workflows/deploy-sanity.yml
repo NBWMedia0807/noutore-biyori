@@ -1,4 +1,4 @@
-name: Deploy Sanity Studio 
+name: Deploy Sanity Studio
 
 on:
   push:
@@ -7,16 +7,11 @@ on:
     paths:
       - 'studio/**'
       - '.github/workflows/deploy-sanity.yml'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-      SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
-      SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
-      SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,7 +21,27 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup pnpm 10.15
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Clean studio node_modules
+        run: rm -rf studio/node_modules
+
+      - name: Install deps (studio)
+        working-directory: studio
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy Sanity Studio (hosted)
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
         run: |
-          corepack enable
-          corepack prepare pnpm@10.15.0 --activate
+          npx --yes sanity@latest deploy \
+            --project quljge22 \
+            --dataset production \
+            --host noutore-biyori-studio-main \
+            --token "$SANITY_AUTH_TOKEN" \
+            --yes
