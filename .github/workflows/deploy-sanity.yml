@@ -1,24 +1,13 @@
 name: Deploy Sanity Studio
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'studio/**'
-      - '.github/workflows/deploy-sanity.yml'
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-codex/fix-deployment-issues-for-sanity-studio-gkhqn1
-
-codex/fix-deployment-issues-for-sanity-studio-anrlel
-
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-main
 
     steps:
       - name: Checkout
@@ -40,24 +29,9 @@ main
 
       - name: Deploy Sanity Studio (hosted)
         working-directory: studio
-codex/fix-deployment-issues-for-sanity-studio-gkhqn1
-        env:
-          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-
-codex/fix-deployment-issues-for-sanity-studio-anrlel
-        env:
-          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
-main
-
         run: |
           npx --yes sanity@latest deploy \
             --project quljge22 \
             --dataset production \
             --host noutore-biyori-studio-main \
-codex/fix-deployment-issues-for-sanity-studio-gkhqn1
-            --token "$SANITY_AUTH_TOKEN" \
-
-codex/fix-deployment-issues-for-sanity-studio-anrlel
-            --token "$SANITY_AUTH_TOKEN" \
-main
             --yes
