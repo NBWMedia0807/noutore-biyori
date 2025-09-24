@@ -125,7 +125,7 @@
   }
 
   /* 読み込み・エラー状態 */
-  .loading, .no-quizzes {
+  .no-quizzes {
     text-align: center;
     padding: 3rem 1rem;
     color: var(--medium-gray);

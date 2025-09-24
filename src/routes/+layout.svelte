@@ -87,17 +87,6 @@
     justify-content: center;
   }
 
-  /* カテゴリ別色分け */
-  .matchstick-link {
-    background: var(--light-amber);
-    color: #92400e;
-  }
-
-  .difference-link {
-    background: var(--light-orange);
-    color: #9a3412;
-  }
-
   @media (max-width: 768px) {
     .logo-section {
       /* スマホでも横並びを維持 */
