@@ -2,11 +2,13 @@
   import { page } from '$app/stores';
   export let data;
   let quizzes = [];
+  let category = null;
   let categoryTitle = '';
-  $: slug = $page.params.slug;
+  $: slug = category?.slug ?? $page.params.slug;
 
   $: quizzes = data?.quizzes ?? [];
-  $: categoryTitle = data?.categoryTitle ?? '';
+  $: category = data?.category ?? null;
+  $: categoryTitle = category?.title ?? '';
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -37,6 +39,8 @@
           マッチ棒を動かして正しい式を作るパズルゲームです。論理的思考力を鍛えましょう。
         {:else if slug === 'spot-the-difference'}
           2つの画像の違いを見つけるゲームです。観察力と集中力を鍛えましょう。
+        {:else}
+          {categoryTitle}のクイズ一覧です。新しい挑戦をお楽しみください。
         {/if}
       </p>
       <div class="quiz-count">全{quizzes.length}問</div>
@@ -121,7 +125,7 @@
   }
 
   /* 読み込み・エラー状態 */
-  .loading, .no-quizzes {
+  .no-quizzes {
     text-align: center;
     padding: 3rem 1rem;
     color: var(--medium-gray);

@@ -1,46 +1,52 @@
 // src/routes/category/[slug]/+page.server.js
 export const prerender = false;
 
+import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity.server.js';
 
-const CATEGORY_BY_SLUG = {
-  matchstick: 'マッチ棒クイズ',
-  'spot-the-difference': '間違い探し'
-};
-
-const Q = /* groq */ `
-*[_type == "quiz" && (
-  (defined(category._ref) && category->title == $category) || 
-  (defined(category) && !defined(category._ref) && category == $category) ||
-  (!defined(category) && $category == "マッチ棒クイズ" && title match "*マッチ棒*") ||
-  (!defined(category) && $category == "間違い探し" && title match "*間違い探し*")
-)] | order(_createdAt desc) {
-  _id,
-  _createdAt,
-  title,
-  "slug": slug.current,
-  category->{ _id, title },
-  category,
-  mainImage{ asset->{ url, metadata } },
-  answerImage{ asset->{ url, metadata } }
-}`;
-
-export const load = async ({ params }) => {
-  const slug = params.slug;
-  const categoryTitle = CATEGORY_BY_SLUG[slug] ?? '';
-
-  if (!categoryTitle) {
-    return { quizzes: [], categoryTitle: '' };
+const CATEGORY_QUERY = /* groq */ `
+  *[_type == "category" && slug.current == $slug][0]{
+    _id,
+    title,
+    "slug": slug.current
   }
+`;
+
+const QUIZ_BY_CATEGORY_QUERY = /* groq */ `
+  *[_type == "quiz" && defined(category->_ref) && category->slug.current == $slug]
+    | order(_createdAt desc) {
+      _id,
+      _createdAt,
+      title,
+      "slug": slug.current,
+      category->{ _id, title },
+      mainImage{ asset->{ url, metadata } },
+      answerImage{ asset->{ url, metadata } }
+    }
+`;
+
+export const load = async ({ params, setHeaders }) => {
+  const { slug } = params;
+  setHeaders({ 'cache-control': 'no-store' });
 
   try {
-    console.log(`[category/${slug}] Fetching quizzes for category: ${categoryTitle}`);
-    const quizzes = await client.fetch(Q, { category: categoryTitle });
-    console.log(`[category/${slug}] Found ${quizzes?.length || 0} quizzes`);
-    console.log(`[category/${slug}] First quiz:`, quizzes?.[0]);
-    return { quizzes: quizzes ?? [], categoryTitle };
-  } catch (e) {
-    console.error('[category/+page.server] fetch failed', e);
-    return { quizzes: [], categoryTitle };
+    const category = await client.fetch(CATEGORY_QUERY, { slug });
+
+    if (!category) {
+      throw error(404, 'カテゴリが見つかりませんでした');
+    }
+
+    const quizzes = await client.fetch(QUIZ_BY_CATEGORY_QUERY, { slug });
+
+    return {
+      category,
+      quizzes: quizzes ?? []
+    };
+  } catch (err) {
+    if (err?.status === 404) {
+      throw err;
+    }
+    console.error('[category/+page.server] fetch failed', err);
+    throw error(500, 'カテゴリ情報の取得に失敗しました');
   }
 };

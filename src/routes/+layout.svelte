@@ -21,13 +21,9 @@
       {#if data?.categories?.length}
         {#each data.categories as c}
           <li>
-            <a href={`/quiz/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
+            <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
           </li>
         {/each}
-      {:else}
-        <!-- Fallback (カテゴリ未取得時) -->
-        <li><a href="/quiz/matchstick" class="nav-link" data-sveltekit-preload-data>マッチ棒クイズ</a></li>
-        <li><a href="/quiz/spot-the-difference" class="nav-link" data-sveltekit-preload-data>間違い探し</a></li>
       {/if}
     </ul>
   </div>
@@ -89,17 +85,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  /* カテゴリ別色分け */
-  .matchstick-link {
-    background: var(--light-amber);
-    color: #92400e;
-  }
-
-  .difference-link {
-    background: var(--light-orange);
-    color: #9a3412;
   }
 
   @media (max-width: 768px) {
