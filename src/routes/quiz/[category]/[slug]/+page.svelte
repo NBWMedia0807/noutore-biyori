@@ -34,10 +34,6 @@
     .filter(Boolean);
 </script>
 
-<svelte:head>
-  <title>{quiz.title} - 脳トレ日和</title>
-</svelte:head>
-
 <main style="max-width:800px;margin:24px auto;padding:16px;">
   <h1 style="text-align:center;margin-top:0;">{quiz.title}</h1>
 

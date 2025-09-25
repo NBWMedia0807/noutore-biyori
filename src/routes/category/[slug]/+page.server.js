@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity.server.js';
+import { createCategoryDescription, createPageSeo } from '$lib/seo.js';
 
 export const prerender = false;
 
@@ -27,7 +28,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
   answerImage{ asset->{ url, metadata } }
 }`;
 
-export const load = async ({ params, setHeaders }) => {
+export const load = async ({ params, setHeaders, url }) => {
   const { slug } = params;
   setHeaders({ 'cache-control': 'no-store' });
 
@@ -44,9 +45,22 @@ export const load = async ({ params, setHeaders }) => {
       categoryMatch: `*${category.title}*`
     });
 
+    const description = createCategoryDescription(category.title, category.description);
+    const breadcrumbs = [
+      { name: 'カテゴリ一覧', url: '/category' },
+      { name: category.title, url: url.pathname }
+    ];
+    const seo = createPageSeo({
+      title: category.title,
+      description,
+      path: url.pathname,
+      breadcrumbs
+    });
+
     return {
       category,
-      quizzes: quizzes ?? []
+      quizzes: quizzes ?? [],
+      seo
     };
   } catch (err) {
     if (err?.status === 404) {

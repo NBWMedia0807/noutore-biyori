@@ -1,5 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity.server.js';
+import { SITE } from '$lib/config/site.js';
+import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
 const QUERY = /* groq */ `
 *[_type == "quiz" && slug.current == $slug && (
@@ -7,6 +9,7 @@ const QUERY = /* groq */ `
   (!defined(category._ref) && category == $category)
 )][0]{
   _id,
+  _createdAt,
   _updatedAt,
   title,
   "slug": slug.current,
@@ -24,10 +27,39 @@ const QUERY = /* groq */ `
 
 export const prerender = false;
 
-export const load = async ({ params, setHeaders }) => {
+export const load = async ({ params, setHeaders, url }) => {
   setHeaders({ 'cache-control': 'no-store' });
   const { category, slug } = params;
   const doc = await client.fetch(QUERY, { category, slug });
   if (!doc) throw error(404, 'Not found');
-  return { quiz: doc, __dataSource: 'sanity' };
+  const descriptionSource = portableTextToPlain(doc.problemDescription) || doc.title;
+  const description = descriptionSource.length > 120 ? `${descriptionSource.slice(0, 117)}…` : descriptionSource;
+  const imageUrl = doc.mainImage?.asset?.url;
+
+  const breadcrumbs = [];
+  if (doc.category?.title && doc.category?.slug) {
+    breadcrumbs.push({ name: doc.category.title, url: `/category/${doc.category.slug}` });
+  }
+  breadcrumbs.push({ name: doc.title, url: url.pathname });
+
+  const seo = {
+    ...createPageSeo({
+      title: doc.title,
+      description,
+      path: url.pathname,
+      type: 'article',
+      image: imageUrl,
+      breadcrumbs,
+      article: {
+        title: doc.title,
+        datePublished: doc._createdAt,
+        dateModified: doc._updatedAt,
+        authorName: SITE.organization.name,
+        category: doc.category?.title
+      }
+    }),
+    imageAlt: doc.title
+  };
+
+  return { quiz: doc, __dataSource: 'sanity', seo };
 };

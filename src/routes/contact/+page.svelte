@@ -1,8 +1,3 @@
-<svelte:head>
-  <title>お問い合わせ - 脳トレ日和</title>
-  <meta name="description" content="脳トレ日和へのお問い合わせフォームです。ご質問、ご意見、ご要望などお気軽にお寄せください。">
-</svelte:head>
-
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">お問い合わせ</h2>

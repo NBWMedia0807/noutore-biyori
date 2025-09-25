@@ -1,5 +1,7 @@
 // src/routes/+page.server.js
 import { client } from '$lib/sanity.server.js';
+import { SITE } from '$lib/config/site.js';
+import { createPageSeo } from '$lib/seo.js';
 
 const QUIZZES_QUERY = /* groq */ `
 *[_type == "quiz"] | order(_createdAt desc) {
@@ -13,14 +15,29 @@ const QUIZZES_QUERY = /* groq */ `
   problemDescription
 }`;
 
-export const load = async () => {
+export const load = async ({ url }) => {
   try {
     const result = await client.fetch(QUIZZES_QUERY);
     const quizzes = Array.isArray(result) ? result.filter(Boolean) : [];
 
-    return { quizzes };
+    const seo = createPageSeo({
+      title: `${SITE.name}｜${SITE.tagline}`,
+      description: SITE.description,
+      path: url.pathname,
+      appendSiteName: false
+    });
+
+    return { quizzes, seo };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
-    return { quizzes: [] };
+    return {
+      quizzes: [],
+      seo: createPageSeo({
+        title: `${SITE.name}｜${SITE.tagline}`,
+        description: SITE.description,
+        path: url.pathname,
+        appendSiteName: false
+      })
+    };
   }
 };

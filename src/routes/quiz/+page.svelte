@@ -3,14 +3,6 @@
   const { quizzes } = data;
 </script>
 
-<svelte:head>
-  <title>クイズ一覧 - 脳トレ日和</title>
-  <meta
-    name="description"
-    content="脳トレ日和のクイズ一覧ページです。マッチ棒クイズや間違い探しなど、楽しいクイズに挑戦しましょう。"
-  />
-</svelte:head>
-
 <main>
   <div class="section-header">
     <h1 class="section-title">🧩 クイズ一覧</h1>
