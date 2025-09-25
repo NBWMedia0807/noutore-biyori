@@ -13,21 +13,14 @@ const QUIZZES_QUERY = /* groq */ `
   problemDescription
 }`;
 
-export const load = async ({ setHeaders }) => {
-  setHeaders({ 'cache-control': 'no-store' });
+export const load = async () => {
   try {
-    console.log('[+page.server.js] Fetching quizzes from Sanity...');
-    const quizzes = await client.fetch(QUIZZES_QUERY);
-    console.log('[+page.server.js] Fetched quizzes:', quizzes.length);
-    console.log('[+page.server.js] First quiz data:', JSON.stringify(quizzes[0], null, 2));
-    
-    return {
-      quizzes: quizzes || []
-    };
+    const result = await client.fetch(QUIZZES_QUERY);
+    const quizzes = Array.isArray(result) ? result.filter(Boolean) : [];
+
+    return { quizzes };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
-    return {
-      quizzes: []
-    };
+    return { quizzes: [] };
   }
 };

@@ -18,12 +18,20 @@ const authToken = tokenCandidates.find((value) => typeof value === 'string' && v
 const hasToken = Boolean(authToken);
 const enablePreviewDrafts = hasToken && (previewFlag || nodeEnv !== 'production');
 
+const projectId = env.SANITY_PROJECT_ID || 'quljge22';
+const dataset = env.SANITY_DATASET || 'production';
+const apiVersion = env.SANITY_API_VERSION || '2024-01-01';
+
+if (!env.SANITY_PROJECT_ID) {
+  console.warn('[sanity.server] SANITY_PROJECT_ID is missing; falling back to default projectId.');
+}
+
 export const client = createClient({
-  projectId: env.SANITY_PROJECT_ID,
-  dataset: env.SANITY_DATASET || 'production',
-  apiVersion: env.SANITY_API_VERSION || '2024-01-01',
+  projectId,
+  dataset,
+  apiVersion,
   token: authToken,
-  useCdn: false,
+  useCdn: !hasToken,
   perspective: enablePreviewDrafts ? 'previewDrafts' : 'published'
 });
 

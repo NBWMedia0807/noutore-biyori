@@ -3,31 +3,31 @@ import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 
 // ✅ ブラウザから読める “VITE_” 変数を使う
-const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
-const dataset   = import.meta.env.VITE_SANITY_DATASET || 'production';
+const projectId = import.meta.env?.VITE_SANITY_PROJECT_ID || 'quljge22';
+const dataset = import.meta.env?.VITE_SANITY_DATASET || 'production';
+const apiVersion = import.meta.env?.VITE_SANITY_API_VERSION || '2024-01-01';
 
-if (!projectId) {
-  console.error('VITE_SANITY_PROJECT_ID is missing');
+if (!import.meta.env?.VITE_SANITY_PROJECT_ID) {
+  console.warn('[sanityPublic] VITE_SANITY_PROJECT_ID is missing; using default projectId.');
 }
 
-// APIバージョンはブラウザ公開の VITE_ 変数を参照（デフォルト: 2024-01-01）
-const apiVersion =
-  (import.meta.env && import.meta.env.VITE_SANITY_API_VERSION) ||
-  '2024-01-01';
+let client;
+try {
+  client = createClient({
+    projectId,
+    dataset,
+    apiVersion,
+    useCdn: true // ブラウザ側は CDN でOK
+  });
+} catch (error) {
+  console.error('[sanityPublic] Failed to create Sanity client:', error);
+}
 
-// 読み取り専用クライアント（トークン不要）
-const client = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: true, // ブラウザ側は CDN でOK
-});
-
-const builder = imageUrlBuilder(client);
+const builder = client ? imageUrlBuilder(client) : null;
 
 // 画像URLを作るだけ
 export const urlFor = (source) => {
-  if (!source) return null;
+  if (!builder || !source) return null;
   try {
     return builder.image(source);
   } catch (error) {

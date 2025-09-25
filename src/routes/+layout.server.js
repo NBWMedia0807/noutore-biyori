@@ -6,14 +6,14 @@ const CATEGORY_QUERY = /* groq */ `
   "slug": slug.current
 }`;
 
-export const load = async ({ setHeaders }) => {
-  setHeaders({ 'cache-control': 'no-store' });
-  let categories = [];
+export const load = async () => {
   try {
-    categories = await client.fetch(CATEGORY_QUERY);
-  } catch (e) {
-    categories = [];
+    const result = await client.fetch(CATEGORY_QUERY);
+    const categories = Array.isArray(result) ? result.filter(Boolean) : [];
+    return { categories };
+  } catch (error) {
+    console.error('[+layout.server.js] Error fetching categories:', error);
+    return { categories: [] };
   }
-  return { categories };
 };
 
