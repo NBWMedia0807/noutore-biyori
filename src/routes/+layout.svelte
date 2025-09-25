@@ -35,7 +35,7 @@
 <svelte:head>
   <title>{seo.title}</title>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
-  <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+  <link rel="preload" href="/logo.png" as="image" type="image/png" />
   {#if seo.description}
     <meta name="description" content={seo.description} />
   {/if}
@@ -100,7 +100,7 @@
   <div class="header-content">
     <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt="脳トレ日和"
         class="logo-image"
         width="80"
