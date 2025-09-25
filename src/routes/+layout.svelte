@@ -53,9 +53,28 @@
   {#if seo.image}
     <meta property="og:image" content={seo.image} />
   {/if}
+  {#if seo.image && seo.imageWidth}
+    <meta property="og:image:width" content={seo.imageWidth} />
+  {/if}
+  {#if seo.image && seo.imageHeight}
+    <meta property="og:image:height" content={seo.imageHeight} />
+  {/if}
   <meta property="og:locale" content={SITE.locale} />
   {#if seo.image}
     <meta property="og:image:alt" content={imageAlt} />
+  {/if}
+  {#if seo.article?.author}
+    <meta name="author" content={seo.article.author} />
+  {/if}
+  {#if seo.article?.section}
+    <meta property="article:section" content={seo.article.section} />
+  {/if}
+  {#if seo.article?.publishedTime}
+    <meta property="article:published_time" content={seo.article.publishedTime} />
+  {/if}
+  {#if seo.article?.modifiedTime}
+    <meta property="article:modified_time" content={seo.article.modifiedTime} />
+    <meta property="og:updated_time" content={seo.article.modifiedTime} />
   {/if}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={seo.title} />
@@ -112,6 +131,8 @@
       <a href="/privacy">プライバシーポリシー</a>
       <a href="/contact">お問い合わせ</a>
       <a href="/about">サイトについて</a>
+      <a href="/about#author-info">著者情報</a>
+      <a href="/about#operator-info">運営者情報</a>
     </div>
   </div>
 </footer>

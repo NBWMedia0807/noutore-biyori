@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity.server.js';
+import { client, urlFor } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
@@ -34,9 +34,19 @@ export const load = async ({ params, setHeaders, url }) => {
   if (!doc) throw error(404, 'Not found');
   const descriptionSource = portableTextToPlain(doc.problemDescription) || doc.title;
   const description = descriptionSource.length > 120 ? `${descriptionSource.slice(0, 117)}…` : descriptionSource;
-  const imageUrl = doc.mainImage?.asset?.url;
+  const OG_IMAGE_WIDTH = 1200;
+  const OG_IMAGE_HEIGHT = 630;
+  let resolvedImage = null;
 
-  const breadcrumbs = [];
+  if (doc.mainImage) {
+    try {
+      resolvedImage = urlFor(doc.mainImage).width(OG_IMAGE_WIDTH).height(OG_IMAGE_HEIGHT).fit('crop').auto('format').url();
+    } catch (err) {
+      console.error('[quiz slug] failed to build og:image URL', err);
+    }
+  }
+
+  const breadcrumbs = [{ name: 'クイズ一覧', url: '/quiz' }];
   if (doc.category?.title && doc.category?.slug) {
     breadcrumbs.push({ name: doc.category.title, url: `/category/${doc.category.slug}` });
   }
@@ -48,12 +58,14 @@ export const load = async ({ params, setHeaders, url }) => {
       description,
       path: url.pathname,
       type: 'article',
-      image: imageUrl,
+      image: resolvedImage ?? SITE.defaultOgImage,
+      imageWidth: resolvedImage ? OG_IMAGE_WIDTH : undefined,
+      imageHeight: resolvedImage ? OG_IMAGE_HEIGHT : undefined,
       breadcrumbs,
       article: {
         title: doc.title,
         datePublished: doc._createdAt,
-        dateModified: doc._updatedAt,
+        dateModified: doc._updatedAt ?? doc._createdAt,
         authorName: SITE.organization.name,
         category: doc.category?.title
       }
@@ -61,5 +73,5 @@ export const load = async ({ params, setHeaders, url }) => {
     imageAlt: doc.title
   };
 
-  return { quiz: doc, __dataSource: 'sanity', seo };
+  return { quiz: doc, __dataSource: 'sanity', breadcrumbs, seo };
 };

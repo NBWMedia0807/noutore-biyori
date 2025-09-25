@@ -1,6 +1,8 @@
 <script>
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+
   export let data;
-  const { quiz } = data;
+  const { quiz, breadcrumbs = [] } = data;
 
   function renderPortableText(content) {
     if (!content) return '';
@@ -35,6 +37,7 @@
 </script>
 
 <main style="max-width:800px;margin:24px auto;padding:16px;">
+  <Breadcrumbs items={breadcrumbs} />
   <h1 style="text-align:center;margin-top:0;">{quiz.title}</h1>
 
   <!-- 問題画像 -->
