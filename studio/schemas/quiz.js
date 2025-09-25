@@ -132,7 +132,7 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
-      validation: (Rule) => Rule.required()
+      validation: Rule => Rule.required()
     }
   ]
 }
