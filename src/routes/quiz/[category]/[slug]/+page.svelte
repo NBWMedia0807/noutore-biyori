@@ -1,5 +1,6 @@
 <script>
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   const { quiz, breadcrumbs = [] } = data;
@@ -29,6 +30,17 @@
     return [value];
   }
 
+  $: mainImageFallback = quiz?.mainImage?.asset?.url || '';
+  $: mainImageSource = quiz?.mainImage?.asset?._ref ? quiz.mainImage : mainImageFallback;
+  $: mainImageSet = mainImageSource
+    ? createSanityImageSet(mainImageSource, {
+        width: 960,
+        height: 540,
+        quality: 80,
+        fallbackUrl: mainImageFallback
+      })
+    : null;
+
   $: hintTexts = [
     ...normalizePortableArray(quiz?.hints)
   ]
@@ -41,9 +53,28 @@
   <h1 style="text-align:center;margin-top:0;">{quiz.title}</h1>
 
   <!-- 問題画像 -->
-  {#if quiz.mainImage?.asset?.url}
+  {#if mainImageSet?.src}
     <div style="text-align:center;margin:16px 0;">
-      <img src={quiz.mainImage.asset.url} alt={quiz.title} style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);" />
+      <picture>
+        {#if mainImageSet.avifSrcset}
+          <source srcset={mainImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        {#if mainImageSet.webpSrcset}
+          <source srcset={mainImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        <img
+          src={mainImageSet.src}
+          srcset={mainImageSet.srcset}
+          sizes="(min-width: 768px) 720px, 100vw"
+          alt={quiz.title}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="960"
+          height="540"
+          style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);"
+        />
+      </picture>
     </div>
   {/if}
 

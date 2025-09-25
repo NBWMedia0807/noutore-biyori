@@ -1,6 +1,16 @@
 <script>
   export let data;
+  import { createSanityImageSet } from '$lib/utils/images.js';
+
   const { quizzes } = data;
+
+  function getImageSet(quiz) {
+    if (!quiz) return null;
+    const fallback = quiz.mainImage?.asset?.url || '';
+    const source = quiz.mainImage?.asset?._ref ? quiz.mainImage : fallback;
+    if (!source && !fallback) return null;
+    return createSanityImageSet(source, { width: 640, height: 360, quality: 75, fallbackUrl: fallback });
+  }
 </script>
 
 <main>
@@ -13,15 +23,30 @@
   {:else}
     <div class="quiz-grid">
       {#each quizzes as quiz}
+        {@const image = getImageSet(quiz)}
         <article class="quiz-card">
           <a href={`/quiz/${quiz.slug}`} class="quiz-link">
             <div class="quiz-content">
-              {#if quiz.mainImage?.asset?.url}
-                <img
-                  src={quiz.mainImage.asset.url}
-                  alt={quiz.title}
-                  style="max-width:100%;height:auto;border-radius:12px;margin-bottom:1rem"
-                />
+              {#if image?.src}
+                <picture>
+                  {#if image.avifSrcset}
+                    <source srcset={image.avifSrcset} type="image/avif" sizes="(min-width: 960px) 300px, 92vw" />
+                  {/if}
+                  {#if image.webpSrcset}
+                    <source srcset={image.webpSrcset} type="image/webp" sizes="(min-width: 960px) 300px, 92vw" />
+                  {/if}
+                  <img
+                    src={image.src}
+                    srcset={image.srcset}
+                    sizes="(min-width: 960px) 300px, 92vw"
+                    alt={quiz.title}
+                    loading="lazy"
+                    decoding="async"
+                    width="640"
+                    height="360"
+                    style="max-width:100%;height:auto;border-radius:12px;margin-bottom:1rem"
+                  />
+                </picture>
               {/if}
 
               <h2 class="quiz-title">

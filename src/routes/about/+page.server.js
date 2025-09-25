@@ -1,6 +1,12 @@
 import { createPageSeo } from '$lib/seo.js';
 
-export const load = ({ url }) => {
+export const load = (event) => {
+  const { url, setHeaders, isDataRequest } = event;
+
+  if (!isDataRequest) {
+    setHeaders({ 'cache-control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800' });
+  }
+
   const seo = createPageSeo({
     title: 'サイトについて',
     description:

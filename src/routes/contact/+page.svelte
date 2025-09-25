@@ -1,3 +1,7 @@
+<script>
+  import SectionIcon from '$lib/components/SectionIcon.svelte';
+</script>
+
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">お問い合わせ</h2>
@@ -41,7 +45,7 @@
     </div>
 
     <div class="contact-info">
-      <h3><img src="/icons/clock-icon.png" alt="注意事項" class="section-icon" /> お問い合わせに関する注意事項</h3>
+      <h3><SectionIcon name="clock-icon" className="section-icon" /> お問い合わせに関する注意事項</h3>
       <ul class="info-list">
         <li>お返事には数日お時間をいただく場合がございます</li>
         <li>内容によってはお返事できない場合もございます</li>
@@ -51,7 +55,7 @@
     </div>
 
     <div class="faq-section">
-      <h3><img src="/icons/text-icon.png" alt="よくある質問" class="section-icon" /> よくある質問</h3>
+      <h3><SectionIcon name="text-icon" className="section-icon" /> よくある質問</h3>
       
       <div class="faq-item">
         <h4>Q. ゲームが正常に動作しません</h4>
@@ -199,7 +203,7 @@
     gap: 0.5rem;
   }
 
-  .section-icon {
+  :global(.section-icon) {
     width: 24px;
     height: 24px;
     object-fit: contain;

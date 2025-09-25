@@ -1,5 +1,6 @@
 <script>
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   const { quiz, breadcrumbs = [] } = data;
@@ -20,6 +21,17 @@
     return '';
   }
 
+  $: answerFallback = quiz?.answerImage?.asset?.url || '';
+  $: answerSource = quiz?.answerImage?.asset?._ref ? quiz.answerImage : answerFallback;
+  $: answerImageSet = answerSource
+    ? createSanityImageSet(answerSource, {
+        width: 960,
+        height: 540,
+        quality: 80,
+        fallbackUrl: answerFallback
+      })
+    : null;
+
   $: closingText =
     renderPT(quiz?.closingMessage) ||
     (typeof quiz?.closingMessage === 'string' ? quiz.closingMessage : '');
@@ -29,9 +41,27 @@
   <Breadcrumbs items={breadcrumbs} />
   <h1 style="text-align:center;margin-top:0;">{quiz.title}｜正解</h1>
 
-  {#if quiz.answerImage?.asset?.url}
+  {#if answerImageSet?.src}
     <div style="text-align:center;margin:16px 0;">
-      <img src={quiz.answerImage.asset.url} alt="正解画像" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);" />
+      <picture>
+        {#if answerImageSet.avifSrcset}
+          <source srcset={answerImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        {#if answerImageSet.webpSrcset}
+          <source srcset={answerImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        <img
+          src={answerImageSet.src}
+          srcset={answerImageSet.srcset}
+          sizes="(min-width: 768px) 720px, 100vw"
+          alt="正解画像"
+          loading="lazy"
+          decoding="async"
+          width="960"
+          height="540"
+          style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);"
+        />
+      </picture>
     </div>
   {/if}
 

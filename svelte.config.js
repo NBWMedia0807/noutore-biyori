@@ -8,6 +8,12 @@ const config = {
 
     adapter: vercel(),
 
+    prerender: {
+      handleHttpError: 'warn',
+      handleMissingId: 'ignore',
+      handleUnseenRoutes: 'ignore'
+    },
+
     files: {
 
       appTemplate: 'src/app.html' // 必要ならカスタムapp.htmlを指定

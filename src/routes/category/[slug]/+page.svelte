@@ -118,18 +118,6 @@
     padding: 0 1rem;
   }
 
-  /* 読み込み・エラー状態 */
-  .loading, .no-quizzes {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--medium-gray);
-    font-size: 1.1rem;
-  }
-
-  .no-quizzes p {
-    margin-bottom: 0.5rem;
-  }
-
   /* クイズグリッド */
   .quiz-grid {
     display: grid;

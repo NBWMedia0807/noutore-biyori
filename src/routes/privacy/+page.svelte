@@ -1,3 +1,7 @@
+<script>
+  import SectionIcon from '$lib/components/SectionIcon.svelte';
+</script>
+
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">プライバシーポリシー</h2>
@@ -8,7 +12,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/text-icon.png" alt="収集する情報" class="section-icon" /> 1. 収集する情報</h3>
+      <h3><SectionIcon name="text-icon" className="section-icon" /> 1. 収集する情報</h3>
       <div class="policy-content">
         <h4>1.1 自動的に収集される情報</h4>
         <ul>
@@ -30,7 +34,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/clock-icon.png" alt="利用目的" class="section-icon" /> 2. 情報の利用目的</h3>
+      <h3><SectionIcon name="clock-icon" className="section-icon" /> 2. 情報の利用目的</h3>
       <div class="policy-content">
         <p>収集した情報は以下の目的で利用いたします：</p>
         <ul>
@@ -44,7 +48,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/features-icon.png" alt="第三者提供" class="section-icon" /> 3. 第三者への情報提供</h3>
+      <h3><SectionIcon name="features-icon" className="section-icon" /> 3. 第三者への情報提供</h3>
       <div class="policy-content">
         <p>当サイトは、以下の場合を除き、収集した個人情報を第三者に提供することはありません：</p>
         <ul>
@@ -57,7 +61,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/trophy-icon.png" alt="Cookie" class="section-icon" /> 4. Cookieについて</h3>
+      <h3><SectionIcon name="trophy-icon" className="section-icon" /> 4. Cookieについて</h3>
       <div class="policy-content">
         <p>当サイトでは、サービスの向上のためにCookieを使用する場合があります。</p>
         <h4>4.1 Cookieとは</h4>
@@ -76,7 +80,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/brain-icon.png" alt="セキュリティ" class="section-icon" /> 5. セキュリティ</h3>
+      <h3><SectionIcon name="brain-icon" className="section-icon" /> 5. セキュリティ</h3>
       <div class="policy-content">
         <p>当サイトは、収集した個人情報の安全性を確保するため、以下の対策を講じています：</p>
         <ul>
@@ -89,7 +93,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/home-icon.png" alt="個人情報の開示" class="section-icon" /> 6. 個人情報の開示・訂正・削除</h3>
+      <h3><SectionIcon name="home-icon" className="section-icon" /> 6. 個人情報の開示・訂正・削除</h3>
       <div class="policy-content">
         <p>ユーザーは、当サイトが保有する自己の個人情報について、以下の権利を有します：</p>
         <ul>
@@ -102,7 +106,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/news-icon.png" alt="外部サービス" class="section-icon" /> 7. 外部サービスの利用</h3>
+      <h3><SectionIcon name="news-icon" className="section-icon" /> 7. 外部サービスの利用</h3>
       <div class="policy-content">
         <p>当サイトでは、以下の外部サービスを利用する場合があります：</p>
         
@@ -112,21 +116,21 @@
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/game-icon.png" alt="未成年者" class="section-icon" /> 8. 未成年者の個人情報</h3>
+      <h3><SectionIcon name="game-icon" className="section-icon" /> 8. 未成年者の個人情報</h3>
       <div class="policy-content">
         <p>当サイトは、13歳未満の児童から個人情報を意図的に収集することはありません。13歳未満の児童が個人情報を提供した場合は、保護者の方は<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
       </div>
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/text-icon.png" alt="ポリシーの変更" class="section-icon" /> 9. プライバシーポリシーの変更</h3>
+      <h3><SectionIcon name="text-icon" className="section-icon" /> 9. プライバシーポリシーの変更</h3>
       <div class="policy-content">
         <p>当サイトは、必要に応じてプライバシーポリシーを変更する場合があります。重要な変更については、サイト上で通知いたします。</p>
       </div>
     </div>
 
     <div class="policy-section">
-      <h3><img src="/icons/clock-icon.png" alt="お問い合わせ" class="section-icon" /> 10. お問い合わせ</h3>
+      <h3><SectionIcon name="clock-icon" className="section-icon" /> 10. お問い合わせ</h3>
       <div class="policy-content">
         <p>プライバシーポリシーに関するご質問やご意見がございましたら、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
         
@@ -216,7 +220,7 @@
     padding-bottom: 0.5rem;
   }
 
-  .section-icon {
+  :global(.section-icon) {
     width: 24px;
     height: 24px;
     object-fit: contain;

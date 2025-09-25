@@ -1,11 +1,10 @@
 <script>
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
-  import { urlFor } from '$lib/sanityPublic.js';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   let { quiz, breadcrumbs = [] } = data;
   $: ({ quiz, breadcrumbs = [] } = data);
-  let error = null;
   let showHint = false;
 
   function toggleHint() {
@@ -34,16 +33,6 @@
       .join('\n');
   }
 
-  function getImageUrl(imageRef) {
-    if (!imageRef) return '';
-    if (typeof imageRef === 'string') return imageRef;
-    if (imageRef.asset && imageRef.asset.url) return imageRef.asset.url;
-    if (imageRef.asset && imageRef.asset._ref) {
-      try { return urlFor(imageRef).width(900).url(); } catch { return ''; }
-    }
-    return '';
-  }
-
   // タイトルを改行で分割
   function formatTitle(title) {
     if (!title) return '';
@@ -53,6 +42,17 @@
   $: hintText =
     renderPortableText(quiz?.hints) ||
     (typeof quiz?.hints === 'string' ? quiz.hints : '');
+
+  $: mainFallback = quiz?.mainImage?.asset?.url || '';
+  $: mainSource = quiz?.mainImage?.asset?._ref ? quiz.mainImage : mainFallback;
+  $: mainImageSet = mainSource
+    ? createSanityImageSet(mainSource, {
+        width: 900,
+        height: 506,
+        quality: 80,
+        fallbackUrl: mainFallback
+      })
+    : null;
 </script>
 
 <main>
@@ -75,13 +75,26 @@
       <section class="problem-section">
         <h2 class="section-title">問題</h2>
         
-        {#if getImageUrl(quiz.mainImage)}
+        {#if mainImageSet?.src}
           <div class="quiz-image">
-            <img 
-              src={getImageUrl(quiz.mainImage)}
-              alt="問題画像"
-              loading="lazy"
-            />
+            <picture>
+              {#if mainImageSet.avifSrcset}
+                <source srcset={mainImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+              {/if}
+              {#if mainImageSet.webpSrcset}
+                <source srcset={mainImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+              {/if}
+              <img
+                src={mainImageSet.src}
+                srcset={mainImageSet.srcset}
+                sizes="(min-width: 768px) 720px, 100vw"
+                alt="問題画像"
+                loading="lazy"
+                decoding="async"
+                width="900"
+                height="506"
+              />
+            </picture>
           </div>
         {/if}
         
@@ -106,8 +119,7 @@
 
       <!-- 正解ページへのナビゲーション -->
       <section class="answer-navigation">
-        <a href="/quiz/matchstick/article/{quiz._id}/answer" class="answer-link">
-        </a>
+        <a href="/quiz/matchstick/article/{quiz._id}/answer" class="answer-link">正解ページへ進む →</a>
       </section>
 
 
@@ -125,29 +137,6 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 1rem;
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    gap: 1rem;
-  }
-
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--light-gray);
-    border-top: 4px solid var(--primary-yellow);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
   }
 
   .error-container {
@@ -287,12 +276,6 @@
     transform: translateY(-2px);
   }
 
-  .quiz-nav {
-    padding: 2rem;
-    text-align: center;
-  }
-
-  .nav-button,
   .back-button {
     background: var(--primary-yellow);
     color: #856404;
@@ -304,7 +287,6 @@
     display: inline-block;
   }
 
-  .nav-button:hover,
   .back-button:hover {
     background: var(--primary-amber);
     transform: translateY(-2px);
@@ -315,8 +297,7 @@
     .quiz-header,
     .problem-section,
     .hint-section,
-    .answer-navigation,
-    .quiz-nav {
+    .answer-navigation {
       padding: 1.5rem;
     }
 
