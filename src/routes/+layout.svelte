@@ -136,7 +136,7 @@
 
 <footer>
   <div class="footer-content">
-    <p>&copy; 2024 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
+    <p>&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
     <div class="footer-links">
       <a href="/privacy">プライバシーポリシー</a>
       <a href="/contact">お問い合わせ</a>

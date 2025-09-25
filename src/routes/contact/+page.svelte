@@ -8,6 +8,7 @@
     
     <div class="contact-intro">
       <p>脳トレ日和をご利用いただき、ありがとうございます。ご質問、ご意見、ご要望などございましたら、下記のフォームよりお気軽にお寄せください。</p>
+      <p class="operation-start">運用開始月：2025年9月</p>
     </div>
 
     <div class="contact-form-section">
@@ -115,6 +116,12 @@
     color: #636e72;
     line-height: 1.8;
     margin: 0;
+  }
+
+  .operation-start {
+    margin-top: 1rem;
+    color: #a08000;
+    font-weight: 600;
   }
 
   .contact-form-section {
