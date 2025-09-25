@@ -10,6 +10,7 @@
     "@sanity/vision": "latest",
     "react": "18.x",
     "react-dom": "18.x",
-    "sanity": "latest"
+    "sanity": "latest",
+    "styled-components": "6.1.19"
   }
 }

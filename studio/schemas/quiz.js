@@ -1,4 +1,6 @@
 // studio/schemas/quiz.js
+import CategoryReferenceInput from './components/CategoryReferenceInput.jsx'
+
 export default {
   name: 'quiz',
   title: 'クイズ',
@@ -132,7 +134,10 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
-      validation: (Rule) => Rule.required()
+      validation: (Rule) => Rule.required(),
+      components: {
+        input: CategoryReferenceInput
+      }
     }
   ]
 }
