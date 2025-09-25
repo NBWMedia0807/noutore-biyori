@@ -1,4 +1,23 @@
 // studio/schemas/quiz.js
+import {useEffect} from 'react'
+import {set, unset} from 'sanity'
+
+function CategoryReferenceInput(props) {
+  const {value, onChange} = props
+
+  useEffect(() => {
+    if (Array.isArray(value)) {
+      if (value.length > 0 && value[0]) {
+        onChange(set(value[0]))
+      } else {
+        onChange(unset())
+      }
+    }
+  }, [value, onChange])
+
+  return props.renderDefault(props)
+}
+
 export default {
   name: 'quiz',
   title: 'クイズ',
@@ -132,7 +151,8 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
-      validation: (Rule) => Rule.required()
+      validation: (Rule) => Rule.required(),
+      components: { input: CategoryReferenceInput }
     }
   ]
 }
