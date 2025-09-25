@@ -6,13 +6,13 @@ export const SITE = {
   url: 'https://noutorebiyori.com',
   language: 'ja',
   locale: 'ja_JP',
-  defaultOgImage: 'https://noutorebiyori.com/logo.png',
+  defaultOgImage: 'https://noutorebiyori.com/logo.svg',
   twitterHandle: '@noutorebiyori',
   organization: {
     id: 'https://noutorebiyori.com/#organization',
     name: '脳トレ日和運営チーム',
     url: 'https://noutorebiyori.com',
-    logo: 'https://noutorebiyori.com/logo.png',
+    logo: 'https://noutorebiyori.com/logo.svg',
     sameAs: ['https://noutorebiyori.com']
   }
 };
