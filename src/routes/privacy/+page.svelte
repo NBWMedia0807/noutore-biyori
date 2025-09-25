@@ -1,8 +1,3 @@
-<svelte:head>
-  <title>プライバシーポリシー - 脳トレ日和</title>
-  <meta name="description" content="脳トレ日和のプライバシーポリシーです。個人情報の取り扱いについて詳しくご説明いたします。">
-</svelte:head>
-
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">プライバシーポリシー</h2>

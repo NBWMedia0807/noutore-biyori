@@ -1,7 +1,79 @@
 <script>
+  import '../lib/styles/global.css';
+  import { page } from '$app/stores';
+  import { SITE } from '$lib/config/site.js';
+  import { createPageSeo } from '$lib/seo.js';
+
   export let data;
-  import "../lib/styles/global.css";
+
+  const twitterHandle = SITE.twitterHandle ?? '';
+
+  $: currentPage = $page;
+  $: fallbackSeo = createPageSeo({
+    path: currentPage?.url?.pathname ?? '/',
+    appendSiteName: false
+  });
+  $: providedSeo = currentPage?.data?.seo ?? {};
+  $: resolvedJsonLd = (() => {
+    if (!providedSeo?.jsonld) return fallbackSeo.jsonld;
+    return Array.isArray(providedSeo.jsonld)
+      ? providedSeo.jsonld.filter(Boolean)
+      : [providedSeo.jsonld];
+  })();
+  $: seo = {
+    ...fallbackSeo,
+    ...providedSeo,
+    description: providedSeo.description ?? fallbackSeo.description,
+    canonical: providedSeo.canonical ?? fallbackSeo.canonical,
+    image: providedSeo.image ?? fallbackSeo.image,
+    type: providedSeo.type ?? fallbackSeo.type,
+    jsonld: resolvedJsonLd
+  };
+  $: imageAlt = providedSeo.imageAlt ?? `${SITE.name}のイメージ`;
 </script>
+
+<svelte:head>
+  <title>{seo.title}</title>
+  {#if seo.description}
+    <meta name="description" content={seo.description} />
+  {/if}
+  <meta name="robots" content="max-image-preview:large" />
+  {#if seo.canonical}
+    <link rel="canonical" href={seo.canonical} />
+  {/if}
+  <meta property="og:site_name" content={SITE.name} />
+  <meta property="og:title" content={seo.title} />
+  {#if seo.description}
+    <meta property="og:description" content={seo.description} />
+  {/if}
+  {#if seo.canonical}
+    <meta property="og:url" content={seo.canonical} />
+  {/if}
+  <meta property="og:type" content={seo.type ?? 'website'} />
+  {#if seo.image}
+    <meta property="og:image" content={seo.image} />
+  {/if}
+  <meta property="og:locale" content={SITE.locale} />
+  {#if seo.image}
+    <meta property="og:image:alt" content={imageAlt} />
+  {/if}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={seo.title} />
+  {#if seo.description}
+    <meta name="twitter:description" content={seo.description} />
+  {/if}
+  {#if seo.image}
+    <meta name="twitter:image" content={seo.image} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+  {/if}
+  {#if twitterHandle}
+    <meta name="twitter:site" content={twitterHandle} />
+    <meta name="twitter:creator" content={twitterHandle} />
+  {/if}
+  {#each seo.jsonld as schema (schema['@id'] ?? JSON.stringify(schema))}
+    <script type="application/ld+json">{JSON.stringify(schema)}</script>
+  {/each}
+</svelte:head>
 
 <header>
   <div class="header-content">

@@ -1,8 +1,3 @@
-<svelte:head>
-  <title>サイトについて - 脳トレ日和</title>
-  <meta name="description" content="脳トレ日和について詳しくご紹介します。サイトの目的、運営者情報、ゲームの特徴などをご確認いただけます。">
-</svelte:head>
-
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">脳トレ日和について</h2>

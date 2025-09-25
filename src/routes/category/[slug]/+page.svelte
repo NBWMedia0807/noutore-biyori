@@ -31,11 +31,6 @@
   }
 </script>
 
-<svelte:head>
-  <title>{categoryTitle} - 脳トレ日和</title>
-  <meta name="description" content={categoryDescription}>
-</svelte:head>
-
 {#key slug}
   <!-- カテゴリヘッダー -->
   <section class="category-header" style="text-align:center;">

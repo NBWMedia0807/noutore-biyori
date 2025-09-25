@@ -9,10 +9,6 @@
   }
 </script>
 
-<svelte:head>
-  <title>{category ? category.title : 'カテゴリ未定義'} - 脳トレ日和</title>
-</svelte:head>
-
 <section class="category-header" style="text-align:center;">
   <h1 class="category-title">{category ? category.title : 'カテゴリが見つかりません'}</h1>
   {#if category}

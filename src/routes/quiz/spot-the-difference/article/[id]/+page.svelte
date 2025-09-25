@@ -56,11 +56,6 @@
     (typeof quiz?.hints === 'string' ? quiz.hints : '');
 </script>
 
-<svelte:head>
-  <title>{quiz?.title || 'クイズ'} - 脳トレ日和</title>
-  <meta name="description" content={quiz?.title ? `${quiz.title}に挑戦しましょう。` : 'クイズに挑戦しましょう。'} />
-</svelte:head>
-
 <main>
   {#if quiz}
     <article class="quiz-article">
