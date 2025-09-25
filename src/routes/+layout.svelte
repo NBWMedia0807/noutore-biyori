@@ -21,13 +21,9 @@
       {#if data?.categories?.length}
         {#each data.categories as c}
           <li>
-            <a href={`/quiz/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
+            <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
           </li>
         {/each}
-      {:else}
-        <!-- Fallback (カテゴリ未取得時) -->
-        <li><a href="/quiz/matchstick" class="nav-link" data-sveltekit-preload-data>マッチ棒クイズ</a></li>
-        <li><a href="/quiz/spot-the-difference" class="nav-link" data-sveltekit-preload-data>間違い探し</a></li>
       {/if}
     </ul>
   </div>

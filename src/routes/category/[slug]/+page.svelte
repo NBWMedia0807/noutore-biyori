@@ -1,12 +1,21 @@
 <script>
-  import { page } from '$app/stores';
   export let data;
   let quizzes = [];
+  let category = null;
   let categoryTitle = '';
-  $: slug = $page.params.slug;
+  let slug = '';
+  let categoryDescription = '';
 
   $: quizzes = data?.quizzes ?? [];
-  $: categoryTitle = data?.categoryTitle ?? '';
+  $: category = data?.category ?? null;
+  $: categoryTitle = category?.title ?? '';
+  $: slug = category?.slug ?? '';
+  $: categoryDescription = (() => {
+    const description = (category?.description || '').trim();
+    if (description) return description;
+    if (categoryTitle) return `${categoryTitle}の一覧ページです。`;
+    return 'カテゴリの一覧ページです。';
+  })();
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -24,7 +33,7 @@
 
 <svelte:head>
   <title>{categoryTitle} - 脳トレ日和</title>
-  <meta name="description" content="{categoryTitle}の一覧ページです。楽しく脳を鍛える{categoryTitle}をお楽しみください。">
+  <meta name="description" content={categoryDescription}>
 </svelte:head>
 
 {#key slug}
@@ -32,13 +41,7 @@
   <section class="category-header" style="text-align:center;">
     <div class="category-info">
       <h1 class="category-title">{categoryTitle}</h1>
-      <p class="category-description">
-        {#if slug === 'matchstick'}
-          マッチ棒を動かして正しい式を作るパズルゲームです。論理的思考力を鍛えましょう。
-        {:else if slug === 'spot-the-difference'}
-          2つの画像の違いを見つけるゲームです。観察力と集中力を鍛えましょう。
-        {/if}
-      </p>
+      <p class="category-description">{categoryDescription}</p>
       <div class="quiz-count">全{quizzes.length}問</div>
     </div>
   </section>
@@ -54,7 +57,7 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href="/quiz/{quiz.slug}" class="quiz-link">
+          <a href={`/quiz/${slug}/${quiz.slug}`} class="quiz-link">
             <div class="quiz-image">
               {#if getImageUrl(quiz.mainImage || quiz.answerImage)}
                 <img src="{getImageUrl(quiz.mainImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
