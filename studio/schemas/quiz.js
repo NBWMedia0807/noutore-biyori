@@ -151,8 +151,12 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
+codex/fix-react-error-#185-in-quiz-category-field-e476kt
       validation: (Rule) => Rule.required(),
       components: { input: CategoryReferenceInput }
+
+      validation: Rule => Rule.required()
+main
     }
   ]
 }
