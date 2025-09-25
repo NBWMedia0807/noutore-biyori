@@ -46,10 +46,7 @@ export const load = async ({ params, setHeaders, url }) => {
     });
 
     const description = createCategoryDescription(category.title, category.description);
-    const breadcrumbs = [
-      { name: 'カテゴリ一覧', url: '/category' },
-      { name: category.title, url: url.pathname }
-    ];
+    const breadcrumbs = [{ name: category.title, url: url.pathname }];
     const seo = createPageSeo({
       title: category.title,
       description,

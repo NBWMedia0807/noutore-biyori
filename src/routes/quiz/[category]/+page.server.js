@@ -5,7 +5,11 @@ import { SITE } from '$lib/config/site.js';
 
 const QUERY = /* groq */ `
 {
-  "category": *[_type == "category" && slug.current == $slug][0]{title, "slug": slug.current},
+  "category": *[_type == "category" && slug.current == $slug][0]{
+    title,
+    "slug": slug.current,
+    description
+  },
   "quizzes": *[_type == "quiz" && (
     (defined(category._ref) && category->slug.current == $slug) ||
     (!defined(category._ref) && (category == $slug || category == ^.category.title))
