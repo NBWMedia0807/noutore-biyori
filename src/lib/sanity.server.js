@@ -22,6 +22,9 @@ const projectId = env.SANITY_PROJECT_ID || 'quljge22';
 const dataset = env.SANITY_DATASET || 'production';
 const apiVersion = env.SANITY_API_VERSION || '2024-01-01';
 
+const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
+const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true';
+
 if (!env.SANITY_PROJECT_ID) {
   console.warn('[sanity.server] SANITY_PROJECT_ID is missing; falling back to default projectId.');
 }
@@ -37,3 +40,5 @@ export const client = createClient({
 
 const builder = imageUrlBuilder(client);
 export const urlFor = (source) => builder.image(source);
+
+export const shouldSkipSanityFetch = () => shouldBypassSanity;

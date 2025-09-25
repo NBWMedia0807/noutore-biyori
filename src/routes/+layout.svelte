@@ -34,6 +34,8 @@
 
 <svelte:head>
   <title>{seo.title}</title>
+  <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
+  <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
   {#if seo.description}
     <meta name="description" content={seo.description} />
   {/if}
@@ -96,8 +98,16 @@
 
 <header>
   <div class="header-content">
-    <a href="/" class="logo-section">
-      <img src="/logo.png" alt="脳トレ日和" class="logo-image" />
+    <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
+      <img
+        src="/logo.svg"
+        alt="脳トレ日和"
+        class="logo-image"
+        width="80"
+        height="80"
+        decoding="async"
+        fetchpriority="high"
+      />
       <div class="title-section">
         <h1>脳トレ日和</h1>
         <p class="subtitle">楽しく脳を鍛えましょう</p>
@@ -178,17 +188,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  /* カテゴリ別色分け */
-  .matchstick-link {
-    background: var(--light-amber);
-    color: #92400e;
-  }
-
-  .difference-link {
-    background: var(--light-orange);
-    color: #9a3412;
   }
 
   @media (max-width: 768px) {

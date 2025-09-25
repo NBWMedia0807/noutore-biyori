@@ -1,6 +1,6 @@
 <script>
   export let data;
-  import { urlFor } from '$lib/sanityPublic.js';
+  import { createSanityImageSet } from '$lib/utils/images.js';
   
   let quizzes = [];
   let visibleQuizzes = [];
@@ -8,17 +8,12 @@
   $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
   $: visibleQuizzes = quizzes.filter((quiz) => quiz?.category?.slug && quiz?.slug);
 
-  function getImageUrl(quiz) {
-    // 1) SSRで付与したサムネイルURLを最優先（Sanity由来のみ）
-    if (quiz?.thumbnailUrl) return quiz.thumbnailUrl;
-    // 2) 参照があれば builder で最適化URL
-    if (quiz?.mainImage && quiz.mainImage.asset && !quiz.mainImage.asset.url) {
-      try { return urlFor(quiz.mainImage).width(600).height(360).fit('crop').url(); } catch {}
-    }
-    // 3) そのままURLがあれば利用（Sanityの asset.url）
-    if (quiz?.mainImage?.asset?.url) return quiz.mainImage.asset.url;
-    // 4) 何も無ければ未表示（非Sanityのプレースホルダは使わない）
-    return '';
+  function getImageSet(quiz) {
+    if (!quiz) return null;
+    const fallback = quiz.thumbnailUrl || quiz.mainImage?.asset?.url || '';
+    const source = quiz.mainImage?.asset?._ref ? quiz.mainImage : fallback;
+    if (!source && !fallback) return null;
+    return createSanityImageSet(source, { width: 600, height: 360, fallbackUrl: fallback, quality: 75 });
   }
 </script>
 
@@ -29,15 +24,31 @@
 {:else}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
     {#each visibleQuizzes as q}
-        <a href={`/quiz/${q.category.slug}/${q.slug}`}
-           style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
-        {#if getImageUrl(q)}
-          <img
-            src={getImageUrl(q)}
-            alt={q.title}
-            loading="lazy"
-            style="width:100%;height:160px;object-fit:cover"
-          />
+      {@const image = getImageSet(q)}
+      <a
+        href={`/quiz/${q.category.slug}/${q.slug}`}
+        style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;"
+      >
+        {#if image?.src}
+          <picture>
+            {#if image.avifSrcset}
+              <source srcset={image.avifSrcset} type="image/avif" sizes="(min-width: 768px) 220px, 90vw" />
+            {/if}
+            {#if image.webpSrcset}
+              <source srcset={image.webpSrcset} type="image/webp" sizes="(min-width: 768px) 220px, 90vw" />
+            {/if}
+            <img
+              src={image.src}
+              srcset={image.srcset}
+              sizes="(min-width: 768px) 220px, 90vw"
+              alt={q.title}
+              loading="lazy"
+              decoding="async"
+              width="600"
+              height="360"
+              style="width:100%;height:160px;object-fit:cover"
+            />
+          </picture>
         {/if}
         <div style="padding:12px;">
           <h3 style="margin:0;font-size:16px;line-height:1.4;">{q.title}</h3>

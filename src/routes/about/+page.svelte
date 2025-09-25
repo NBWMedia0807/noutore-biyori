@@ -1,14 +1,18 @@
+<script>
+  import SectionIcon from '$lib/components/SectionIcon.svelte';
+</script>
+
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">脳トレ日和について</h2>
-    
+
     <div class="about-section">
-      <h3><img src="/icons/brain-icon.png" alt="目的" class="section-icon" /> サイトの目的</h3>
+      <h3><SectionIcon name="brain-icon" className="section-icon" /> サイトの目的</h3>
       <p>脳トレ日和は、日常生活の中で楽しく脳を鍛えることを目的とした無料の脳トレーニングサイトです。特に高齢者の方々が気軽に楽しめるよう、シンプルで分かりやすいデザインと操作性を重視して作られています。</p>
     </div>
 
     <div class="about-section">
-      <h3><img src="/icons/game-icon.png" alt="ゲーム" class="section-icon" /> 提供ゲーム</h3>
+      <h3><SectionIcon name="game-icon" className="section-icon" /> 提供ゲーム</h3>
       <div class="games-grid">
         <div class="game-info">
           <h4>記憶力ゲーム</h4>
@@ -30,7 +34,7 @@
     </div>
 
     <div class="about-section">
-      <h3><img src="/icons/features-icon.png" alt="特徴" class="section-icon" /> サイトの特徴</h3>
+      <h3><SectionIcon name="features-icon" className="section-icon" /> サイトの特徴</h3>
       <ul class="features-list">
         <li><strong>シンプルな操作</strong> - 誰でも迷わず使える直感的なインターフェース</li>
         <li><strong>見やすいデザイン</strong> - 大きな文字と温かみのある色合いで目に優しい</li>
@@ -41,7 +45,7 @@
     </div>
 
     <div class="about-section">
-      <h3><img src="/icons/home-icon.png" alt="おすすめ" class="section-icon" /> こんな方におすすめ</h3>
+      <h3><SectionIcon name="home-icon" className="section-icon" /> こんな方におすすめ</h3>
       <ul class="target-users">
         <li>日々の脳トレーニングを習慣にしたい方</li>
         <li>記憶力や計算力の維持・向上を図りたい方</li>
@@ -52,7 +56,7 @@
     </div>
 
     <div class="about-section" id="author-info">
-      <h3><img src="/icons/news-icon.png" alt="著者情報" class="section-icon" /> 著者情報</h3>
+      <h3><SectionIcon name="news-icon" className="section-icon" /> 著者情報</h3>
       <div class="operator-info">
         <table class="info-table">
           <tbody>
@@ -78,7 +82,7 @@
     </div>
 
     <div class="about-section" id="operator-info">
-      <h3><img src="/icons/news-icon.png" alt="運営者情報" class="section-icon" /> 運営者情報</h3>
+      <h3><SectionIcon name="news-icon" className="section-icon" /> 運営者情報</h3>
       <div class="operator-info">
         <table class="info-table">
           <tbody>
@@ -108,7 +112,7 @@
     </div>
 
     <div class="about-section">
-      <h3><img src="/icons/clock-icon.png" alt="プライバシー" class="section-icon" /> プライバシーと安全性</h3>
+      <h3><SectionIcon name="clock-icon" className="section-icon" /> プライバシーと安全性</h3>
       <p>当サイトでは、ユーザーの皆様の個人情報保護を最優先に考えています。</p>
       <ul>
         <li>個人情報の収集は最小限に留めています</li>
@@ -119,12 +123,12 @@
     </div>
 
     <div class="about-section">
-      <h3><img src="/icons/trophy-icon.png" alt="今後の展開" class="section-icon" /> 今後の展開</h3>
+      <h3><SectionIcon name="trophy-icon" className="section-icon" /> 今後の展開</h3>
       <p>脳トレ日和では、ユーザーの皆様からのフィードバックを基に、継続的にサイトの改善と新機能の追加を行っています。今後も更なる脳トレーニングコンテンツの充実を図り、より多くの方に愛されるサイトを目指します。</p>
     </div>
 
     <div class="cta-section">
-      <h3><img src="/icons/game-icon.png" alt="始める" class="section-icon" /> さあ、始めましょう！</h3>
+      <h3><SectionIcon name="game-icon" className="section-icon" /> さあ、始めましょう！</h3>
       <p>脳トレ日和で楽しく脳を鍛えて、健康的な毎日を過ごしましょう。</p>
       <a href="/" class="cta-button">ゲームを始める</a>
     </div>
@@ -166,7 +170,7 @@
     gap: 0.5rem;
   }
 
-  .section-icon {
+  :global(.section-icon) {
     width: 24px;
     height: 24px;
     object-fit: contain;

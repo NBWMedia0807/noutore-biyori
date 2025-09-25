@@ -1,8 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity.server.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createCategoryDescription, createPageSeo } from '$lib/seo.js';
 
-export const prerender = false;
+const CATEGORY_SLUGS_QUERY = /* groq */ `
+*[_type == "category" && defined(slug.current)]{
+  "slug": slug.current
+}`;
 
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && slug.current == $slug][0]{
@@ -28,9 +31,52 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
   answerImage{ asset->{ url, metadata } }
 }`;
 
-export const load = async ({ params, setHeaders, url }) => {
+export const entries = async () => {
+  if (shouldSkipSanityFetch()) {
+    return [];
+  }
+
+  try {
+    const result = await client.fetch(CATEGORY_SLUGS_QUERY);
+    return Array.isArray(result) ? result.filter((item) => item?.slug).map((item) => ({ slug: item.slug })) : [];
+  } catch (err) {
+    console.error('[category] Failed to build prerender entries', err);
+    return [];
+  }
+};
+
+const createFallbackResponse = (slug, path) => {
+  const fallbackTitle = slug ? slug.replace(/-/g, ' ') : 'カテゴリ';
+  const normalizedTitle = fallbackTitle || 'カテゴリ';
+  return {
+    category: slug
+      ? {
+          title: normalizedTitle,
+          slug,
+          description: ''
+        }
+      : null,
+    quizzes: [],
+    seo: createPageSeo({
+      title: normalizedTitle,
+      description: `${normalizedTitle}のクイズ一覧ページです。`,
+      path,
+      breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
+    })
+  };
+};
+
+export const load = async (event) => {
+  const { params, setHeaders, url, isDataRequest } = event;
   const { slug } = params;
-  setHeaders({ 'cache-control': 'no-store' });
+
+  if (!isDataRequest) {
+    setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
+  }
+
+  if (shouldSkipSanityFetch()) {
+    return createFallbackResponse(slug, url.pathname);
+  }
 
   try {
     const category = await client.fetch(CATEGORY_QUERY, { slug });
@@ -64,6 +110,6 @@ export const load = async ({ params, setHeaders, url }) => {
       throw err;
     }
     console.error(`[category/${slug}] Sanity fetch failed`, err);
-    throw error(500, 'カテゴリ情報の取得に失敗しました');
+    return createFallbackResponse(slug, url.pathname);
   }
 };

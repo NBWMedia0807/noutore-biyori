@@ -1,4 +1,6 @@
-import { client } from '$lib/sanity.server.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+
+export const prerender = true;
 
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && defined(slug.current)] | order(title asc) {
@@ -7,6 +9,10 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 export const load = async () => {
+  if (shouldSkipSanityFetch()) {
+    return { categories: [] };
+  }
+
   try {
     const result = await client.fetch(CATEGORY_QUERY);
     const categories = Array.isArray(result) ? result.filter(Boolean) : [];

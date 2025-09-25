@@ -1,4 +1,4 @@
-import { client } from '$lib/sanity.server.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
 
 const QUIZZES_QUERY = /* groq */ `
@@ -11,31 +11,33 @@ const QUIZZES_QUERY = /* groq */ `
   problemDescription
 }`;
 
-export const load = async ({ url }) => {
+const createQuizListSeo = (path) =>
+  createPageSeo({
+    title: 'クイズ一覧',
+    description:
+      '脳トレ日和で公開中のクイズ一覧です。マッチ棒クイズや間違い探しなど、バリエーション豊かな問題に挑戦できます。',
+    path,
+    breadcrumbs: [{ name: 'クイズ一覧', url: path }]
+  });
+
+export const load = async (event) => {
+  const { url, setHeaders, isDataRequest } = event;
+
+  if (!isDataRequest) {
+    setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
+  }
+
+  if (shouldSkipSanityFetch()) {
+    return { quizzes: [], seo: createQuizListSeo(url.pathname) };
+  }
+
   try {
     const result = await client.fetch(QUIZZES_QUERY);
     const quizzes = Array.isArray(result) ? result.filter(Boolean) : [];
 
-    const seo = createPageSeo({
-      title: 'クイズ一覧',
-      description:
-        '脳トレ日和で公開中のクイズ一覧です。マッチ棒クイズや間違い探しなど、バリエーション豊かな問題に挑戦できます。',
-      path: url.pathname,
-      breadcrumbs: [{ name: 'クイズ一覧', url: url.pathname }]
-    });
-
-    return { quizzes, seo };
+    return { quizzes, seo: createQuizListSeo(url.pathname) };
   } catch (error) {
     console.error('[quiz/+page.server] Error fetching quizzes:', error);
-    return {
-      quizzes: [],
-      seo: createPageSeo({
-        title: 'クイズ一覧',
-        description:
-          '脳トレ日和で公開中のクイズ一覧です。マッチ棒クイズや間違い探しなど、バリエーション豊かな問題に挑戦できます。',
-        path: url.pathname,
-        breadcrumbs: [{ name: 'クイズ一覧', url: url.pathname }]
-      })
-    };
+    return { quizzes: [], seo: createQuizListSeo(url.pathname) };
   }
 };
