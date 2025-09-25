@@ -2,6 +2,12 @@
   export let data;
   import { urlFor } from '$lib/sanityPublic.js';
   
+  let quizzes = [];
+  let visibleQuizzes = [];
+
+  $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
+  $: visibleQuizzes = quizzes.filter((quiz) => quiz?.category?.slug && quiz?.slug);
+
   function getImageUrl(quiz) {
     // 1) SSRで付与したサムネイルURLを最優先（Sanity由来のみ）
     if (quiz?.thumbnailUrl) return quiz.thumbnailUrl;
@@ -18,11 +24,11 @@
 
 <h1 style="margin:16px 0;text-align:center;">新着記事</h1>
 
-{#if !data.quizzes?.length}
+{#if !visibleQuizzes.length}
   <p>まだクイズが投稿されていません。</p>
 {:else}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
-    {#each data.quizzes.filter(q => q?.category?.slug) as q}
+    {#each visibleQuizzes as q}
         <a href={`/quiz/${q.category.slug}/${q.slug}`}
            style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;">
         {#if getImageUrl(q)}
