@@ -15,6 +15,18 @@ const sanitizeText = (value) => {
   return value.replace(/\s+/g, ' ').trim();
 };
 
+const toIsoString = (value) => {
+  if (!value) return undefined;
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return undefined;
+    return date.toISOString();
+  } catch (error) {
+    console.error('[seo] Failed to normalize date:', error);
+    return undefined;
+  }
+};
+
 const buildWebSiteSchema = () => ({
   '@type': 'WebSite',
   '@id': `${SITE.url}/#website`,
@@ -70,32 +82,37 @@ const buildArticleSchema = ({
   dateModified,
   authorName,
   category
-}) => ({
-  '@type': 'BlogPosting',
-  '@id': `${canonical}#blogposting`,
-  mainEntityOfPage: canonical,
-  headline: title,
-  description,
-  image: image ? [image] : undefined,
-  datePublished,
-  dateModified: dateModified ?? datePublished,
-  author: {
-    '@type': 'Person',
-    name: authorName ?? SITE.organization.name
-  },
-  publisher: {
-    '@type': 'Organization',
-    '@id': SITE.organization.id,
-    name: SITE.organization.name,
-    url: SITE.organization.url,
-    logo: {
-      '@type': 'ImageObject',
-      url: SITE.organization.logo
-    }
-  },
-  articleSection: category,
-  inLanguage: SITE.locale
-});
+}) => {
+  const published = toIsoString(datePublished);
+  const modified = toIsoString(dateModified) ?? published;
+
+  return {
+    '@type': 'BlogPosting',
+    '@id': `${canonical}#blogposting`,
+    mainEntityOfPage: canonical,
+    headline: title,
+    description,
+    image: image ? [image] : undefined,
+    datePublished: published,
+    dateModified: modified,
+    author: {
+      '@type': 'Person',
+      name: authorName ?? SITE.organization.name
+    },
+    publisher: {
+      '@type': 'Organization',
+      '@id': SITE.organization.id,
+      name: SITE.organization.name,
+      url: SITE.organization.url,
+      logo: {
+        '@type': 'ImageObject',
+        url: SITE.organization.logo
+      }
+    },
+    articleSection: category,
+    inLanguage: SITE.locale
+  };
+};
 
 const normalizeJsonLd = (schemas) => {
   if (!schemas) return [];
@@ -109,6 +126,8 @@ export const createPageSeo = ({
   path = '/',
   type = 'website',
   image,
+  imageWidth,
+  imageHeight,
   breadcrumbs = [],
   article,
   appendSiteName = true,
@@ -123,6 +142,14 @@ export const createPageSeo = ({
   })();
 
   const ogImage = image ? toAbsoluteUrl(image) : SITE.defaultOgImage;
+  const normalizedImageWidth = typeof imageWidth === 'number' ? Math.max(Math.floor(imageWidth), 0) : undefined;
+  const normalizedImageHeight = typeof imageHeight === 'number' ? Math.max(Math.floor(imageHeight), 0) : undefined;
+
+  const articleTitle = sanitizeText(article?.title ?? title ?? SITE.name);
+  const articlePublished = article ? toIsoString(article.datePublished) : undefined;
+  const articleModified = article ? toIsoString(article.dateModified) ?? articlePublished : undefined;
+  const articleAuthor = article?.authorName ? sanitizeText(article.authorName) : SITE.organization.name;
+  const articleSection = article?.category ? sanitizeText(article.category) : undefined;
 
   const jsonld = [
     buildWebSiteSchema(),
@@ -132,13 +159,13 @@ export const createPageSeo = ({
       ? [
           buildArticleSchema({
             canonical,
-            title: sanitizeText(article.title ?? title ?? SITE.name),
+            title: articleTitle,
             description: sanitizedDescription,
             image: ogImage,
-            datePublished: article.datePublished,
-            dateModified: article.dateModified,
-            authorName: article.authorName,
-            category: article.category
+            datePublished: articlePublished,
+            dateModified: articleModified,
+            authorName: articleAuthor,
+            category: articleSection
           })
         ]
       : []),
@@ -151,7 +178,18 @@ export const createPageSeo = ({
     canonical,
     type,
     image: ogImage,
-    jsonld
+    imageWidth: normalizedImageWidth,
+    imageHeight: normalizedImageHeight,
+    jsonld,
+    article: article
+      ? {
+          title: articleTitle,
+          publishedTime: articlePublished,
+          modifiedTime: articleModified,
+          author: articleAuthor,
+          section: articleSection
+        }
+      : null
   };
 };
 

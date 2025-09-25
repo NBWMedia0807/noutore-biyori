@@ -1,6 +1,8 @@
 <script>
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+
   export let data;
-  const { quiz } = data;
+  const { quiz, breadcrumbs = [] } = data;
 
   const FALLBACK_CLOSING_MESSAGE =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
@@ -24,6 +26,7 @@
 </script>
 
 <main style="max-width:800px;margin:24px auto;padding:16px;">
+  <Breadcrumbs items={breadcrumbs} />
   <h1 style="text-align:center;margin-top:0;">{quiz.title}｜正解</h1>
 
   {#if quiz.answerImage?.asset?.url}

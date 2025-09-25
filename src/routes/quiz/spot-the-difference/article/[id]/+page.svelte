@@ -1,7 +1,10 @@
 <script>
-  export let data;
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { urlFor } from '$lib/sanityPublic.js';
-  let { quiz } = data;
+
+  export let data;
+  let { quiz, breadcrumbs = [] } = data;
+  $: ({ quiz, breadcrumbs = [] } = data);
   let error = null;
   let showHint = false;
 
@@ -59,11 +62,11 @@
 <main>
   {#if quiz}
     <article class="quiz-article">
+      <div class="breadcrumbs-wrapper">
+        <Breadcrumbs items={breadcrumbs} />
+      </div>
       <!-- ヘッダー -->
       <header class="quiz-header">
-        <div class="breadcrumb">
-          <a href="/quiz">← クイズ一覧</a>
-        </div>
         
         <div class="category-tag">
           間違い探し
@@ -173,18 +176,8 @@
     color: #856404;
   }
 
-  .breadcrumb {
-    margin-bottom: 1rem;
-  }
-
-  .breadcrumb a {
-    color: #856404;
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .breadcrumb a:hover {
-    text-decoration: underline;
+  .breadcrumbs-wrapper {
+    padding: 1.5rem 1.5rem 0;
   }
 
   .category-tag {

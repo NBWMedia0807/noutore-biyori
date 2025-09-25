@@ -1,7 +1,7 @@
 // src/routes/quiz/matchstick/article/[id]/+page.server.js
 export const prerender = false;
 
-import { client } from '$lib/sanity.server.js';
+import { client, urlFor } from '$lib/sanity.server.js';
 import { error } from '@sveltejs/kit';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
@@ -35,13 +35,22 @@ export const load = async ({ params, url }) => {
   const descriptionSource = portableTextToPlain(quiz.problemDescription) || quiz.title;
   const description = descriptionSource.length > 120 ? `${descriptionSource.slice(0, 117)}…` : descriptionSource;
 
-  const breadcrumbs = [
-    { name: 'クイズ一覧', url: '/quiz' }
-  ];
+  const breadcrumbs = [{ name: 'クイズ一覧', url: '/quiz' }];
   if (quiz.category?.title && quiz.category?.slug) {
     breadcrumbs.push({ name: quiz.category.title, url: `/category/${quiz.category.slug}` });
   }
   breadcrumbs.push({ name: quiz.title, url: url.pathname });
+
+  const OG_IMAGE_WIDTH = 1200;
+  const OG_IMAGE_HEIGHT = 630;
+  let resolvedImage = null;
+  if (quiz.mainImage) {
+    try {
+      resolvedImage = urlFor(quiz.mainImage).width(OG_IMAGE_WIDTH).height(OG_IMAGE_HEIGHT).fit('crop').auto('format').url();
+    } catch (err) {
+      console.error('[matchstick article] failed to build og:image URL', err);
+    }
+  }
 
   const seo = {
     ...createPageSeo({
@@ -49,7 +58,9 @@ export const load = async ({ params, url }) => {
       description,
       path: url.pathname,
       type: 'article',
-      image: quiz.mainImage?.asset?.url,
+      image: resolvedImage ?? SITE.defaultOgImage,
+      imageWidth: resolvedImage ? OG_IMAGE_WIDTH : undefined,
+      imageHeight: resolvedImage ? OG_IMAGE_HEIGHT : undefined,
       breadcrumbs,
       article: {
         title: quiz.title,
@@ -62,6 +73,6 @@ export const load = async ({ params, url }) => {
     imageAlt: quiz.title
   };
 
-  return { quiz, seo };
+  return { quiz, breadcrumbs, seo };
 };
 

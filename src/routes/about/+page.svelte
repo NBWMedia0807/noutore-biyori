@@ -51,7 +51,33 @@
       </ul>
     </div>
 
-    <div class="about-section">
+    <div class="about-section" id="author-info">
+      <h3><img src="/icons/news-icon.png" alt="著者情報" class="section-icon" /> 著者情報</h3>
+      <div class="operator-info">
+        <table class="info-table">
+          <tbody>
+            <tr>
+              <th>記事監修</th>
+              <td>脳トレ日和編集部</td>
+            </tr>
+            <tr>
+              <th>主な担当</th>
+              <td>クイズ制作・校正、Sanityコンテンツ管理</td>
+            </tr>
+            <tr>
+              <th>プロフィール</th>
+              <td>脳科学・高齢者向けレクリエーション領域の取材経験を持つ編集者が、毎日の脳トレ問題を企画・執筆しています。</td>
+            </tr>
+            <tr>
+              <th>連絡先</th>
+              <td><a href="/contact">お問い合わせフォーム</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="about-section" id="operator-info">
       <h3><img src="/icons/news-icon.png" alt="運営者情報" class="section-icon" /> 運営者情報</h3>
       <div class="operator-info">
         <table class="info-table">
