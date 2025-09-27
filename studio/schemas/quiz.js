@@ -21,11 +21,28 @@ export default {
 
     // ── 問題 ─────────────────────────────
     {
-      name: 'mainImage',
+      name: 'problemImage',
       title: '問題画像',
+      description: '一覧や詳細ページに表示される問題画像です。',
       type: 'image',
       options: { hotspot: true },
-      validation: (Rule) => Rule.required()
+      validation: (Rule) =>
+        Rule.custom((value, context) => {
+          if (value?.asset?._ref) return true;
+          if (context?.parent?.mainImage?.asset?._ref) {
+            return true;
+          }
+          return '問題画像を設定してください。';
+        })
+    },
+    {
+      name: 'mainImage',
+      title: '旧：問題画像',
+      description: '既存データ互換用のフィールドです。新規では問題画像を利用してください。',
+      type: 'image',
+      options: { hotspot: true },
+      readOnly: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
+      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref)
     },
     {
       name: 'problemDescription',
@@ -132,7 +149,7 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required()
     }
   ]
 }

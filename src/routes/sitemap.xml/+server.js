@@ -79,15 +79,15 @@ export const GET = async () => {
   });
 
   quizzes.forEach((quiz) => {
-    const categorySlug = quiz?.category?.slug;
-    if (!categorySlug || !quiz?.slug) return;
+    const slug = quiz?.slug;
+    if (!slug) return;
     const lastmod = toIsoString(quiz._updatedAt ?? quiz._createdAt);
-    addEntry(`/quiz/${categorySlug}/${quiz.slug}`, {
+    addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',
       lastmod
     });
-    addEntry(`/quiz/${categorySlug}/${quiz.slug}/answer`, {
+    addEntry(`/quiz/${slug}/answer`, {
       changefreq: 'weekly',
       priority: '0.6',
       lastmod

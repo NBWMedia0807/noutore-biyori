@@ -30,20 +30,27 @@
     return [value];
   }
 
-  $: mainImageFallback = quiz?.mainImage?.asset?.url || '';
-  $: mainImageSource = quiz?.mainImage?.asset?._ref ? quiz.mainImage : mainImageFallback;
-  $: mainImageSet = mainImageSource
-    ? createSanityImageSet(mainImageSource, {
+  const FALLBACK_IMAGE = '/logo.svg';
+
+  $: heroImageFallback =
+    quiz?.problemImage?.asset?.url || quiz?.mainImage?.asset?.url || FALLBACK_IMAGE;
+  $: heroImageSource = quiz?.problemImage?.asset?._ref
+    ? quiz.problemImage
+    : quiz?.mainImage?.asset?._ref
+      ? quiz.mainImage
+      : null;
+  $: heroImageSet = heroImageSource
+    ? createSanityImageSet(heroImageSource, {
         width: 960,
         height: 540,
         quality: 80,
-        fallbackUrl: mainImageFallback
+        fallbackUrl: heroImageFallback
       })
-    : null;
+    : heroImageFallback
+      ? { src: heroImageFallback }
+      : null;
 
-  $: hintTexts = [
-    ...normalizePortableArray(quiz?.hints)
-  ]
+  $: hintTexts = normalizePortableArray(quiz?.hints)
     .map((entry) => textOrPortable(entry)?.trim())
     .filter(Boolean);
 </script>
@@ -52,19 +59,18 @@
   <Breadcrumbs items={breadcrumbs} />
   <h1 style="text-align:center;margin-top:0;">{quiz.title}</h1>
 
-  <!-- 問題画像 -->
-  {#if mainImageSet?.src}
+  {#if heroImageSet?.src}
     <div style="text-align:center;margin:16px 0;">
       <picture>
-        {#if mainImageSet.avifSrcset}
-          <source srcset={mainImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+        {#if heroImageSet.avifSrcset}
+          <source srcset={heroImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
         {/if}
-        {#if mainImageSet.webpSrcset}
-          <source srcset={mainImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+        {#if heroImageSet.webpSrcset}
+          <source srcset={heroImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
         {/if}
         <img
-          src={mainImageSet.src}
-          srcset={mainImageSet.srcset}
+          src={heroImageSet.src}
+          srcset={heroImageSet.srcset}
           sizes="(min-width: 768px) 720px, 100vw"
           alt={quiz.title}
           loading="eager"
@@ -78,7 +84,6 @@
     </div>
   {/if}
 
-  <!-- 問題説明 -->
   {#if textOrPortable(quiz.problemDescription)}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">問題の補足</h2>
@@ -86,7 +91,6 @@
     </section>
   {/if}
 
-  <!-- ヒント -->
   {#if hintTexts.length}
     <section style="margin:16px 0;">
       <h2 style="font-size:1.25rem;margin:.5rem 0;">ヒント</h2>
@@ -98,9 +102,7 @@
     </section>
   {/if}
 
-  <!-- 正解ページへの誘導 -->
   <div style="text-align:center;margin:24px 0;">
-    <a href={`/quiz/${quiz.category?.slug}/${quiz.slug}/answer`} style="display:inline-block;background:#ffc107;color:#856404;text-decoration:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;">正解を見る →</a>
+    <a href={`/quiz/${quiz.slug}/answer`} style="display:inline-block;background:#ffc107;color:#856404;text-decoration:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;">正解を見る →</a>
   </div>
-
 </main>

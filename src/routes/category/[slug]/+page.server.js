@@ -15,7 +15,7 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
-*[_type == "quiz" && (
+*[_type == "quiz" && defined(slug.current) && (
   (defined(category._ref) && category->slug.current == $slug) ||
   (!defined(category._ref) && defined(category.slug.current) && category.slug.current == $slug) ||
   (!defined(category._ref) && defined(category) && (category == $categoryTitle || category == $slug)) ||
@@ -27,8 +27,18 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
   "slug": slug.current,
   category->{ _id, title, "slug": slug.current },
   category,
-  mainImage{ asset->{ url, metadata } },
-  answerImage{ asset->{ url, metadata } }
+  mainImage{
+    ..., 
+    asset->{ url, metadata }
+  },
+  answerImage{
+    ..., 
+    asset->{ url, metadata }
+  },
+  problemImage{
+    ..., 
+    asset->{ url, metadata }
+  }
 }`;
 
 export const entries = async () => {
@@ -90,6 +100,9 @@ export const load = async (event) => {
       categoryTitle: category.title,
       categoryMatch: `*${category.title}*`
     });
+    const normalizedQuizzes = Array.isArray(quizzes)
+      ? quizzes.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
+      : [];
 
     const description = createCategoryDescription(category.title, category.description);
     const breadcrumbs = [{ name: category.title, url: url.pathname }];
@@ -102,7 +115,7 @@ export const load = async (event) => {
 
     return {
       category,
-      quizzes: quizzes ?? [],
+      quizzes: normalizedQuizzes,
       seo
     };
   } catch (err) {
