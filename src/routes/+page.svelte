@@ -6,14 +6,27 @@
   let visibleQuizzes = [];
 
   $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
-  $: visibleQuizzes = quizzes.filter((quiz) => quiz?.category?.slug && quiz?.slug);
+  const FALLBACK_IMAGE = '/logo.svg';
+
+  $: visibleQuizzes = quizzes.filter((quiz) => quiz?.slug);
 
   function getImageSet(quiz) {
     if (!quiz) return null;
-    const fallback = quiz.thumbnailUrl || quiz.mainImage?.asset?.url || '';
-    const source = quiz.mainImage?.asset?._ref ? quiz.mainImage : fallback;
-    if (!source && !fallback) return null;
-    return createSanityImageSet(source, { width: 600, height: 360, fallbackUrl: fallback, quality: 75 });
+    const fallback =
+      quiz.problemImage?.asset?.url || quiz.mainImage?.asset?.url || quiz.thumbnailUrl || FALLBACK_IMAGE;
+    const source = quiz.problemImage?.asset?._ref
+      ? quiz.problemImage
+      : quiz.mainImage?.asset?._ref
+        ? quiz.mainImage
+        : null;
+    const builderSource = source ?? fallback;
+    if (!builderSource && !fallback) return null;
+    return createSanityImageSet(builderSource, {
+      width: 600,
+      height: 360,
+      fallbackUrl: fallback || FALLBACK_IMAGE,
+      quality: 75
+    });
   }
 </script>
 
@@ -26,7 +39,7 @@
     {#each visibleQuizzes as q}
       {@const image = getImageSet(q)}
       <a
-        href={`/quiz/${q.category.slug}/${q.slug}`}
+        href={`/quiz/${q.slug}`}
         style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;"
       >
         {#if image?.src}

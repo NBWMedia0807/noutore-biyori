@@ -5,27 +5,25 @@ import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
 const QUIZ_SLUGS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current)]{
-  "slug": slug.current,
-  "category": select(
-    defined(category._ref) => category->slug.current,
-    defined(category.slug.current) => category.slug.current,
-    defined(category) => category,
-    null
-  )
+  "slug": slug.current
 }`;
 
-const QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && (
-  (defined(category._ref) && category->slug.current == $category) ||
-  (!defined(category._ref) && category == $category)
-)][0]{
+const QUIZ_QUERY = /* groq */ `
+*[_type == "quiz" && slug.current == $slug][0]{
   _id,
   _createdAt,
   _updatedAt,
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  mainImage{ asset->{ url, metadata } },
+  mainImage{
+    ..., 
+    asset->{ url, metadata }
+  },
+  problemImage{
+    ..., 
+    asset->{ url, metadata }
+  },
   problemDescription,
   "hints": select(
     defined(hints) => hints,
@@ -46,31 +44,26 @@ export const entries = async () => {
     if (!Array.isArray(slugs)) return [];
     const seen = new Set();
     return slugs
-      .filter((item) => item?.slug && item?.category)
-      .map((item) => {
-        const key = `${item.category}__${item.slug}`;
-        if (seen.has(key)) return null;
-        seen.add(key);
-        return { category: item.category, slug: item.slug };
+      .map((item) => item?.slug)
+      .filter(Boolean)
+      .filter((slug) => {
+        if (seen.has(slug)) return false;
+        seen.add(slug);
+        return true;
       })
-      .filter(Boolean);
+      .map((slug) => ({ slug }));
   } catch (err) {
-    console.error('[quiz detail] Failed to build prerender entries', err);
+    console.error('[quiz slug] Failed to build prerender entries', err);
     return [];
   }
 };
 
-const buildFallback = (category, slug, path) => {
-  const fallbackCategorySlug = category ?? '';
-  const fallbackCategoryTitle = fallbackCategorySlug ? fallbackCategorySlug.replace(/-/g, ' ') : 'クイズ';
-  const fallbackTitle = slug ? slug.replace(/-/g, ' ') : 'クイズ詳細';
-  const breadcrumbs = [{ name: 'クイズ一覧', url: '/quiz' }];
-  if (fallbackCategorySlug) {
-    breadcrumbs.push({ name: fallbackCategoryTitle, url: `/quiz/${fallbackCategorySlug}` });
-  }
-  breadcrumbs.push({ name: fallbackTitle, url: path });
-
+const buildFallback = (slug, path) => {
+  const fallbackSlug = slug ?? '';
+  const fallbackTitle = fallbackSlug ? fallbackSlug.replace(/-/g, ' ') : 'クイズ詳細';
+  const breadcrumbs = [{ name: 'クイズ一覧', url: '/quiz' }, { name: fallbackTitle, url: path }];
   const description = `${fallbackTitle}のクイズ詳細ページです。`;
+
   const seo = {
     ...createPageSeo({
       title: fallbackTitle,
@@ -82,7 +75,7 @@ const buildFallback = (category, slug, path) => {
       article: {
         title: fallbackTitle,
         authorName: SITE.organization.name,
-        category: fallbackCategoryTitle
+        category: 'クイズ'
       }
     }),
     imageAlt: fallbackTitle
@@ -90,48 +83,57 @@ const buildFallback = (category, slug, path) => {
 
   return {
     quiz: {
-      _id: `${fallbackCategorySlug || 'category'}-${slug || 'quiz'}`,
+      _id: fallbackSlug || 'quiz',
       title: fallbackTitle,
-      slug,
-      category: {
-        title: fallbackCategoryTitle,
-        slug: fallbackCategorySlug
-      },
+      slug: fallbackSlug,
+      category: null,
+      problemImage: null,
       mainImage: null,
       problemDescription: '',
-      hints: []
+      hints: [],
+      adCode1: '',
+      adCode2: ''
     },
-    __dataSource: 'fallback',
     breadcrumbs,
-    seo
+    seo,
+    __dataSource: 'fallback'
   };
 };
 
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
-  const { category, slug } = params;
+  const { slug } = params;
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
+  if (!slug) {
+    return buildFallback('', url.pathname);
+  }
+
   if (shouldSkipSanityFetch()) {
-    return buildFallback(category, slug, url.pathname);
+    return buildFallback(slug, url.pathname);
   }
 
   try {
-    const doc = await client.fetch(QUERY, { category, slug });
-    if (!doc) throw error(404, 'Not found');
+    const doc = await client.fetch(QUIZ_QUERY, { slug });
+
+    if (!doc) {
+      throw error(404, 'Not found');
+    }
 
     const descriptionSource = portableTextToPlain(doc.problemDescription) || doc.title;
     const description = descriptionSource.length > 120 ? `${descriptionSource.slice(0, 117)}…` : descriptionSource;
+
     const OG_IMAGE_WIDTH = 1200;
     const OG_IMAGE_HEIGHT = 630;
     let resolvedImage = null;
 
-    if (doc.mainImage) {
+    const heroImage = doc.problemImage ?? doc.mainImage;
+    if (heroImage) {
       try {
-        resolvedImage = urlFor(doc.mainImage).width(OG_IMAGE_WIDTH).height(OG_IMAGE_HEIGHT).fit('crop').auto('format').url();
+        resolvedImage = urlFor(heroImage).width(OG_IMAGE_WIDTH).height(OG_IMAGE_HEIGHT).fit('crop').auto('format').url();
       } catch (err) {
         console.error('[quiz slug] failed to build og:image URL', err);
       }
@@ -158,18 +160,18 @@ export const load = async (event) => {
           datePublished: doc._createdAt,
           dateModified: doc._updatedAt ?? doc._createdAt,
           authorName: SITE.organization.name,
-          category: doc.category?.title
+          category: doc.category?.title ?? 'クイズ'
         }
       }),
       imageAlt: doc.title
     };
 
-    return { quiz: doc, __dataSource: 'sanity', breadcrumbs, seo };
+    return { quiz: doc, breadcrumbs, seo, __dataSource: 'sanity' };
   } catch (err) {
     if (err?.status === 404) {
       throw err;
     }
-    console.error(`[quiz detail:${category}/${slug}] Sanity fetch failed`, err);
-    return buildFallback(category, slug, url.pathname);
+    console.error(`[quiz/${slug}] Sanity fetch failed`, err);
+    return buildFallback(slug, url.pathname);
   }
 };

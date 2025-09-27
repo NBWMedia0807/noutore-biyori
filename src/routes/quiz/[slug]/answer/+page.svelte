@@ -8,21 +8,23 @@
   const FALLBACK_CLOSING_MESSAGE =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
-  function renderPT(content){
+  function renderPT(content) {
     if (!content) return '';
     if (typeof content === 'string') return content;
     if (content?._type === 'block') return renderPT([content]);
-    if (Array.isArray(content)){
+    if (Array.isArray(content)) {
       return content
-        .filter(b=>b?._type==='block')
-        .map(b=> b.children?.filter(c=>c?._type==='span')?.map(c=>c.text).join('') || '')
+        .filter((b) => b?._type === 'block')
+        .map((b) => b?.children?.filter((c) => c?._type === 'span')?.map((c) => c.text).join('') || '')
         .join('\n');
     }
     return '';
   }
 
-  $: answerFallback = quiz?.answerImage?.asset?.url || '';
-  $: answerSource = quiz?.answerImage?.asset?._ref ? quiz.answerImage : answerFallback;
+  const FALLBACK_IMAGE = '/logo.svg';
+
+  $: answerFallback = quiz?.answerImage?.asset?.url || FALLBACK_IMAGE;
+  $: answerSource = quiz?.answerImage?.asset?._ref ? quiz.answerImage : null;
   $: answerImageSet = answerSource
     ? createSanityImageSet(answerSource, {
         width: 960,
@@ -30,7 +32,7 @@
         quality: 80,
         fallbackUrl: answerFallback
       })
-    : null;
+    : { src: answerFallback };
 
   $: closingText =
     renderPT(quiz?.closingMessage) ||
@@ -54,7 +56,7 @@
           src={answerImageSet.src}
           srcset={answerImageSet.srcset}
           sizes="(min-width: 768px) 720px, 100vw"
-          alt="正解画像"
+          alt={`${quiz.title}の正解画像`}
           loading="lazy"
           decoding="async"
           width="960"
@@ -79,7 +81,7 @@
 
   <div style="text-align:center;margin:24px 0;">
     <a
-      href={`/quiz/${quiz.category?.slug}/${quiz.slug}`}
+      href={`/quiz/${quiz.slug}`}
       style="display:inline-block;background:#ffc107;color:#856404;text-decoration:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;"
     >
       ← 問題に戻る

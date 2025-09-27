@@ -24,10 +24,22 @@
 
   import { urlFor } from '$lib/sanityPublic.js';
 
-  function getImageUrl(image) {
-    if (!image || !image.asset) return '';
-    if (image.asset.url) return image.asset.url;
-    try { return urlFor(image).width(600).height(360).fit('crop').url(); } catch { return ''; }
+  const FALLBACK_IMAGE = '/logo.svg';
+
+  function resolveImage(quiz) {
+    if (!quiz) return FALLBACK_IMAGE;
+    const candidate = quiz.problemImage || quiz.mainImage || quiz.answerImage;
+    if (!candidate) return FALLBACK_IMAGE;
+    if (candidate.asset?.url) return candidate.asset.url;
+    if (candidate.asset?._ref) {
+      try {
+        return urlFor(candidate).width(600).height(360).fit('crop').auto('format').url();
+      } catch (error) {
+        console.error('[category/+page] Failed to build image URL', error);
+        return FALLBACK_IMAGE;
+      }
+    }
+    return FALLBACK_IMAGE;
   }
 </script>
 
@@ -52,11 +64,9 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href={`/quiz/${slug}/${quiz.slug}`} class="quiz-link">
+          <a href={`/quiz/${quiz.slug}`} class="quiz-link">
             <div class="quiz-image">
-              {#if getImageUrl(quiz.mainImage || quiz.answerImage)}
-                <img src="{getImageUrl(quiz.mainImage || quiz.answerImage)}" alt="{quiz.title}" class="quiz-img" loading="lazy" />
-              {/if}
+              <img src={resolveImage(quiz)} alt={quiz.title || 'クイズ画像'} class="quiz-img" loading="lazy" />
               <div class="quiz-category">{quiz.category?.title ?? categoryTitle}</div>
             </div>
             <div class="quiz-content">

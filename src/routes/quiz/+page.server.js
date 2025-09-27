@@ -2,12 +2,19 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
 
 const QUIZZES_QUERY = /* groq */ `
-*[_type == "quiz"] | order(_createdAt desc) {
+*[_type == "quiz" && defined(slug.current)] | order(_createdAt desc) {
   _id,
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  mainImage{ asset->{ url, metadata } },
+  mainImage{
+    ...,
+    asset->{ url, metadata }
+  },
+  problemImage{
+    ...,
+    asset->{ url, metadata }
+  },
   problemDescription
 }`;
 
@@ -33,7 +40,9 @@ export const load = async (event) => {
 
   try {
     const result = await client.fetch(QUIZZES_QUERY);
-    const quizzes = Array.isArray(result) ? result.filter(Boolean) : [];
+    const quizzes = Array.isArray(result)
+      ? result.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
+      : [];
 
     return { quizzes, seo: createQuizListSeo(url.pathname) };
   } catch (error) {

@@ -3,13 +3,25 @@
   import { createSanityImageSet } from '$lib/utils/images.js';
 
   const { quizzes } = data;
+  const FALLBACK_IMAGE = '/logo.svg';
 
   function getImageSet(quiz) {
     if (!quiz) return null;
-    const fallback = quiz.mainImage?.asset?.url || '';
-    const source = quiz.mainImage?.asset?._ref ? quiz.mainImage : fallback;
-    if (!source && !fallback) return null;
-    return createSanityImageSet(source, { width: 640, height: 360, quality: 75, fallbackUrl: fallback });
+    const fallback =
+      quiz.problemImage?.asset?.url || quiz.mainImage?.asset?.url || FALLBACK_IMAGE;
+    const source = quiz.problemImage?.asset?._ref
+      ? quiz.problemImage
+      : quiz.mainImage?.asset?._ref
+        ? quiz.mainImage
+        : null;
+    const builderSource = source ?? fallback;
+    if (!builderSource && !fallback) return null;
+    return createSanityImageSet(builderSource, {
+      width: 640,
+      height: 360,
+      quality: 75,
+      fallbackUrl: fallback || FALLBACK_IMAGE
+    });
   }
 </script>
 
