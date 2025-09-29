@@ -2,6 +2,8 @@ import { error } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createCategoryDescription, createPageSeo } from '$lib/seo.js';
 
+export const prerender = false;
+
 const CATEGORY_SLUGS_QUERY = /* groq */ `
 *[_type == "category" && defined(slug.current)]{
   "slug": slug.current

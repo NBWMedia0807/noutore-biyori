@@ -1,7 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { createSlugQueryPayload } from '$lib/utils/slug.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
+
+export const prerender = false;
 
 const QUIZ_SLUGS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current)]{
@@ -9,7 +12,11 @@ const QUIZ_SLUGS_QUERY = /* groq */ `
 }`;
 
 const QUERY = /* groq */ `
-*[_type=='quiz' && slug.current==$slug][0]{
+*[_type=='quiz' && (
+  slug.current in $slugCandidates ||
+  lower(slug.current) in $lowerSlugCandidates ||
+  _id in $slugCandidates
+)][0]{
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
@@ -93,21 +100,26 @@ export const entries = async () => {
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
   const { slug } = params;
+  const { candidates: slugCandidates, lowerCandidates: lowerSlugCandidates } = createSlugQueryPayload(slug);
+  const primarySlug = slugCandidates[0] ?? '';
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
-  if (!slug) {
+  if (!slugCandidates.length) {
     return buildFallback('', url.pathname);
   }
 
   if (shouldSkipSanityFetch()) {
-    return buildFallback(slug, url.pathname);
+    return buildFallback(primarySlug, url.pathname);
   }
 
   try {
-    const doc = await client.fetch(QUERY, { slug });
+    const doc = await client.fetch(QUERY, {
+      slugCandidates,
+      lowerSlugCandidates
+    });
     if (!doc) {
       throw error(404, 'Not found');
     }
@@ -158,6 +170,6 @@ export const load = async (event) => {
       throw err;
     }
     console.error(`[quiz/${slug}/answer] Sanity fetch failed`, err);
-    return buildFallback(slug, url.pathname);
+    return buildFallback(primarySlug, url.pathname);
   }
 };
