@@ -8,11 +8,11 @@ import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 export const prerender = false;
 
 const QUIZ_IDS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(_id)]{ _id }
+*[_type == "quiz" && defined(_id) && !(_id in path("drafts.**"))]{ _id }
 `;
 
 const Q = /* groq */ `
-*[_type == "quiz" && _id == $id][0]{
+*[_type == "quiz" && _id == $id && !(_id in path("drafts.**"))][0]{
   _id,
   title,
   "slug": slug.current,

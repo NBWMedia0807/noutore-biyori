@@ -1,7 +1,7 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 
 const CATEGORY_QUERY = /* groq */ `
-*[_type == "category" && defined(slug.current)] | order(title asc) {
+*[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))] | order(title asc) {
   title,
   "slug": slug.current
 }`;

@@ -1,23 +1,19 @@
 import { error } from '@sveltejs/kit';
 import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { createSlugQueryPayload, mergeSlugCandidateLists } from '$lib/utils/slug.js';
+import { createSlugQueryPayload } from '$lib/utils/slug.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
 export const prerender = false;
 
 const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current)]{
+*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
   _id,
   "slug": slug.current
 }`;
 
-const QUIZ_QUERY = /* groq */ `
-*[_type == "quiz" && (
-  slug.current in $slugCandidates ||
-  lower(slug.current) in $lowerSlugCandidates ||
-  _id in $slugCandidates
-)][0]{
+const QUIZ_BY_SLUG_QUERY = /* groq */ `
+*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
   _id,
   _createdAt,
   _updatedAt,
@@ -66,6 +62,16 @@ export const entries = async () => {
   }
 };
 
+const fetchQuizBySlug = async (slug) => {
+  if (!slug) return null;
+  try {
+    return await client.fetch(QUIZ_BY_SLUG_QUERY, { slug });
+  } catch (err) {
+    console.error(`[quiz slug:${slug}] Failed to fetch quiz by slug`, err);
+    return null;
+  }
+};
+
 const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
   try {
     const catalog = await client.fetch(QUIZ_SLUGS_QUERY);
@@ -78,14 +84,19 @@ const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
 
     for (const entry of catalog) {
       const candidateSlug = entry?.slug;
-      if (!candidateSlug) continue;
-      const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } = createSlugQueryPayload(
-        candidateSlug
-      );
+      const candidateId = entry?._id;
+      if (candidateId && slugCandidateSet.has(candidateId)) {
+        return candidateSlug ?? null;
+      }
+
+      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
+
+      const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } =
+        createSlugQueryPayload(candidateSlug);
       const hasDirectOverlap = entryCandidates.some((value) => slugCandidateSet.has(value));
       const hasLowerOverlap = entryLowerCandidates.some((value) => lowerCandidateSet.has(value));
       if (hasDirectOverlap || hasLowerOverlap) {
-        return { slug: candidateSlug, id: entry?._id };
+        return candidateSlug;
       }
     }
   } catch (fallbackError) {
@@ -157,30 +168,12 @@ export const load = async (event) => {
   }
 
   try {
-    let doc = await client.fetch(QUIZ_QUERY, {
-      slugCandidates,
-      lowerSlugCandidates
-    });
+    let doc = await fetchQuizBySlug(primarySlug);
 
     if (!doc) {
-      const resolved = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
-      if (resolved?.slug) {
-        const resolvedPayload = createSlugQueryPayload(resolved.slug);
-        const nextSlugCandidates = mergeSlugCandidateLists(
-          slugCandidates,
-          resolvedPayload.candidates,
-          [resolved.slug],
-          resolved?.id ? [resolved.id] : []
-        );
-        const nextLowerCandidates = mergeSlugCandidateLists(
-          lowerSlugCandidates,
-          resolvedPayload.lowerCandidates
-        );
-
-        doc = await client.fetch(QUIZ_QUERY, {
-          slugCandidates: nextSlugCandidates,
-          lowerSlugCandidates: nextLowerCandidates
-        });
+      const resolvedSlug = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
+      if (resolvedSlug && resolvedSlug !== primarySlug) {
+        doc = await fetchQuizBySlug(resolvedSlug);
       }
     }
 
