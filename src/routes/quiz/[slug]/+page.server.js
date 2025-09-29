@@ -8,6 +8,10 @@ export const prerender = false;
 
 const QUIZ_SLUGS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
+codex/review-implementation-against-ideal-state-ilxcca
+  _id,
+
+main
   "slug": slug.current
 }`;
 
@@ -83,7 +87,17 @@ const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
 
     for (const entry of catalog) {
       const candidateSlug = entry?.slug;
+codex/review-implementation-against-ideal-state-ilxcca
+      const candidateId = entry?._id;
+      if (candidateId && slugCandidateSet.has(candidateId)) {
+        return candidateSlug ?? null;
+      }
+
       if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
+
+
+      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
+main
       const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } =
         createSlugQueryPayload(candidateSlug);
       const hasDirectOverlap = entryCandidates.some((value) => slugCandidateSet.has(value));
