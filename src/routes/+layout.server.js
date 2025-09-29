@@ -1,7 +1,8 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = { runtime: 'nodejs18.x' };
+export const config = vercelNodeConfig;
 
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))] | order(title asc) {

@@ -1,9 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
 import { createSlugContext, findQuizDocument, QUIZ_DIAGNOSTIC_QUERY } from '$lib/server/quiz.js';
+import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = { runtime: 'nodejs18.x' };
+export const config = vercelNodeConfig;
 
 export const GET = async ({ params }) => {
   const slugContext = createSlugContext(params.slug ?? '');

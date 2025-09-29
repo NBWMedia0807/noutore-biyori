@@ -3,9 +3,10 @@ import { urlFor, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js'
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { createSlugContext, findQuizDocument, QUIZ_DETAIL_QUERY } from '$lib/server/quiz.js';
+import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = { runtime: 'nodejs18.x' };
+export const config = vercelNodeConfig;
 
 const buildFallback = (slug, path) => {
   const fallbackSlug = slug ?? '';

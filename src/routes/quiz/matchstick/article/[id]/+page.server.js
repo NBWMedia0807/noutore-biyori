@@ -4,9 +4,10 @@ import { error } from '@sveltejs/kit';
 import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = { runtime: 'nodejs18.x' };
+export const config = vercelNodeConfig;
 
 const QUIZ_IDS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(_id) && !(_id in path("drafts.**"))]{ _id }
