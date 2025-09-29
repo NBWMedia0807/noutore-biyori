@@ -2,10 +2,9 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo } from '$lib/seo.js';
-import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = vercelNodeConfig;
+export const config = { runtime: 'node' };
 
 const QUIZZES_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_createdAt desc) {

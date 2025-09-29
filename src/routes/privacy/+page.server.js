@@ -1,8 +1,7 @@
 import { createPageSeo } from '$lib/seo.js';
-import { vercelNodeConfig } from '$lib/server/runtime.js';
 
 export const prerender = false;
-export const config = vercelNodeConfig;
+export const config = { runtime: 'node' };
 
 export const load = (event) => {
   const { url, setHeaders, isDataRequest } = event;

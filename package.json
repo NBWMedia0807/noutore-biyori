@@ -35,6 +35,11 @@
     "@sveltejs/adapter-vercel": "5.10.2"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
