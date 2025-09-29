@@ -10,11 +10,11 @@ const STATIC_ROUTES = [
 ];
 
 const QUERY = /* groq */ `{
-  "categories": *[_type == "category" && defined(slug.current)] | order(_updatedAt desc) {
+  "categories": *[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
     "slug": slug.current,
     _updatedAt
   },
-  "quizzes": *[_type == "quiz" && defined(slug.current)] | order(_updatedAt desc) {
+  "quizzes": *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
     "slug": slug.current,
     _updatedAt,
     _createdAt,

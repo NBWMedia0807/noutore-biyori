@@ -3,7 +3,7 @@ import { client } from './sanity.server.js';
 
 export async function fetchAllQuizzes() {
   const query = /* groq */ `
-    *[_type == "quiz"] | order(_createdAt desc) {
+    *[_type == "quiz" && !(_id in path("drafts.**"))] | order(_createdAt desc) {
       _id,
       title,
       "slug": slug.current,
@@ -25,7 +25,7 @@ export async function fetchAllQuizzes() {
 
 export async function fetchQuizBySlug(slug) {
   const query = /* groq */ `
-    *[_type == "quiz" && (slug.current == $slug || _id == $slug)][0]{
+    *[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
       _id,
       title,
       "slug": slug.current,
@@ -53,7 +53,7 @@ export async function fetchQuizBySlug(slug) {
 
 export async function fetchQuizzesByCategory(category) {
   const query = /* groq */ `
-    *[_type == "quiz" && ((defined(category._ref) && category->title == $category) || (!defined(category._ref) && category == $category))] | order(_createdAt desc) {
+    *[_type == "quiz" && !(_id in path("drafts.**")) && ((defined(category._ref) && category->title == $category) || (!defined(category._ref) && category == $category))] | order(_createdAt desc) {
       _id,
       title,
       "slug": slug.current,

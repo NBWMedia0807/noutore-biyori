@@ -5,19 +5,19 @@ import { createCategoryDescription, createPageSeo } from '$lib/seo.js';
 export const prerender = false;
 
 const CATEGORY_SLUGS_QUERY = /* groq */ `
-*[_type == "category" && defined(slug.current)]{
+*[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))]{
   "slug": slug.current
 }`;
 
 const CATEGORY_QUERY = /* groq */ `
-*[_type == "category" && slug.current == $slug][0]{
+*[_type == "category" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
   title,
   "slug": slug.current,
   description
 }`;
 
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && (
+*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**")) && (
   (defined(category._ref) && category->slug.current == $slug) ||
   (!defined(category._ref) && defined(category.slug.current) && category.slug.current == $slug) ||
   (!defined(category._ref) && defined(category) && (category == $categoryTitle || category == $slug)) ||
