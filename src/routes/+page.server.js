@@ -3,6 +3,8 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo } from '$lib/seo.js';
 
+export const prerender = false;
+
 const QUIZZES_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current)] | order(_createdAt desc) {
   _id,

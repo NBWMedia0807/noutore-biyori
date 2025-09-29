@@ -1,7 +1,5 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 
-export const prerender = true;
-
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && defined(slug.current)] | order(title asc) {
   title,
