@@ -5,7 +5,7 @@ import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
 export const prerender = false;
-export const config = { runtime: 'node' };
+export const config = { runtime: 'nodejs18.x' };
 
 const QUIZ_SLUGS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{

@@ -3,7 +3,7 @@ import { createClient } from '@sanity/client';
 import { env } from '$env/dynamic/private';
 
 export const prerender = false;
-export const config = { runtime: 'node' };
+export const config = { runtime: 'nodejs18.x' };
 
 const projectId = env.SANITY_PROJECT_ID || 'quljge22';
 const dataset = env.SANITY_DATASET || 'production';
