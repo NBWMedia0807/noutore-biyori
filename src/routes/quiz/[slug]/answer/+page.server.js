@@ -1,10 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-codex/fix-404-error-on-article-page-migngy
 import { createSlugQueryPayload, mergeSlugCandidateLists } from '$lib/utils/slug.js';
-
-import { createSlugQueryPayload } from '$lib/utils/slug.js';
-main
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
@@ -150,11 +146,11 @@ export const load = async (event) => {
   }
 
   try {
-codex/fix-404-error-on-article-page-migngy
     let doc = await client.fetch(QUERY, {
       slugCandidates,
       lowerSlugCandidates
     });
+
     if (!doc) {
       const resolved = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
       if (resolved?.slug) {
@@ -163,7 +159,7 @@ codex/fix-404-error-on-article-page-migngy
           slugCandidates,
           resolvedPayload.candidates,
           [resolved.slug],
-          [resolved.id]
+          resolved?.id ? [resolved.id] : []
         );
         const nextLowerCandidates = mergeSlugCandidateLists(
           lowerSlugCandidates,
@@ -177,11 +173,6 @@ codex/fix-404-error-on-article-page-migngy
       }
     }
 
-    const doc = await client.fetch(QUERY, {
-      slugCandidates,
-      lowerSlugCandidates
-    });
-main
     if (!doc) {
       throw error(404, 'Not found');
     }
