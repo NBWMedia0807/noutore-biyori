@@ -51,6 +51,7 @@ export const createSlugQueryPayload = (value) => {
   const lowerCandidates = unique(candidates.map((entry) => entry.toLowerCase()));
   return { candidates, lowerCandidates };
 };
+codex/fix-404-error-on-article-page-migngy
 
 export const mergeSlugCandidateLists = (...lists) => {
   const seen = new Set();
@@ -68,3 +69,5 @@ export const mergeSlugCandidateLists = (...lists) => {
   }
   return merged;
 };
+
+main

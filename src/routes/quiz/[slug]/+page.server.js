@@ -1,6 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+codex/fix-404-error-on-article-page-migngy
 import { createSlugQueryPayload, mergeSlugCandidateLists } from '$lib/utils/slug.js';
+
+import { createSlugQueryPayload } from '$lib/utils/slug.js';
+main
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
@@ -157,6 +161,7 @@ export const load = async (event) => {
   }
 
   try {
+codex/fix-404-error-on-article-page-migngy
     let doc = await client.fetch(QUIZ_QUERY, {
       slugCandidates,
       lowerSlugCandidates
@@ -183,6 +188,12 @@ export const load = async (event) => {
         });
       }
     }
+
+    const doc = await client.fetch(QUIZ_QUERY, {
+      slugCandidates,
+      lowerSlugCandidates
+    });
+main
 
     if (!doc) {
       throw error(404, 'Not found');
