@@ -8,7 +8,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo \"no tests yet\" && exit 0",
+    "test": "node --test tests/quiz-pages.test.mjs",
+    "test:quiz": "node --test tests/quiz-pages.test.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check ."
   },

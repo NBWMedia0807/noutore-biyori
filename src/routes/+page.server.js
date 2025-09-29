@@ -4,6 +4,7 @@ import { SITE } from '$lib/config/site.js';
 import { createPageSeo } from '$lib/seo.js';
 
 export const prerender = false;
+export const config = { runtime: 'node' };
 
 const QUIZZES_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_createdAt desc) {
@@ -12,11 +13,11 @@ const QUIZZES_QUERY = /* groq */ `
   "slug": slug.current,
   category->{ _id, title, "slug": slug.current },
   mainImage{
-    ..., 
+    ...,
     asset->{ url, metadata }
   },
   problemImage{
-    ..., 
+    ...,
     asset->{ url, metadata }
   },
   // SSR用のサムネイルURL（asset参照がない場合の保険）
