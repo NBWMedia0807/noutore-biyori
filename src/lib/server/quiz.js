@@ -1,4 +1,4 @@
-import { client } from '$lib/sanity.server.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createSlugQueryPayload } from '$lib/utils/slug.js';
 import {
   isQuizStubEnabled,
@@ -107,14 +107,19 @@ export const createSlugContext = (rawSlug) => {
 
 export const fetchQuizCatalog = async (logPrefix = 'quiz catalog') => {
   let catalog = [];
+  const skipSanity = shouldSkipSanityFetch();
 
-  try {
-    const result = await client.fetch(QUIZ_SLUGS_QUERY);
-    if (Array.isArray(result)) {
-      catalog = result.filter((entry) => typeof entry?.slug === 'string' && entry.slug.length > 0);
+  if (!skipSanity) {
+    try {
+      const result = await client.fetch(QUIZ_SLUGS_QUERY);
+      if (Array.isArray(result)) {
+        catalog = result.filter((entry) => typeof entry?.slug === 'string' && entry.slug.length > 0);
+      }
+    } catch (error) {
+      console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz catalog`, error);
     }
-  } catch (error) {
-    console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz catalog`, error);
+  } else {
+    console.info(`${formatPrefix(logPrefix)} SKIP_SANITY active; using stub catalog only`);
   }
 
   if (isQuizStubEnabled()) {
@@ -131,13 +136,19 @@ export const fetchQuizCatalog = async (logPrefix = 'quiz catalog') => {
 
 export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
   if (!slug) return null;
-  try {
-    const doc = await client.fetch(query, { slug });
-    if (doc) {
-      return doc;
+  const skipSanity = shouldSkipSanityFetch();
+
+  if (!skipSanity) {
+    try {
+      const doc = await client.fetch(query, { slug });
+      if (doc) {
+        return doc;
+      }
+    } catch (error) {
+      console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz by slug:${slug}`, error);
     }
-  } catch (error) {
-    console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz by slug:${slug}`, error);
+  } else {
+    console.info(`${formatPrefix(logPrefix)} SKIP_SANITY active; skipping Sanity fetch for slug:${slug}`);
   }
 
   if (isQuizStubEnabled()) {

@@ -34,18 +34,9 @@ export const GET = async ({ url }) => {
     );
   }
 
-  if (shouldSkipSanityFetch()) {
-    console.warn('[api/debug/sanity] SKIP_SANITY active; cannot query Sanity');
-    return json(
-      {
-        slug: rawSlug,
-        normalizedSlug,
-        resolvedSlug: null,
-        hit: false,
-        reason: 'SKIP_SANITY'
-      },
-      { status: 503 }
-    );
+  const skipSanity = shouldSkipSanityFetch();
+  if (skipSanity) {
+    console.warn('[api/debug/sanity] SKIP_SANITY active; using stub/catalog fallback');
   }
 
   const { doc, resolvedSlug } = await findQuizDocument({
@@ -56,14 +47,16 @@ export const GET = async ({ url }) => {
 
   if (!doc) {
     console.warn('[api/debug/sanity] 0件', { slugCandidates });
+    const status = skipSanity ? 503 : 404;
     return json(
       {
         slug: rawSlug,
         normalizedSlug,
         resolvedSlug: resolvedSlug ?? null,
-        hit: false
+        hit: false,
+        skipSanity
       },
-      { status: 404 }
+      { status }
     );
   }
 
@@ -71,7 +64,7 @@ export const GET = async ({ url }) => {
     console.info('[api/debug/sanity] resolved via catalog', { primarySlug, resolvedSlug });
   }
 
-  console.info('[api/debug/sanity] OK', { slug: doc.slug, id: doc._id });
+  console.info('[api/debug/sanity] OK', { slug: doc.slug, id: doc._id, skipSanity });
 
   return json({
     slug: rawSlug,
@@ -79,6 +72,7 @@ export const GET = async ({ url }) => {
     resolvedSlug: resolvedSlug ?? doc.slug,
     hit: true,
     doc,
-    env: sanityEnv
+    env: sanityEnv,
+    skipSanity
   });
 };
