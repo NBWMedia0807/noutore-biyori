@@ -1,75 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { client, urlFor, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
-import { createSlugQueryPayload } from '$lib/utils/slug.js';
+import { urlFor, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import { createSlugContext, findQuizDocument, QUIZ_ANSWER_QUERY } from '$lib/server/quiz.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs18.x' };
-
-const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
-  _id,
-  "slug": slug.current
-}`;
-
-const QUIZ_BY_SLUG_QUERY = /* groq */ `
-*[_type=='quiz' && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  answerImage{ asset->{ url, metadata } },
-  answerExplanation,
-  closingMessage,
-  adCode1,
-  adCode2,
-  _createdAt,
-  _updatedAt
-}`;
-
-const fetchQuizBySlug = async (slug) => {
-  if (!slug) return null;
-  try {
-    return await client.fetch(QUIZ_BY_SLUG_QUERY, { slug });
-  } catch (err) {
-    console.error(`[quiz answer slug:${slug}] Failed to fetch quiz by slug`, err);
-    return null;
-  }
-};
-
-const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
-  try {
-    const catalog = await client.fetch(QUIZ_SLUGS_QUERY);
-    if (!Array.isArray(catalog) || catalog.length === 0) {
-      return null;
-    }
-
-    const slugCandidateSet = new Set(slugCandidates);
-    const lowerCandidateSet = new Set(lowerSlugCandidates);
-
-    for (const entry of catalog) {
-      const candidateSlug = entry?.slug;
-      const candidateId = entry?._id;
-      if (candidateId && slugCandidateSet.has(candidateId)) {
-        return candidateSlug ?? null;
-      }
-
-      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
-
-      const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } =
-        createSlugQueryPayload(candidateSlug);
-      const hasDirectOverlap = entryCandidates.some((value) => slugCandidateSet.has(value));
-      const hasLowerOverlap = entryLowerCandidates.some((value) => lowerCandidateSet.has(value));
-      if (hasDirectOverlap || hasLowerOverlap) {
-        return candidateSlug;
-      }
-    }
-  } catch (fallbackError) {
-    console.error('[quiz answer] Failed to resolve slug from catalog', fallbackError);
-  }
-
-  return null;
-};
 
 const buildFallback = (slug, path) => {
   const fallbackSlug = slug ?? '';
@@ -117,11 +53,9 @@ const buildFallback = (slug, path) => {
 
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
-  const rawSlug = params.slug ?? '';
-  const normalizedSlug = decodeURIComponent(rawSlug ?? '');
-  const { candidates: slugCandidates, lowerCandidates: lowerSlugCandidates } =
-    createSlugQueryPayload(normalizedSlug);
-  const primarySlug = slugCandidates[0] ?? '';
+  const slugContext = createSlugContext(params.slug ?? '');
+  const { rawSlug, normalizedSlug, slugCandidates, primarySlug } = slugContext;
+  const logPrefix = 'quiz/[slug]/answer';
 
   console.info('[quiz/[slug]/answer] IN', {
     slug: rawSlug,
@@ -144,18 +78,19 @@ export const load = async (event) => {
   }
 
   try {
-    let doc = await fetchQuizBySlug(primarySlug);
-
-    if (!doc) {
-      const resolvedSlug = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
-      if (resolvedSlug && resolvedSlug !== primarySlug) {
-        doc = await fetchQuizBySlug(resolvedSlug);
-      }
-    }
+    const { doc, resolvedSlug } = await findQuizDocument({
+      slugContext,
+      query: QUIZ_ANSWER_QUERY,
+      logPrefix
+    });
 
     if (!doc) {
       console.warn('[quiz/[slug]/answer] 0件', { slugCandidates });
       throw error(404, 'Not found');
+    }
+
+    if (resolvedSlug && resolvedSlug !== primarySlug) {
+      console.info('[quiz/[slug]/answer] resolved via catalog', { primarySlug, resolvedSlug });
     }
 
     const explanation = portableTextToPlain(doc.answerExplanation);
@@ -198,7 +133,11 @@ export const load = async (event) => {
       imageAlt: `${doc.title}の正解`
     };
 
-    console.info('[quiz/[slug]/answer] OK', { slug: doc.slug, dataSource: 'sanity' });
+    console.info('[quiz/[slug]/answer] OK', {
+      slug: doc.slug,
+      dataSource: 'sanity',
+      resolvedSlug: resolvedSlug ?? primarySlug
+    });
 
     return { quiz: doc, breadcrumbs, seo, __dataSource: 'sanity' };
   } catch (err) {

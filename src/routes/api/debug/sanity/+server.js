@@ -1,111 +1,74 @@
 import { json } from '@sveltejs/kit';
-import { client, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
-import { createSlugQueryPayload } from '$lib/utils/slug.js';
+import { shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
+import { createSlugContext, findQuizDocument, QUIZ_DIAGNOSTIC_QUERY } from '$lib/server/quiz.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs18.x' };
 
-const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
-  _id,
-  "slug": slug.current
-}`;
-
-const QUIZ_BY_SLUG_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  title,
-  "slug": slug.current,
-  _createdAt,
-  _updatedAt
-}`;
-
-const fetchQuizBySlug = async (slug) => {
-  if (!slug) return null;
-  try {
-    return await client.fetch(QUIZ_BY_SLUG_QUERY, { slug });
-  } catch (err) {
-    console.error(`[api/debug/sanity] Failed to fetch quiz by slug:${slug}`, err);
-    return null;
-  }
-};
-
-const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
-  try {
-    const catalog = await client.fetch(QUIZ_SLUGS_QUERY);
-    if (!Array.isArray(catalog) || catalog.length === 0) {
-      return null;
-    }
-
-    const slugCandidateSet = new Set(slugCandidates);
-    const lowerCandidateSet = new Set(lowerSlugCandidates);
-
-    for (const entry of catalog) {
-      const candidateSlug = entry?.slug;
-      const candidateId = entry?._id;
-      if (candidateId && slugCandidateSet.has(candidateId)) {
-        return candidateSlug ?? null;
-      }
-
-      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
-
-      const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } =
-        createSlugQueryPayload(candidateSlug);
-      const hasDirectOverlap = entryCandidates.some((value) => slugCandidateSet.has(value));
-      const hasLowerOverlap = entryLowerCandidates.some((value) => lowerCandidateSet.has(value));
-      if (hasDirectOverlap || hasLowerOverlap) {
-        return candidateSlug;
-      }
-    }
-  } catch (fallbackError) {
-    console.error('[api/debug/sanity] Failed to resolve slug from catalog', fallbackError);
-  }
-
-  return null;
-};
-
 export const GET = async ({ url }) => {
-  const rawSlug = url.searchParams.get('slug');
-  if (!rawSlug) {
+  const rawSlugParam = url.searchParams.get('slug');
+  if (!rawSlugParam) {
     return json({ error: 'slug query parameter is required' }, { status: 400 });
   }
 
-  const normalizedSlug = decodeURIComponent(rawSlug ?? '');
-  const { candidates: slugCandidates, lowerCandidates: lowerSlugCandidates } =
-    createSlugQueryPayload(normalizedSlug);
-  const primarySlug = slugCandidates[0] ?? '';
+  const slugContext = createSlugContext(rawSlugParam);
+  const { rawSlug, normalizedSlug, slugCandidates, primarySlug } = slugContext;
+  const logPrefix = 'api/debug/sanity';
 
-  console.info('[api/debug/sanity] IN', { slug: rawSlug, normalizedSlug, env: sanityEnv });
+  console.info('[api/debug/sanity] IN', {
+    slug: rawSlug,
+    normalizedSlug,
+    env: sanityEnv
+  });
+
+  if (!slugCandidates.length) {
+    return json(
+      {
+        slug: rawSlug,
+        normalizedSlug,
+        resolvedSlug: null,
+        hit: false,
+        reason: 'NO_CANDIDATE'
+      },
+      { status: 400 }
+    );
+  }
 
   if (shouldSkipSanityFetch()) {
     console.warn('[api/debug/sanity] SKIP_SANITY active; cannot query Sanity');
-    return json({
-      slug: rawSlug,
-      normalizedSlug,
-      resolvedSlug: null,
-      hit: false,
-      reason: 'SKIP_SANITY'
-    }, { status: 503 });
+    return json(
+      {
+        slug: rawSlug,
+        normalizedSlug,
+        resolvedSlug: null,
+        hit: false,
+        reason: 'SKIP_SANITY'
+      },
+      { status: 503 }
+    );
   }
 
-  let resolvedSlug = primarySlug;
-  let doc = await fetchQuizBySlug(primarySlug);
-
-  if (!doc) {
-    resolvedSlug = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
-    if (resolvedSlug && resolvedSlug !== primarySlug) {
-      doc = await fetchQuizBySlug(resolvedSlug);
-    }
-  }
+  const { doc, resolvedSlug } = await findQuizDocument({
+    slugContext,
+    query: QUIZ_DIAGNOSTIC_QUERY,
+    logPrefix
+  });
 
   if (!doc) {
     console.warn('[api/debug/sanity] 0件', { slugCandidates });
-    return json({
-      slug: rawSlug,
-      normalizedSlug,
-      resolvedSlug,
-      hit: false
-    }, { status: 404 });
+    return json(
+      {
+        slug: rawSlug,
+        normalizedSlug,
+        resolvedSlug: resolvedSlug ?? null,
+        hit: false
+      },
+      { status: 404 }
+    );
+  }
+
+  if (resolvedSlug && resolvedSlug !== primarySlug) {
+    console.info('[api/debug/sanity] resolved via catalog', { primarySlug, resolvedSlug });
   }
 
   console.info('[api/debug/sanity] OK', { slug: doc.slug, id: doc._id });
@@ -113,7 +76,7 @@ export const GET = async ({ url }) => {
   return json({
     slug: rawSlug,
     normalizedSlug,
-    resolvedSlug: doc.slug,
+    resolvedSlug: resolvedSlug ?? doc.slug,
     hit: true,
     doc,
     env: sanityEnv

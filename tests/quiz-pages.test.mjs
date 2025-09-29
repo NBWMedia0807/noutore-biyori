@@ -4,12 +4,12 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const DEFAULT_BASE_URL = 'http://127.0.0.1:5173';
+const DEFAULT_BASE_URL = 'http://localhost:5173';
 const baseURL = process.env.QUIZ_BASE_URL || DEFAULT_BASE_URL;
 const serverCommand = process.env.QUIZ_TEST_SERVER_COMMAND || 'pnpm';
 const serverArgs = process.env.QUIZ_TEST_SERVER_ARGS
   ? process.env.QUIZ_TEST_SERVER_ARGS.split(' ').filter(Boolean)
-  : ['dev', '--', '--host=127.0.0.1', '--port=5173'];
+  : ['dev', '--', '--host=localhost', '--port=5173'];
 
 const KNOWN_SLUGS = (process.env.QUIZ_KNOWN_SLUGS || '')
   .split(',')
@@ -18,6 +18,7 @@ const KNOWN_SLUGS = (process.env.QUIZ_KNOWN_SLUGS || '')
 
 const serverLogs = [];
 let devServer;
+let devServerGroupPid = null;
 
 const waitForServer = async (url, attempts = 60, intervalMs = 1000) => {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -43,8 +44,16 @@ const waitForServer = async (url, attempts = 60, intervalMs = 1000) => {
 const fetchWithLog = async (path) => {
   const target = new URL(path, baseURL).toString();
   const response = await fetch(target, { redirect: 'manual' });
-  const bodySnippet = await response.text();
-  return { response, bodySnippet: bodySnippet.slice(0, 160) };
+
+  let bodySnippet = '';
+  try {
+    const text = await response.clone().text();
+    bodySnippet = text.slice(0, 160);
+  } catch (err) {
+    bodySnippet = `<unavailable: ${err?.message ?? 'unknown'}>`;
+  }
+
+  return { response, bodySnippet };
 };
 
 const resolveSlugs = async () => {
@@ -70,8 +79,10 @@ before(async () => {
 
   devServer = spawn(serverCommand, serverArgs, {
     env: { ...process.env, NODE_ENV: 'test' },
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true
   });
+  devServerGroupPid = devServer.pid ?? null;
 
   if (devServer.stdout) {
     devServer.stdout.on('data', (chunk) => {
@@ -91,6 +102,7 @@ before(async () => {
 
   devServer.on('exit', (code, signal) => {
     serverLogs.push(`[dev] exited with code=${code} signal=${signal}`);
+    devServerGroupPid = null;
   });
 
   const healthUrl = new URL('/', baseURL).toString();
@@ -99,9 +111,37 @@ before(async () => {
 
 after(async () => {
   if (devServer && devServer.exitCode === null) {
+    if (devServerGroupPid !== null) {
+      try {
+        process.kill(-devServerGroupPid, 'SIGTERM');
+      } catch (err) {
+        serverLogs.push(`[dev] failed to send group SIGTERM: ${err.message}`);
+      }
+    }
+
     devServer.kill('SIGTERM');
     try {
-      await once(devServer, 'exit');
+      const waitForExit = () =>
+        devServer.exitCode !== null ? Promise.resolve() : once(devServer, 'exit');
+
+      await Promise.race([
+        waitForExit(),
+        (async () => {
+          await delay(5000);
+          if (devServer.exitCode === null) {
+            serverLogs.push('[dev] forcing SIGKILL after timeout');
+            if (devServerGroupPid !== null) {
+              try {
+                process.kill(-devServerGroupPid, 'SIGKILL');
+              } catch (err) {
+                serverLogs.push(`[dev] failed to send group SIGKILL: ${err.message}`);
+              }
+            }
+            devServer.kill('SIGKILL');
+            await waitForExit();
+          }
+        })()
+      ]);
     } catch (err) {
       serverLogs.push(`[dev] failed to exit cleanly: ${err.message}`);
     }
@@ -130,7 +170,24 @@ test('diagnostic API echoes Sanity document', async () => {
   const sampleSlug = slugs[0];
   const { response } = await fetchWithLog(`/api/debug/sanity?slug=${encodeURIComponent(sampleSlug)}`);
   assert.strictEqual(response.status, 200, 'Diagnostic API should return 200 for an existing slug');
-  const payload = await response.json();
-  assert.strictEqual(payload.hit, true, 'Diagnostic API should set hit=true');
-  assert.strictEqual(payload.resolvedSlug, sampleSlug, 'Resolved slug should match the requested slug');
+  const bodyText = await response.text();
+  let payload;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch (err) {
+    console.error('[diagnostic parse error]', { status: response.status, bodyText });
+    throw err;
+  }
+
+  if ((process.env.ENABLE_QUIZ_STUB || '').toLowerCase() === '1') {
+    console.log('[diagnostic payload]', payload);
+  }
+
+  try {
+    assert.strictEqual(payload.hit, true, 'Diagnostic API should set hit=true');
+    assert.strictEqual(payload.resolvedSlug, sampleSlug, 'Resolved slug should match the requested slug');
+  } catch (err) {
+    console.error('[diagnostic debug]', { status: response.status, payload });
+    throw err;
+  }
 });
