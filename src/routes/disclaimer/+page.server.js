@@ -1,7 +1,7 @@
 import { createPageSeo } from '$lib/seo.js';
 
 export const prerender = false;
-export const config = { runtime: 'node' };
+export const config = { runtime: 'nodejs22.x' };
 
 export const load = (event) => {
   const { url, setHeaders, isDataRequest } = event;

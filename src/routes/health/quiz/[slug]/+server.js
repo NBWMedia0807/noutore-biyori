@@ -3,7 +3,7 @@ import { shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
 import { createSlugContext, findQuizDocument, QUIZ_DIAGNOSTIC_QUERY } from '$lib/server/quiz.js';
 
 export const prerender = false;
-export const config = { runtime: 'node' };
+export const config = { runtime: 'nodejs22.x' };
 
 export const GET = async ({ params }) => {
   const slugContext = createSlugContext(params.slug ?? '');

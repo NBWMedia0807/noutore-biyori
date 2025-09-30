@@ -5,7 +5,7 @@ import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { createSlugContext, findQuizDocument, QUIZ_ANSWER_QUERY } from '$lib/server/quiz.js';
 
 export const prerender = false;
-export const config = { runtime: 'node' };
+export const config = { runtime: 'nodejs22.x' };
 
 const buildFallback = (slug, path) => {
   const fallbackSlug = slug ?? '';
