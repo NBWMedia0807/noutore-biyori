@@ -2,6 +2,7 @@
 import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 import { env } from '$env/dynamic/private';
+import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
 
 const nodeEnv = env.NODE_ENV || 'production';
 const previewFlag = (env.SANITY_PREVIEW_DRAFTS || env.SANITY_PREVIEW || '').toLowerCase() === 'true';
@@ -18,9 +19,33 @@ const authToken = tokenCandidates.find((value) => typeof value === 'string' && v
 const hasToken = Boolean(authToken);
 const enablePreviewDrafts = hasToken && (previewFlag || nodeEnv !== 'production');
 
-const projectId = env.SANITY_PROJECT_ID || 'quljge22';
-const dataset = env.SANITY_DATASET || 'production';
-const apiVersion = env.SANITY_API_VERSION || '2024-01-01';
+const projectId = env.SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId;
+const dataset = env.SANITY_DATASET || SANITY_DEFAULTS.dataset;
+const apiVersion = env.SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion;
+
+warnMissingSanityEnv({
+  source: 'server',
+  projectId: env.SANITY_PROJECT_ID,
+  dataset: env.SANITY_DATASET,
+  apiVersion: env.SANITY_API_VERSION
+});
+
+const publicProjectId = env.VITE_SANITY_PROJECT_ID;
+const publicDataset = env.VITE_SANITY_DATASET;
+
+if (publicProjectId && publicProjectId !== projectId) {
+  console.warn(
+    `[sanity.server] SANITY_PROJECT_ID (${projectId}) と VITE_SANITY_PROJECT_ID (${publicProjectId}) が一致していません。` +
+      ' Vercel やローカルの環境変数を再確認してください。'
+  );
+}
+
+if (publicDataset && publicDataset !== dataset) {
+  console.warn(
+    `[sanity.server] SANITY_DATASET (${dataset}) と VITE_SANITY_DATASET (${publicDataset}) が一致していません。` +
+      ' dataset が意図した値か確認してください。'
+  );
+}
 
 export const sanityEnv = {
   projectId,
