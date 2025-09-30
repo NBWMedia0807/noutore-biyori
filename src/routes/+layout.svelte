@@ -3,14 +3,17 @@
   import { page } from '$app/stores';
   import { SITE } from '$lib/config/site.js';
   import { createPageSeo } from '$lib/seo.js';
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
 
   export let data;
 
   const twitterHandle = SITE.twitterHandle ?? '';
 
   $: currentPage = $page;
-  $: uiSettings = currentPage?.data?.ui ?? {};
-  $: hideGlobalNav = Boolean(uiSettings.hideGlobalNav);
+  $: ui = currentPage?.data?.ui ?? {};
+  $: breadcrumbs = Array.isArray(currentPage?.data?.breadcrumbs)
+    ? currentPage.data.breadcrumbs
+    : [];
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
@@ -98,7 +101,7 @@
   {/each}
 </svelte:head>
 
-{#if !hideGlobalNav}
+{#if ui.showHeader !== false}
   <header class="site-header">
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
@@ -118,7 +121,9 @@
       </a>
     </div>
   </header>
+{/if}
 
+{#if !ui.hideGlobalNavTabs}
   <nav class="main-nav global-nav">
     <div class="nav-container">
       <ul class="nav-menu">
@@ -132,6 +137,12 @@
       </ul>
     </div>
   </nav>
+{/if}
+
+{#if !ui.hideBreadcrumbs && breadcrumbs.length}
+  <div class="breadcrumbs-container">
+    <Breadcrumbs items={breadcrumbs} />
+  </div>
 {/if}
 
 <main>
@@ -193,6 +204,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .breadcrumbs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
   }
 
   @media (max-width: 768px) {

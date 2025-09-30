@@ -1,5 +1,4 @@
 import { error, redirect } from '@sveltejs/kit';
-import { SITE } from '$lib/config/site.js';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 
 export const prerender = false;
@@ -11,29 +10,22 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in pat
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  problemImage{ asset->{ url, metadata } },
+  "problemImage": select(
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    defined(mainImage) => mainImage,
+    null
+  ){ asset->{ url, metadata } },
+  hint,
+  hints,
   body,
   problemDescription,
-  "hints": select(
-    defined(hints) => hints,
-    defined(hint) => [hint],
-    []
-  ),
   closingMessage,
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
   _createdAt,
   _updatedAt
 }`;
-
-const toCanonicalUrl = (slug, suffix = '') => {
-  try {
-    return new URL(`/quiz/${slug}${suffix}`, SITE.url).href;
-  } catch (error) {
-    console.error('[quiz/[...slug]] Failed to build canonical URL', error);
-    return `/quiz/${slug}${suffix}`;
-  }
-};
 
 export async function load({ params, setHeaders }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -51,7 +43,13 @@ export async function load({ params, setHeaders }) {
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
   return {
     doc,
-    ui: { hideGlobalNav: true, hideBreadcrumbs: true },
-    canonicalPath: toCanonicalUrl(doc.slug)
+    ui: {
+      showHeader: true,
+      hideGlobalNavTabs: true,
+      hideBreadcrumbs: true
+    },
+    seo: {
+      canonical: `/quiz/${doc.slug}`
+    }
   };
 }
