@@ -9,6 +9,8 @@
   const twitterHandle = SITE.twitterHandle ?? '';
 
   $: currentPage = $page;
+  $: uiSettings = currentPage?.data?.ui ?? {};
+  $: hideGlobalNav = Boolean(uiSettings.hideGlobalNav);
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
@@ -96,39 +98,41 @@
   {/each}
 </svelte:head>
 
-<header>
-  <div class="header-content">
-    <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
-      <img
-        src="/logo.svg"
-        alt="脳トレ日和"
-        class="logo-image"
-        width="80"
-        height="80"
-        decoding="async"
-        fetchpriority="high"
-      />
-      <div class="title-section">
-        <h1>脳トレ日和</h1>
-        <p class="subtitle">楽しく脳を鍛えましょう</p>
-      </div>
-    </a>
-  </div>
-</header>
+{#if !hideGlobalNav}
+  <header class="site-header">
+    <div class="header-content">
+      <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
+        <img
+          src="/logo.svg"
+          alt="脳トレ日和"
+          class="logo-image"
+          width="80"
+          height="80"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <div class="title-section">
+          <h1>脳トレ日和</h1>
+          <p class="subtitle">楽しく脳を鍛えましょう</p>
+        </div>
+      </a>
+    </div>
+  </header>
 
-<nav class="main-nav">
-  <div class="nav-container">
-    <ul class="nav-menu">
-      {#if data?.categories?.length}
-        {#each data.categories as c}
-          <li>
-            <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
-          </li>
-        {/each}
-      {/if}
-    </ul>
-  </div>
-</nav>
+  <nav class="main-nav global-nav">
+    <div class="nav-container">
+      <ul class="nav-menu">
+        {#if data?.categories?.length}
+          {#each data.categories as c}
+            <li>
+              <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
+            </li>
+          {/each}
+        {/if}
+      </ul>
+    </div>
+  </nav>
+{/if}
 
 <main>
   <slot />

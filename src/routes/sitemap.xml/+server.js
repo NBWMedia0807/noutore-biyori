@@ -15,13 +15,11 @@ const QUERY = /* groq */ `{
   },
   "quizzes": *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
     _id,
+    "slug": slug.current,
     _updatedAt,
-    _createdAt,
-    category->{ "slug": slug.current }
+    _createdAt
   }
 }`;
-
-const resolveCategorySlug = (slug) => (slug === 'spot-the-difference' ? 'spot-the-difference' : 'matchstick');
 
 const toAbsoluteUrl = (path) => new URL(path, SITE.url).href;
 const toIsoString = (value) => {
@@ -80,16 +78,15 @@ export const GET = async () => {
   });
 
   quizzes.forEach((quiz) => {
-    const id = quiz?._id;
-    if (!id) return;
-    const categorySlug = resolveCategorySlug(quiz?.category?.slug);
+    const slug = quiz?.slug;
+    if (!slug) return;
     const lastmod = toIsoString(quiz._updatedAt ?? quiz._createdAt);
-    addEntry(`/quiz/${categorySlug}/article/${id}`, {
+    addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',
       lastmod
     });
-    addEntry(`/quiz/${categorySlug}/article/${id}/answer`, {
+    addEntry(`/quiz/${slug}/answer`, {
       changefreq: 'weekly',
       priority: '0.6',
       lastmod

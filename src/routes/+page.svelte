@@ -10,8 +10,6 @@
 
   $: visibleQuizzes = quizzes.filter((quiz) => quiz?.slug);
 
-  const canonicalCategorySlug = (value) => (value === 'spot-the-difference' ? 'spot-the-difference' : 'matchstick');
-
   function getImageSet(quiz) {
     if (!quiz) return null;
     const fallback =
@@ -41,7 +39,7 @@
     {#each visibleQuizzes as q}
       {@const image = getImageSet(q)}
       <a
-        href={`/quiz/${canonicalCategorySlug(q?.category?.slug)}/article/${q._id}`}
+        href={`/quiz/${q.slug}`}
         style="display:block;text-decoration:none;border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;"
       >
         {#if image?.src}
