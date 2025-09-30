@@ -6,6 +6,7 @@ import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 
 export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
 
 const QUIZ_IDS_QUERY = /* groq */ `
 *[_type == "quiz" && defined(_id) && !(_id in path("drafts.**"))]{ _id }

@@ -8,7 +8,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo \"no tests yet\" && exit 0",
+    "test": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
+    "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check ."
   },
@@ -34,6 +35,11 @@
     "@sveltejs/adapter-vercel": "5.10.2"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

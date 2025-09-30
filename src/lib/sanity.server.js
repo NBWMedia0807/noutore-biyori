@@ -22,6 +22,12 @@ const projectId = env.SANITY_PROJECT_ID || 'quljge22';
 const dataset = env.SANITY_DATASET || 'production';
 const apiVersion = env.SANITY_API_VERSION || '2024-01-01';
 
+export const sanityEnv = {
+  projectId,
+  dataset,
+  apiVersion
+};
+
 const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
 const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true';
 
@@ -42,3 +48,4 @@ const builder = imageUrlBuilder(client);
 export const urlFor = (source) => builder.image(source);
 
 export const shouldSkipSanityFetch = () => shouldBypassSanity;
+export const isSanityPreviewEnabled = () => enablePreviewDrafts;

@@ -1,117 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { client, urlFor, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { createSlugQueryPayload } from '$lib/utils/slug.js';
+import { urlFor, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import { createSlugContext, findQuizDocument, QUIZ_DETAIL_QUERY } from '$lib/server/quiz.js';
 
 export const prerender = false;
-
-const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
-codex/review-implementation-against-ideal-state-ilxcca
-  _id,
-
-main
-  "slug": slug.current
-}`;
-
-const QUIZ_BY_SLUG_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  _createdAt,
-  _updatedAt,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemDescription,
-  "hints": select(
-    defined(hints) => hints,
-    defined(hint) => [hint],
-    []
-  ),
-  adCode1,
-  adCode2
-}`;
-
-export const entries = async () => {
-  if (shouldSkipSanityFetch()) {
-    return [];
-  }
-
-  try {
-    const slugs = await client.fetch(QUIZ_SLUGS_QUERY);
-    if (!Array.isArray(slugs)) return [];
-    const seen = new Set();
-    return slugs
-      .map((item) => item?.slug)
-      .filter(Boolean)
-      .filter((slug) => {
-        if (seen.has(slug)) return false;
-        seen.add(slug);
-        return true;
-      })
-      .map((slug) => ({ slug }));
-  } catch (err) {
-    console.error('[quiz slug] Failed to build prerender entries', err);
-    return [];
-  }
-};
-
-const fetchQuizBySlug = async (slug) => {
-  if (!slug) return null;
-  try {
-    return await client.fetch(QUIZ_BY_SLUG_QUERY, { slug });
-  } catch (err) {
-    console.error(`[quiz slug:${slug}] Failed to fetch quiz by slug`, err);
-    return null;
-  }
-};
-
-const resolveSlugFromCatalog = async (slugCandidates, lowerSlugCandidates) => {
-  try {
-    const catalog = await client.fetch(QUIZ_SLUGS_QUERY);
-    if (!Array.isArray(catalog) || !catalog.length) {
-      return null;
-    }
-
-    const slugCandidateSet = new Set(slugCandidates);
-    const lowerCandidateSet = new Set(lowerSlugCandidates);
-
-    for (const entry of catalog) {
-      const candidateSlug = entry?.slug;
-codex/review-implementation-against-ideal-state-ilxcca
-      const candidateId = entry?._id;
-      if (candidateId && slugCandidateSet.has(candidateId)) {
-        return candidateSlug ?? null;
-      }
-
-      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
-
-
-      if (typeof candidateSlug !== 'string' || candidateSlug.length === 0) continue;
-main
-      const { candidates: entryCandidates, lowerCandidates: entryLowerCandidates } =
-        createSlugQueryPayload(candidateSlug);
-      const hasDirectOverlap = entryCandidates.some((value) => slugCandidateSet.has(value));
-      const hasLowerOverlap = entryLowerCandidates.some((value) => lowerCandidateSet.has(value));
-      if (hasDirectOverlap || hasLowerOverlap) {
-        return candidateSlug;
-      }
-    }
-  } catch (fallbackError) {
-    console.error('[quiz slug] Failed to resolve slug from catalog', fallbackError);
-  }
-
-  return null;
-};
+export const config = { runtime: 'nodejs22.x' };
 
 const buildFallback = (slug, path) => {
   const fallbackSlug = slug ?? '';
@@ -157,35 +51,44 @@ const buildFallback = (slug, path) => {
 
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
-  const { slug } = params;
-  const { candidates: slugCandidates, lowerCandidates: lowerSlugCandidates } = createSlugQueryPayload(slug);
+  const slugContext = createSlugContext(params.slug ?? '');
+  const { rawSlug, normalizedSlug, slugCandidates, primarySlug } = slugContext;
+  const logPrefix = 'quiz/[slug]';
 
-  const primarySlug = slugCandidates[0] ?? '';
+  console.info('[quiz/[slug]] IN', {
+    slug: rawSlug,
+    normalizedSlug,
+    env: sanityEnv
+  });
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
   if (!slugCandidates.length) {
+    console.warn('[quiz/[slug]] 0 candidates', { rawSlug });
     return buildFallback('', url.pathname);
   }
 
   if (shouldSkipSanityFetch()) {
+    console.warn('[quiz/[slug]] SKIP_SANITY active; using fallback', { slug: primarySlug });
     return buildFallback(primarySlug, url.pathname);
   }
 
   try {
-    let doc = await fetchQuizBySlug(primarySlug);
+    const { doc, resolvedSlug } = await findQuizDocument({
+      slugContext,
+      query: QUIZ_DETAIL_QUERY,
+      logPrefix
+    });
 
     if (!doc) {
-      const resolvedSlug = await resolveSlugFromCatalog(slugCandidates, lowerSlugCandidates);
-      if (resolvedSlug && resolvedSlug !== primarySlug) {
-        doc = await fetchQuizBySlug(resolvedSlug);
-      }
+      console.warn('[quiz/[slug]] 0件', { slugCandidates });
+      throw error(404, 'Not found');
     }
 
-    if (!doc) {
-      throw error(404, 'Not found');
+    if (resolvedSlug && resolvedSlug !== primarySlug) {
+      console.info('[quiz/[slug]] resolved via catalog', { primarySlug, resolvedSlug });
     }
 
     const descriptionSource = portableTextToPlain(doc.problemDescription) || doc.title;
@@ -200,7 +103,7 @@ export const load = async (event) => {
       try {
         resolvedImage = urlFor(heroImage).width(OG_IMAGE_WIDTH).height(OG_IMAGE_HEIGHT).fit('crop').auto('format').url();
       } catch (err) {
-        console.error('[quiz slug] failed to build og:image URL', err);
+        console.error('[quiz/[slug]] failed to build og:image URL', err);
       }
     }
 
@@ -231,12 +134,19 @@ export const load = async (event) => {
       imageAlt: doc.title
     };
 
+    console.info('[quiz/[slug]] OK', {
+      slug: doc.slug,
+      source: doc._id,
+      dataSource: 'sanity',
+      resolvedSlug: resolvedSlug ?? primarySlug
+    });
+
     return { quiz: doc, breadcrumbs, seo, __dataSource: 'sanity' };
   } catch (err) {
     if (err?.status === 404) {
       throw err;
     }
-    console.error(`[quiz/${slug}] Sanity fetch failed`, err);
+    console.error(`[quiz/${rawSlug}] ERR`, err);
     return buildFallback(primarySlug, url.pathname);
   }
 };

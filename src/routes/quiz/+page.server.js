@@ -2,6 +2,7 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
 
 export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
 
 const QUIZZES_QUERY = /* groq */ `
 *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_createdAt desc) {
@@ -37,7 +38,10 @@ export const load = async (event) => {
   }
 
   if (shouldSkipSanityFetch()) {
-    return { quizzes: [], seo: createQuizListSeo(url.pathname) };
+    return {
+      quizzes: [],
+      seo: createQuizListSeo(url.pathname)
+    };
   }
 
   try {
@@ -49,6 +53,9 @@ export const load = async (event) => {
     return { quizzes, seo: createQuizListSeo(url.pathname) };
   } catch (error) {
     console.error('[quiz/+page.server] Error fetching quizzes:', error);
-    return { quizzes: [], seo: createQuizListSeo(url.pathname) };
+    return {
+      quizzes: [],
+      seo: createQuizListSeo(url.pathname)
+    };
   }
 };

@@ -1,5 +1,8 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 
+export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
+
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))] | order(title asc) {
   title,
@@ -16,8 +19,7 @@ export const load = async () => {
     const categories = Array.isArray(result) ? result.filter(Boolean) : [];
     return { categories };
   } catch (error) {
-    console.error('[+layout.server.js] Error fetching categories:', error);
+    console.error('[+layout.server] Error fetching categories:', error);
     return { categories: [] };
   }
 };
-
