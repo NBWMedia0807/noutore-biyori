@@ -1,0 +1,47 @@
+import { error, redirect } from '@sveltejs/kit';
+import { SITE } from '$lib/config/site.js';
+import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
+
+export const prerender = false;
+export const ssr = true;
+export const config = { runtime: 'nodejs22.x' };
+
+const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
+  _id,
+  title,
+  "slug": slug.current,
+  category->{ title, "slug": slug.current },
+  answerImage{ asset->{ url, metadata } },
+  answerExplanation,
+  closingMessage
+}`;
+
+const toCanonicalUrl = (slug, suffix = '') => {
+  try {
+    return new URL(`/quiz/${slug}${suffix}`, SITE.url).href;
+  } catch (error) {
+    console.error('[quiz/[...slug]/answer] Failed to build canonical URL', error);
+    return `/quiz/${slug}${suffix}`;
+  }
+};
+
+export async function load({ params, setHeaders }) {
+  const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
+  const slug = slugSegments.join('/');
+  const slugContext = createSlugContext(slug);
+  const { doc: quiz } = await findQuizDocument({
+    slugContext,
+    query: Q,
+    logPrefix: 'quiz/[...slug]/answer'
+  });
+  if (!quiz) throw error(404, 'Answer not found');
+  if (typeof quiz.slug === 'string' && quiz.slug !== slug) {
+    throw redirect(308, `/quiz/${quiz.slug}/answer`);
+  }
+  setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
+  return {
+    quiz,
+    ui: { hideGlobalNav: true, hideBreadcrumbs: true },
+    canonicalPath: toCanonicalUrl(quiz.slug, '/answer')
+  };
+}
