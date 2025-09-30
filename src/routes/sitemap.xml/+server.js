@@ -3,7 +3,6 @@ import { SITE } from '$lib/config/site.js';
 
 const STATIC_ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
-  { path: '/quiz', changefreq: 'daily', priority: '0.9' },
   { path: '/about', changefreq: 'monthly', priority: '0.6' },
   { path: '/contact', changefreq: 'monthly', priority: '0.5' },
   { path: '/privacy', changefreq: 'yearly', priority: '0.4' }
@@ -15,12 +14,14 @@ const QUERY = /* groq */ `{
     _updatedAt
   },
   "quizzes": *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
-    "slug": slug.current,
+    _id,
     _updatedAt,
     _createdAt,
     category->{ "slug": slug.current }
   }
 }`;
+
+const resolveCategorySlug = (slug) => (slug === 'spot-the-difference' ? 'spot-the-difference' : 'matchstick');
 
 const toAbsoluteUrl = (path) => new URL(path, SITE.url).href;
 const toIsoString = (value) => {
@@ -79,15 +80,16 @@ export const GET = async () => {
   });
 
   quizzes.forEach((quiz) => {
-    const slug = quiz?.slug;
-    if (!slug) return;
+    const id = quiz?._id;
+    if (!id) return;
+    const categorySlug = resolveCategorySlug(quiz?.category?.slug);
     const lastmod = toIsoString(quiz._updatedAt ?? quiz._createdAt);
-    addEntry(`/quiz/${slug}`, {
+    addEntry(`/quiz/${categorySlug}/article/${id}`, {
       changefreq: 'weekly',
       priority: '0.8',
       lastmod
     });
-    addEntry(`/quiz/${slug}/answer`, {
+    addEntry(`/quiz/${categorySlug}/article/${id}/answer`, {
       changefreq: 'weekly',
       priority: '0.6',
       lastmod

@@ -153,15 +153,30 @@ test('quiz detail and answer pages respond with 200', async () => {
   assert.ok(slugs.length >= 2, 'At least two slugs are required for the smoke test');
 
   for (const slug of slugs) {
-    const detail = await fetchWithLog(`/quiz/${encodeURIComponent(slug)}`);
-    assert.strictEqual(detail.response.status, 200, `Expected 200 for /quiz/${slug}, got ${detail.response.status}`);
+    const verifyResponse = async (path, label) => {
+      const result = await fetchWithLog(path);
+      if (result.response.status === 308) {
+        const location = result.response.headers.get('location');
+        assert.ok(location, `${label} should include Location header when redirecting`);
+        const redirected = await fetchWithLog(location);
+        assert.strictEqual(
+          redirected.response.status,
+          200,
+          `Expected 200 for ${location} via ${label}, got ${redirected.response.status}`
+        );
+        return redirected;
+      }
 
-    const answer = await fetchWithLog(`/quiz/${encodeURIComponent(slug)}/answer`);
-    assert.strictEqual(
-      answer.response.status,
-      200,
-      `Expected 200 for /quiz/${slug}/answer, got ${answer.response.status}`
-    );
+      assert.strictEqual(
+        result.response.status,
+        200,
+        `Expected 200 for ${label}, got ${result.response.status}`
+      );
+      return result;
+    };
+
+    await verifyResponse(`/quiz/${encodeURIComponent(slug)}`, `/quiz/${slug}`);
+    await verifyResponse(`/quiz/${encodeURIComponent(slug)}/answer`, `/quiz/${slug}/answer`);
   }
 });
 

@@ -57,8 +57,9 @@ export const QUIZ_DETAIL_QUERY = /* groq */ `
   adCode2
 }`;
 
-export const QUIZ_ANSWER_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
+export const QUIZ_ANSWER_BY_ID_QUERY = /* groq */ `
+*[_type == "quiz" && _id == $id && !(_id in path("drafts.**"))][0]{
+  _id,
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
