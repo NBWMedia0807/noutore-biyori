@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import { urlFor, shouldSkipSanityFetch, sanityEnv } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
@@ -84,7 +83,13 @@ export const load = async (event) => {
 
     if (!doc) {
       console.warn('[quiz/[slug]] 0件', { slugCandidates });
-      throw error(404, 'Not found');
+      const fallbackResponse = buildFallback(primarySlug, url.pathname);
+      console.info('[quiz/[slug]] FALLBACK response', {
+        slug: primarySlug,
+        dataSource: fallbackResponse.__dataSource,
+        status: 200
+      });
+      return fallbackResponse;
     }
 
     if (resolvedSlug && resolvedSlug !== primarySlug) {
@@ -147,6 +152,12 @@ export const load = async (event) => {
       throw err;
     }
     console.error(`[quiz/${rawSlug}] ERR`, err);
-    return buildFallback(primarySlug, url.pathname);
+    const fallbackResponse = buildFallback(primarySlug, url.pathname);
+    console.info('[quiz/[slug]] FALLBACK response (error)', {
+      slug: primarySlug,
+      dataSource: fallbackResponse.__dataSource,
+      status: 200
+    });
+    return fallbackResponse;
   }
 };
