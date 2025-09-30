@@ -63,10 +63,6 @@
   const questionPath = `/quiz/${quiz?.slug ?? ''}`;
 </script>
 
-<svelte:head>
-  <link rel="canonical" href={data.canonicalPath} />
-</svelte:head>
-
 <main class="answer-page hide-chrome">
   <header class="quiz-header">
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
@@ -85,21 +81,16 @@
     </section>
   {/if}
 
-  <nav class="back-nav">
+  <nav class="back-nav" style="text-align:center">
     <a class="btn" href={questionPath}>問題ページに戻る</a>
   </nav>
 
   <footer class="closing">
-    <p>{closingText}</p>
+    <p>{closingText || closingDefault}</p>
   </footer>
 </main>
 
 <style>
-  :global(.global-nav),
-  :global(.breadcrumbs) {
-    display: none !important;
-  }
-
   .answer-page {
     max-width: 820px;
     margin: 40px auto;

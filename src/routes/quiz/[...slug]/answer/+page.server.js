@@ -1,5 +1,4 @@
 import { error, redirect } from '@sveltejs/kit';
-import { SITE } from '$lib/config/site.js';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 
 export const prerender = false;
@@ -15,15 +14,6 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in pat
   answerExplanation,
   closingMessage
 }`;
-
-const toCanonicalUrl = (slug, suffix = '') => {
-  try {
-    return new URL(`/quiz/${slug}${suffix}`, SITE.url).href;
-  } catch (error) {
-    console.error('[quiz/[...slug]/answer] Failed to build canonical URL', error);
-    return `/quiz/${slug}${suffix}`;
-  }
-};
 
 export async function load({ params, setHeaders }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -41,7 +31,13 @@ export async function load({ params, setHeaders }) {
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
   return {
     quiz,
-    ui: { hideGlobalNav: true, hideBreadcrumbs: true },
-    canonicalPath: toCanonicalUrl(quiz.slug, '/answer')
+    ui: {
+      showHeader: true,
+      hideGlobalNavTabs: true,
+      hideBreadcrumbs: true
+    },
+    seo: {
+      canonical: `/quiz/${quiz.slug}/answer`
+    }
   };
 }

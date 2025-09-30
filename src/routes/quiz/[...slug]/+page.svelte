@@ -4,6 +4,20 @@
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
+  const blocksToText = (blocks) => {
+    if (!Array.isArray(blocks)) return '';
+    return blocks
+      .map((block) => {
+        if (typeof block === 'string') return block;
+        const children = Array.isArray(block?.children) ? block.children : [];
+        return children
+          .map((child) => (typeof child?.text === 'string' ? child.text : ''))
+          .join('');
+      })
+      .filter((text) => typeof text === 'string' && text.trim().length > 0)
+      .join('\n');
+  };
+
   const escapeHtml = (value) =>
     value
       .replace(/&/g, '&amp;')
@@ -62,12 +76,26 @@
     return fromProblem;
   })();
   const hintList = (() => {
-    const list = [];
-    if (Array.isArray(doc?.hints)) list.push(...doc.hints);
-    if (typeof doc?.hint === 'string') list.push(doc.hint);
-    return list
-      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
-      .filter((entry) => entry.length > 0);
+    const source = [];
+    const append = (value) => {
+      if (value === null || value === undefined) return;
+      if (Array.isArray(value)) {
+        source.push(...value);
+      } else {
+        source.push(value);
+      }
+    };
+    append(doc?.hint);
+    append(doc?.hints);
+
+    return source
+      .map((entry) => {
+        if (typeof entry === 'string') return entry.trim();
+        if (Array.isArray(entry)) return blocksToText(entry).trim();
+        return blocksToText([entry]).trim();
+      })
+      .map((text) => text.replace(/\r?\n/g, '\n').trim())
+      .filter((text) => text.length > 0);
   })();
   const closingText = (() => {
     const text = toPlainText(doc?.closingMessage);
@@ -75,10 +103,6 @@
   })();
   const answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
-
-<svelte:head>
-  <link rel="canonical" href={data.canonicalPath} />
-</svelte:head>
 
 <main class="quiz-detail hide-chrome">
   <header class="quiz-header">
@@ -98,7 +122,7 @@
   {/if}
 
   {#if hintList.length}
-    <section class="hint">
+    <section class="hints">
       <h2>ヒント</h2>
       <ul>
         {#each hintList as hint, index (hint + index)}
@@ -113,16 +137,11 @@
   </nav>
 
   <footer class="closing">
-    <p>{closingText}</p>
+    <p>{closingText || closingDefault}</p>
   </footer>
 </main>
 
 <style>
-  :global(.global-nav),
-  :global(.breadcrumbs) {
-    display: none !important;
-  }
-
   .quiz-detail {
     max-width: 820px;
     margin: 40px auto;
@@ -152,7 +171,7 @@
     line-height: 1.8;
   }
 
-  .hint {
+  .hints {
     margin: 24px 0;
     padding: 16px;
     background: #fff8e1;
@@ -160,17 +179,17 @@
     border: 1px solid #ffe082;
   }
 
-  .hint h2 {
+  .hints h2 {
     margin: 0 0 8px;
     font-size: 18px;
   }
 
-  .hint ul {
+  .hints ul {
     margin: 0;
     padding-left: 1.2em;
   }
 
-  .hint li {
+  .hints li {
     margin-bottom: 6px;
     line-height: 1.6;
   }
