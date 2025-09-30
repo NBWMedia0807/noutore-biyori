@@ -41,6 +41,8 @@
     }
     return FALLBACK_IMAGE;
   }
+
+  const canonicalCategorySlug = (value) => (value === 'spot-the-difference' ? 'spot-the-difference' : 'matchstick');
 </script>
 
 {#key slug}
@@ -64,7 +66,10 @@
     <div class="quiz-grid">
       {#each quizzes as quiz}
         <article class="quiz-card">
-          <a href={`/quiz/${quiz.slug}`} class="quiz-link">
+          <a
+            href={`/quiz/${canonicalCategorySlug(quiz?.category?.slug || slug)}/article/${quiz._id}`}
+            class="quiz-link"
+          >
             <div class="quiz-image">
               <img src={resolveImage(quiz)} alt={quiz.title || 'クイズ画像'} class="quiz-img" loading="lazy" />
               <div class="quiz-category">{quiz.category?.title ?? categoryTitle}</div>
