@@ -1,8 +1,11 @@
 <script>
+  import { tick } from 'svelte';
+
   export let data;
   const { doc } = data;
-  const closingDefault =
-    'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
+
+  let hintOpen = false;
+  let firstHintItem;
 
   const blocksToText = (blocks) => {
     if (!Array.isArray(blocks)) return '';
@@ -48,34 +51,13 @@
     return '';
   };
 
-  const toPlainText = (content) => {
-    if (!content) return '';
-    if (typeof content === 'string') return content;
-    if (Array.isArray(content)) {
-      return content
-        .filter((block) => block?._type === 'block')
-        .map((block) =>
-          (block?.children ?? [])
-            .filter((child) => child?._type === 'span' && typeof child.text === 'string')
-            .map((child) => child.text)
-            .join('')
-        )
-        .filter((text) => typeof text === 'string' && text.trim().length > 0)
-        .join('\n');
-    }
-    if (content?._type === 'block') {
-      return toPlainText([content]);
-    }
-    return '';
-  };
-
   const bodyHtml = (() => {
     const fromBody = toHtml(doc?.body);
     if (fromBody.trim().length) return fromBody;
     const fromProblem = toHtml(doc?.problemDescription);
     return fromProblem;
   })();
-  const hintList = (() => {
+  const hintEntries = (() => {
     const source = [];
     const append = (value) => {
       if (value === null || value === undefined) return;
@@ -90,17 +72,29 @@
 
     return source
       .map((entry) => {
-        if (typeof entry === 'string') return entry.trim();
-        if (Array.isArray(entry)) return blocksToText(entry).trim();
-        return blocksToText([entry]).trim();
+        const text = (() => {
+          if (typeof entry === 'string') return entry;
+          if (Array.isArray(entry)) return blocksToText(entry);
+          return blocksToText([entry]);
+        })()
+          .replace(/\r?\n/g, '\n')
+          .trim();
+
+        return { raw: entry, text };
       })
-      .map((text) => text.replace(/\r?\n/g, '\n').trim())
-      .filter((text) => text.length > 0);
+      .filter(({ text }) => text.length > 0);
   })();
-  const closingText = (() => {
-    const text = toPlainText(doc?.closingMessage);
-    return text.trim().length ? text.trim() : closingDefault;
-  })();
+  const hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
+  const firstHint = hints[0];
+  const restHints = hints.slice(1);
+  const hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
+  const toggleHints = async () => {
+    hintOpen = !hintOpen;
+    if (hintOpen) {
+      await tick();
+      firstHintItem?.focus();
+    }
+  };
   const answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
 
@@ -121,24 +115,37 @@
     </section>
   {/if}
 
-  {#if hintList.length}
-    <section class="hints">
-      <h2>ヒント</h2>
-      <ul>
-        {#each hintList as hint, index (hint + index)}
-          <li>{hint}</li>
-        {/each}
-      </ul>
-    </section>
+  {#if hints.length}
+    <div class="hints-toggle" style="text-align: center; margin: 24px 0;">
+      <button
+        type="button"
+        class="btn"
+        aria-expanded={hintOpen}
+        aria-controls={hintsId}
+        on:click={toggleHints}
+      >
+        {hintOpen ? 'ヒントを隠す' : `ヒントを見る（${hints.length}件）`}
+      </button>
+    </div>
+
+    {#if hintOpen}
+      <section class="hints" id={hintsId} style="margin: 16px 0;">
+        <h2 style="font-size: 18px; margin: 0 0 8px;">ヒント</h2>
+        <ul style="padding-left: 1.2em;">
+          {#if firstHint}
+            <li tabindex="-1" bind:this={firstHintItem}>{firstHint.text}</li>
+          {/if}
+          {#each restHints as hint, index (`${hint.text}-${index + 1}`)}
+            <li tabindex="-1">{hint.text}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
   {/if}
 
   <nav class="to-answer">
     <a class="btn" href={answerPath}>正解ページへ進む →</a>
   </nav>
-
-  <footer class="closing">
-    <p>{closingText || closingDefault}</p>
-  </footer>
 </main>
 
 <style>
@@ -209,10 +216,4 @@
     background: #fff;
   }
 
-  .closing {
-    margin: 32px 0;
-    text-align: center;
-    opacity: 0.9;
-    white-space: pre-line;
-  }
 </style>
