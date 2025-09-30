@@ -2,6 +2,17 @@
 
 Sanity Studio のスキーマを GitHub 上のコードから確実に反映させるための運用手順をまとめています。Studio のホストは固定で `noutore-biyori-studio-main` を使用し、プロジェクト ID は `quljge22`、dataset は `production` です。
 
+## 本番サイト連携チェックリスト
+
+本番の SvelteKit アプリが Sanity の記事を正しく取得できない場合は、以下の 4 点を確認してください。
+
+1. **環境変数**: `.env.local` と Vercel の環境変数で `SANITY_PROJECT_ID` / `SANITY_DATASET` / `SANITY_API_VERSION` が設定されているか。ブラウザ向けの `VITE_SANITY_*` も同じ値に揃えます。
+2. **コード側の設定**: `studio/sanity.config.js` / `studio/sanity.cli.js` / `src/lib/sanity*.js` がすべて同じ projectId (`quljge22`) と dataset (`production`) を参照しているか。`src/lib/sanityDefaults.js` が単一の真実のソースです。
+3. **Sanity CORS**: [Sanity Manage project](https://www.sanity.io/manage) で `https://noutorebiyori.com` とプレビュー用ドメインが CORS Origins に登録されており、`Allow credentials` は無効化されているか。
+4. **API Token**: プレビューやドラフト表示が必要な場合は `SANITY_READ_TOKEN` と `SANITY_PREVIEW_DRAFTS=true`（もしくは `SANITY_PREVIEW=true`）を設定します。
+
+> いずれかが不足すると `src/lib/sanity.server.js` の警告ログに表示されます。ステージング環境でも同じリストで確認できます。
+
 ## トークン管理
 
 1. Sanity の **Manage project tokens** でロール **Deploy Studio (Token only)** を選択し、新しいトークンを発行します。

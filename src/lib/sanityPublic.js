@@ -1,11 +1,20 @@
 // src/lib/sanityPublic.js
 import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
+import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
 
 // ✅ ブラウザから読める “VITE_” 変数を使う
-const projectId = import.meta.env?.VITE_SANITY_PROJECT_ID || 'quljge22';
-const dataset = import.meta.env?.VITE_SANITY_DATASET || 'production';
-const apiVersion = import.meta.env?.VITE_SANITY_API_VERSION || '2024-01-01';
+const projectId = import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId;
+const dataset = import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset;
+const apiVersion = import.meta.env?.VITE_SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion;
+
+warnMissingSanityEnv({
+  source: 'public',
+  projectId: import.meta.env?.VITE_SANITY_PROJECT_ID,
+  dataset: import.meta.env?.VITE_SANITY_DATASET,
+  apiVersion: import.meta.env?.VITE_SANITY_API_VERSION,
+  logger: typeof console !== 'undefined' ? console : undefined
+});
 
 if (!import.meta.env?.VITE_SANITY_PROJECT_ID) {
   console.warn('[sanityPublic] VITE_SANITY_PROJECT_ID is missing; using default projectId.');
