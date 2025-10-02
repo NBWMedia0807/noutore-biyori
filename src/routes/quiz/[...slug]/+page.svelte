@@ -303,9 +303,6 @@
   .hints ul {
     margin: 0;
     padding-left: 1.2em;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
     font-size: 1.05rem;
     line-height: 1.7;
   }
@@ -313,6 +310,10 @@
   .hints li {
     position: relative;
     padding-left: 0.4em;
+  }
+
+  .hints li + li {
+    margin-top: 0.75rem;
   }
 
   .hints li::marker {
