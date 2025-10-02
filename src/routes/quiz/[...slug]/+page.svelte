@@ -114,6 +114,10 @@
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
+codex/improve-ui/ux-for-quiz-article-page-sd7gb0
+
+        <span class="section-icon" aria-hidden="true">🧠</span>
+main
         <h2>問題</h2>
       </div>
       <div class="section-body">{@html bodyHtml}</div>
@@ -129,6 +133,7 @@
         aria-controls={hintsId}
         on:click={toggleHints}
       >
+        <span aria-hidden="true">💡</span>
         {hintOpen ? 'ヒントを隠す' : `ヒントを見る（${hints.length}件）`}
       </button>
     </div>
@@ -136,6 +141,10 @@
     {#if hintOpen}
       <section class="hints content-card" id={hintsId}>
         <div class="section-header">
+codex/improve-ui/ux-for-quiz-article-page-sd7gb0
+
+          <span class="section-icon" aria-hidden="true">✨</span>
+main
           <h2>ヒント</h2>
         </div>
         <ul>
@@ -227,14 +236,38 @@
   }
 
   .section-header {
+codex/improve-ui/ux-for-quiz-article-page-sd7gb0
     margin-bottom: 16px;
   }
 
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(254, 240, 138, 0.8), rgba(255, 230, 179, 0.95));
+    font-size: 1.3rem;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.6), 0 8px 14px rgba(249, 115, 22, 0.18);
+  }
+
+main
   .section-header h2 {
     font-size: 1.25rem;
     color: #92400e;
     font-weight: 700;
+codex/improve-ui/ux-for-quiz-article-page-sd7gb0
     margin: 0;
+
+main
   }
 
   .section-body :global(p) {
@@ -355,6 +388,12 @@
       padding-inline: 1.8rem;
     }
 
+codex/improve-ui/ux-for-quiz-article-page-sd7gb0
+
+    .section-header {
+      gap: 10px;
+    }
+main
   }
 
 </style>
