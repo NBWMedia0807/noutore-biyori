@@ -114,7 +114,10 @@
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+
         <span class="section-icon" aria-hidden="true">🧠</span>
+main
         <h2>問題</h2>
       </div>
       <div class="section-body">{@html bodyHtml}</div>
@@ -138,7 +141,10 @@
     {#if hintOpen}
       <section class="hints content-card" id={hintsId}>
         <div class="section-header">
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+
           <span class="section-icon" aria-hidden="true">✨</span>
+ main
           <h2>ヒント</h2>
         </div>
         <ul>
@@ -232,6 +238,77 @@
   .section-header {
     display: flex;
     align-items: center;
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-size: 1.25rem;
+    color: #92400e;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .section-body :global(p) {
+    margin-bottom: 1em;
+    line-height: 1.85;
+    font-size: 1.05rem;
+  }
+
+  .section-body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .hints-toggle {
+    text-align: center;
+  }
+
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2.4rem;
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 1.05rem;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #78350f;
+    box-shadow: 0 18px 32px rgba(249, 115, 22, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  .action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 36px rgba(234, 88, 12, 0.32);
+    filter: brightness(1.03);
+  }
+
+  .action-button:active {
+    transform: translateY(0);
+    box-shadow: 0 12px 24px rgba(234, 88, 12, 0.24);
+  }
+
+  .action-button span[aria-hidden='true'] {
+    font-size: 1.2rem;
+  }
+
+  .primary {
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #78350f;
+  }
+
+  .hint-button {
+    background: linear-gradient(135deg, #fde68a, #fcd34d);
+    color: #92400e;
+    padding-inline: 2rem;
+    box-shadow: 0 16px 28px rgba(250, 204, 21, 0.26);
+  }
+
+
     gap: 12px;
     margin-bottom: 16px;
   }
@@ -313,6 +390,7 @@
     box-shadow: 0 16px 28px rgba(250, 204, 21, 0.26);
   }
 
+ main
   .hint-button:hover {
     box-shadow: 0 20px 32px rgba(234, 179, 8, 0.3);
   }
