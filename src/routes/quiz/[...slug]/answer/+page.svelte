@@ -79,6 +79,10 @@
   {#if answerHtml}
     <section class="answer-explanation content-card">
       <div class="section-header">
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+
+        <span class="section-icon" aria-hidden="true">📝</span>
+ main
         <h2>解説</h2>
       </div>
       <div class="section-body">{@html answerHtml}</div>
@@ -94,6 +98,10 @@
 
   <footer class="closing">
     <div class="closing-card">
+ codex/improve-ui/ux-for-quiz-article-page-54klg4
+
+      <span class="closing-icon" aria-hidden="true">🌟</span>
+ main
       <p>{closingText || closingDefault}</p>
     </div>
   </footer>
@@ -169,14 +177,36 @@
   .section-header {
     display: flex;
     align-items: center;
+codex/improve-ui/ux-for-quiz-article-page-54klg4
     margin-bottom: 16px;
   }
 
+
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(254, 205, 211, 0.85), rgba(254, 226, 226, 0.95));
+    font-size: 1.3rem;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.65), 0 8px 14px rgba(248, 113, 113, 0.22);
+  }
+
+main
   .section-header h2 {
     font-size: 1.25rem;
     color: #b91c1c;
     font-weight: 700;
+codex/improve-ui/ux-for-quiz-article-page-54klg4
     margin: 0;
+
+main
   }
 
   .section-body :global(p) {
@@ -241,11 +271,24 @@
     text-align: center;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
     border: 1px solid rgba(254, 215, 170, 0.35);
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+main
     color: #92400e;
     line-height: 1.8;
     white-space: pre-line;
   }
 
+codex/improve-ui/ux-for-quiz-article-page-54klg4
+
+  .closing-icon {
+    font-size: 1.6rem;
+  }
+
+main
   @media (max-width: 640px) {
     .answer-page {
       margin-top: 16px;
