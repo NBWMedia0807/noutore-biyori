@@ -152,14 +152,16 @@
 <footer>
   <div class="footer-content">
     <p>&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
-    <div class="footer-links">
-      <a href="/privacy">プライバシーポリシー</a>
-      <a href="/disclaimer">免責事項</a>
-      <a href="/contact">お問い合わせ</a>
-      <a href="/about">サイトについて</a>
-      <a href="/about#author-info">著者情報</a>
-      <a href="/about#operator-info">運営者情報</a>
-    </div>
+    <nav aria-label="固定ページリンク">
+      <ul class="footer-links">
+        <li><a href="/privacy">プライバシーポリシー</a></li>
+        <li><a href="/disclaimer">免責事項</a></li>
+        <li><a href="/contact">お問い合わせ</a></li>
+        <li><a href="/about">サイトについて</a></li>
+        <li><a href="/about#author-info">著者情報</a></li>
+        <li><a href="/about#operator-info">運営者情報</a></li>
+      </ul>
+    </nav>
   </div>
 </footer>
 

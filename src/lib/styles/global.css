@@ -128,7 +128,7 @@ header {
 main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  padding: 1.5rem 1rem 2rem;
 }
 
 button {
@@ -157,7 +157,7 @@ a:focus-visible {
 footer {
   background: var(--dark-gray);
   padding: 2rem 1rem;
-  margin-top: 3rem;
+  margin-top: 0;
   color: var(--white);
 }
 
@@ -168,23 +168,36 @@ footer {
 }
 
 .footer-links {
-  margin-top: 1.5rem;
+  margin: 1.25rem auto 0;
+  padding: 0;
+  list-style: none;
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.footer-links li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.footer-links li:last-child {
+  border-bottom: none;
 }
 
 .footer-links a {
+  display: block;
+  padding: 0.35rem 0;
   color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  transition: background 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.footer-links a:hover {
-  background: rgba(255, 255, 255, 0.1);
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
@@ -198,7 +211,7 @@ footer {
   }
 
   main {
-    padding: 1.5rem 1rem 2.5rem;
+    padding: 1.5rem 1rem 1.5rem;
   }
 
   .nav-link {
@@ -206,6 +219,6 @@ footer {
   }
 
   footer {
-    margin-top: 2rem;
+    margin-top: 0;
   }
 }

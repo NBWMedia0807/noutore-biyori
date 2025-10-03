@@ -55,30 +55,6 @@
       </ul>
     </div>
 
-    <div class="faq-section">
-      <h3><SectionIcon name="text-icon" className="section-icon" /> よくある質問</h3>
-      
-      <div class="faq-item">
-        <h4>Q. ゲームが正常に動作しません</h4>
-        <p>A. ブラウザのキャッシュをクリアしていただくか、別のブラウザでお試しください。それでも解決しない場合は、お使いのデバイスとブラウザの情報を添えてお問い合わせください。</p>
-      </div>
-
-      <div class="faq-item">
-        <h4>Q. スマートフォンでも利用できますか？</h4>
-        <p>A. はい、スマートフォンやタブレットでもご利用いただけます。レスポンシブデザインに対応しており、画面サイズに合わせて最適化されます。</p>
-      </div>
-
-      <div class="faq-item">
-        <h4>Q. 利用料金はかかりますか？</h4>
-        <p>A. 脳トレ日和は完全無料でご利用いただけます。登録も不要です。</p>
-      </div>
-
-      <div class="faq-item">
-        <h4>Q. 新しいゲームの追加予定はありますか？</h4>
-        <p>A. ユーザーの皆様からのご要望を参考に、定期的に新しいゲームの追加を検討しております。ご希望がございましたらお気軽にお聞かせください。</p>
-      </div>
-    </div>
-
     <div class="back-to-home">
       <a href="/" class="back-button">ホームに戻る</a>
     </div>
@@ -191,8 +167,7 @@
     box-shadow: 0 8px 25px rgba(255, 235, 59, 0.4);
   }
 
-  .contact-info,
-  .faq-section {
+  .contact-info {
     background: white;
     padding: 2rem;
     border-radius: 15px;
@@ -200,8 +175,7 @@
     margin-bottom: 2rem;
   }
 
-  .contact-info h3,
-  .faq-section h3 {
+  .contact-info h3 {
     font-size: 1.5rem;
     color: #2d3436;
     margin-bottom: 1rem;
@@ -237,26 +211,6 @@
     font-weight: bold;
   }
 
-  .faq-item {
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    border-radius: 12px;
-    border: 2px solid rgba(255, 235, 59, 0.2);
-  }
-
-  .faq-item h4 {
-    color: #2d3436;
-    margin-bottom: 0.8rem;
-    font-size: 1.1rem;
-  }
-
-  .faq-item p {
-    color: #636e72;
-    line-height: 1.6;
-    margin: 0;
-  }
-
   .back-to-home {
     text-align: center;
   }
@@ -289,8 +243,7 @@
     }
 
     .contact-form-section,
-    .contact-info,
-    .faq-section {
+    .contact-info {
       padding: 1.5rem;
     }
 
