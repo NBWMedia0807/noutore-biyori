@@ -1,21 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
-  <defs>
-    <linearGradient id="logo-gradient" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#fff3c4" />
-      <stop offset="100%" stop-color="#ffd166" />
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="72" height="72" rx="18" fill="url(#logo-gradient)" stroke="#f59e0b" stroke-width="2" />
-  <path
-    d="M30 18c-7.18 0-13 5.82-13 13v5.3c-3.4 2.06-5.5 5.73-5.5 9.7C11.5 52.32 17.18 58 24.5 58H30v6c0 5.52 4.48 10 10 10s10-4.48 10-10v-6h5.5C62.82 58 68.5 52.32 68.5 45c0-3.97-2.1-7.64-5.5-9.7V31c0-7.18-5.82-13-13-13-3.38 0-6.47 1.28-8.8 3.38C38.47 19.28 35.38 18 32 18z"
-    fill="#fff"
-    stroke="#f59e0b"
-    stroke-width="2"
-  />
-  <path
-    d="M32 28v16m8-22v38m8-32v16"
-    stroke="#f59e0b"
-    stroke-width="2"
-    stroke-linecap="round"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">脳トレ日和 ロゴ</title>
+  <desc id="desc">クリーム色の背景にオレンジ色の脳と放射状の光、下部に脳トレ日和の文字を配置したロゴ</desc>
+  <rect width="512" height="512" rx="64" fill="#fbf0d7" />
+  <g fill="none" stroke-linecap="round" stroke-width="24" stroke="#f3a008">
+    <path d="M256 82v60" />
+    <path d="M180 102l22 56" />
+    <path d="M108 152l46 40" />
+    <path d="M78 232h60" />
+    <path d="M404 192l46-40" />
+    <path d="M334 158l22-56" />
+    <path d="M374 276h60" />
+    <path d="M104 316l48 16" />
+    <path d="M152 388l38-44" />
+    <path d="M410 332l-48 16" />
+    <path d="M360 392l-38-44" />
+  </g>
+  <g transform="translate(96 142)">
+    <path
+      d="M160 0c-47.5 0-86 38.5-86 86v18.4C48.4 112.2 32 136 32 164c0 32 26 58 58 58h10v30c0 35.3 28.7 64 64 64s64-28.7 64-64v-30h10c32 0 58-26 58-58 0-28-16.4-51.8-42-59.6V86c0-47.5-38.5-86-86-86z"
+      fill="#f5a623"
+      stroke="#d97706"
+      stroke-width="12"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M160 38c-24 0-44 20-44 44v136c0 24 20 44 44 44s44-20 44-44V82c0-24-20-44-44-44z"
+      fill="#fcd373"
+    />
+    <path
+      d="M118 74c-17.7 0-32 14.3-32 32v56c0 17.7 14.3 32 32 32"
+      fill="none"
+      stroke="#d97706"
+      stroke-width="12"
+      stroke-linecap="round"
+    />
+    <path
+      d="M202 74c17.7 0 32 14.3 32 32v56c0 17.7-14.3 32-32 32"
+      fill="none"
+      stroke="#d97706"
+      stroke-width="12"
+      stroke-linecap="round"
+    />
+    <path d="M160 28v220" stroke="#d97706" stroke-width="12" stroke-linecap="round" />
+  </g>
+  <text
+    x="256"
+    y="436"
+    text-anchor="middle"
+    font-family="'Zen Maru Gothic', 'Noto Sans JP', 'Hiragino Maru Gothic Pro', 'Yu Gothic', 'Noto Sans CJK JP', sans-serif"
+    font-size="72"
+    font-weight="700"
+    fill="#5a3b1c"
+    letter-spacing="8"
+  >脳トレ日和</text>
 </svg>
