@@ -114,10 +114,7 @@
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-
         <span class="section-icon" aria-hidden="true">🧠</span>
-main
         <h2>問題</h2>
       </div>
       <div class="section-body">{@html bodyHtml}</div>
@@ -141,10 +138,7 @@ main
     {#if hintOpen}
       <section class="hints content-card" id={hintsId}>
         <div class="section-header">
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-
           <span class="section-icon" aria-hidden="true">✨</span>
-main
           <h2>ヒント</h2>
         </div>
         <ul>
@@ -236,11 +230,6 @@ main
   }
 
   .section-header {
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-    margin-bottom: 16px;
-  }
-
-
     display: flex;
     align-items: center;
     gap: 12px;
@@ -259,31 +248,20 @@ codex/improve-ui/ux-for-quiz-article-page-r8p1dm
     box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.6), 0 8px 14px rgba(249, 115, 22, 0.18);
   }
 
-main
   .section-header h2 {
     font-size: 1.25rem;
     color: #92400e;
     font-weight: 700;
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
     margin: 0;
   }
 
-  :global(.section-body p) {
-
-  }
-
   .section-body :global(p) {
-main
     margin-bottom: 1em;
     line-height: 1.85;
     font-size: 1.05rem;
   }
 
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-  :global(.section-body p:last-child) {
-
   .section-body :global(p:last-child) {
-main
     margin-bottom: 0;
   }
 
@@ -318,7 +296,6 @@ main
   .action-button:active {
     transform: translateY(0);
     box-shadow: 0 12px 24px rgba(234, 88, 12, 0.24);
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
   }
 
   .action-button span[aria-hidden='true'] {
@@ -337,26 +314,6 @@ codex/improve-ui/ux-for-quiz-article-page-r8p1dm
     box-shadow: 0 16px 28px rgba(250, 204, 21, 0.26);
   }
 
-
-  }
-
-  .action-button span[aria-hidden='true'] {
-    font-size: 1.2rem;
-  }
-
-  .primary {
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #78350f;
-  }
-
-  .hint-button {
-    background: linear-gradient(135deg, #fde68a, #fcd34d);
-    color: #92400e;
-    padding-inline: 2rem;
-    box-shadow: 0 16px 28px rgba(250, 204, 21, 0.26);
-  }
-
-main
   .hint-button:hover {
     box-shadow: 0 20px 32px rgba(234, 179, 8, 0.3);
   }
@@ -364,12 +321,9 @@ main
   .hints ul {
     margin: 0;
     padding-left: 1.2em;
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-main
     font-size: 1.05rem;
     line-height: 1.7;
   }
@@ -379,13 +333,10 @@ main
     padding-left: 0.4em;
   }
 
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
   .hints li + li {
     margin-top: 0.75rem;
   }
 
-
-main
   .hints li::marker {
     color: #f59e0b;
     font-size: 1.2em;
@@ -426,12 +377,9 @@ main
       padding-inline: 1.8rem;
     }
 
-codex/improve-ui/ux-for-quiz-article-page-r8p1dm
-
     .section-header {
       gap: 10px;
     }
-main
   }
 
 </style>
