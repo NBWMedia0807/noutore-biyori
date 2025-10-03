@@ -125,8 +125,9 @@
     <div class="hints-toggle">
       <button
         type="button"
-        class="action-button hint-button"
+        class="button button--secondary button--icon-leading hint-button"
         aria-expanded={hintOpen}
+        aria-pressed={hintOpen}
         aria-controls={hintsId}
         on:click={toggleHints}
       >
@@ -154,7 +155,7 @@
   {/if}
 
   <nav class="to-answer">
-    <a class="action-button primary" href={answerPath}>
+    <a class="button button--primary button--icon-trailing answer-button" href={answerPath}>
       正解ページへ進む
       <span class="sr-only">次のページへ</span>
       <span aria-hidden="true">→</span>
@@ -164,216 +165,121 @@
 
 <style>
   .quiz-detail {
-    max-width: 820px;
-    margin: 24px auto 56px;
-    padding: 0 16px 32px;
+    max-width: 860px;
+    margin: clamp(0.75rem, 2.4vw, 1.5rem) auto clamp(2.5rem, 5vw, 4rem);
+    padding: 0 1.25rem clamp(1.5rem, 3vw, 2.25rem);
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: clamp(1.5rem, 3vw, 2.6rem);
   }
 
   .quiz-header {
     text-align: center;
-    background: linear-gradient(135deg, rgba(255, 241, 204, 0.7), rgba(255, 255, 255, 0.9));
-    border-radius: 24px;
-    padding: 28px 24px 32px;
-    box-shadow: 0 18px 45px rgba(255, 193, 7, 0.18);
-    border: 1px solid rgba(250, 204, 21, 0.35);
-    backdrop-filter: blur(4px);
+    background: linear-gradient(145deg, rgba(255, 247, 224, 0.95), rgba(255, 236, 191, 0.9));
+    border-radius: var(--radius-xl);
+    padding: clamp(1.8rem, 3.5vw, 2.6rem) clamp(1.6rem, 3vw, 2.4rem);
+    box-shadow: var(--shadow-card-soft);
+    border: 1px solid var(--color-border-subtle);
   }
 
   .quiz-meta {
-    font-size: 0.85rem;
+    font-size: 0.92rem;
     letter-spacing: 0.08em;
-    color: #b45309;
+    color: var(--color-primary-600);
     font-weight: 700;
-    margin-bottom: 8px;
   }
 
   .quiz-title {
-    font-size: clamp(1.8rem, 4vw, 2.4rem);
-    line-height: 1.4;
-    margin-bottom: 12px;
-    color: #78350f;
+    font-size: clamp(1.85rem, 4.4vw, 2.5rem);
+    line-height: 1.35;
+    margin: 0.6rem 0 0.85rem;
+    color: var(--color-primary-600);
     font-weight: 800;
   }
 
   .quiz-subtitle {
-    font-size: 1rem;
-    color: #92400e;
-    opacity: 0.9;
+    font-size: clamp(1rem, 1.6vw, 1.1rem);
+    color: var(--color-text-muted);
   }
 
   .problem-image {
     margin: 0 auto;
     text-align: center;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 249, 232, 0.9));
-    padding: 18px;
-    border-radius: 24px;
-    box-shadow: 0 12px 32px rgba(251, 191, 36, 0.22);
-    border: 1px solid rgba(253, 224, 71, 0.45);
+    padding: clamp(1rem, 2vw, 1.4rem);
+    background: linear-gradient(145deg, rgba(255, 252, 240, 0.92), rgba(255, 243, 210, 0.9));
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-card-soft);
   }
 
   .problem-image img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 18px;
-    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.16);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 32px rgba(249, 115, 22, 0.16);
   }
 
   .content-card {
-    background: var(--white);
-    border-radius: 24px;
-    padding: 28px 24px;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-    border: 1px solid rgba(248, 196, 113, 0.32);
+    background: linear-gradient(160deg, rgba(255, 252, 245, 0.98), rgba(255, 244, 223, 0.92));
   }
 
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+  .content-card > .section-body {
+    max-width: 62ch;
+    font-size: clamp(1.02rem, 1.8vw, 1.1rem);
   }
 
-  .section-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(254, 240, 138, 0.8), rgba(255, 230, 179, 0.95));
-    font-size: 1.3rem;
-    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.6), 0 8px 14px rgba(249, 115, 22, 0.18);
+  .content-card > .section-body :global(p) {
+    margin: 0;
   }
 
-  .section-header h2 {
-    font-size: 1.25rem;
-    color: #92400e;
-    font-weight: 700;
+  .content-card > .section-body :global(strong) {
+    color: var(--color-primary-600);
   }
 
-  .section-body :global(p) {
-    margin-bottom: 1em;
-    line-height: 1.85;
-    font-size: 1.05rem;
-  }
-
-  .section-body :global(p:last-child) {
-    margin-bottom: 0;
+  .content-card > .section-body :global(ul),
+  .content-card > .section-body :global(ol) {
+    margin: 0;
   }
 
   .hints-toggle {
     text-align: center;
   }
 
-  .action-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.85rem 2.4rem;
-    border-radius: 999px;
-    border: none;
-    text-decoration: none;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    font-size: 1.05rem;
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #78350f;
-    box-shadow: 0 18px 32px rgba(249, 115, 22, 0.28);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  }
-
-  .action-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 22px 36px rgba(234, 88, 12, 0.32);
-    filter: brightness(1.03);
-  }
-
-  .action-button:active {
-    transform: translateY(0);
-    box-shadow: 0 12px 24px rgba(234, 88, 12, 0.24);
-  }
-
-  .action-button span[aria-hidden='true'] {
-    font-size: 1.2rem;
-  }
-
-  .primary {
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #78350f;
-  }
-
   .hint-button {
-    background: linear-gradient(135deg, #fde68a, #fcd34d);
-    color: #92400e;
-    padding-inline: 2rem;
-    box-shadow: 0 16px 28px rgba(250, 204, 21, 0.26);
+    width: min(100%, 360px);
   }
 
-  .hint-button:hover {
-    box-shadow: 0 20px 32px rgba(234, 179, 8, 0.3);
+  .hints {
+    background: linear-gradient(165deg, rgba(255, 251, 234, 0.95), rgba(255, 238, 204, 0.92));
   }
 
   .hints ul {
     margin: 0;
     padding-left: 1.2em;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    font-size: 1.05rem;
-    line-height: 1.7;
+    display: grid;
+    gap: 0.85rem;
+    font-size: clamp(1rem, 1.8vw, 1.08rem);
+    line-height: 1.72;
   }
 
   .hints li {
-    position: relative;
-    padding-left: 0.4em;
-  }
-
-  .hints li::marker {
-    color: #f59e0b;
-    font-size: 1.2em;
+    padding-left: 0.2em;
   }
 
   .to-answer {
     text-align: center;
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  .answer-button {
+    width: min(100%, 420px);
   }
 
   @media (max-width: 640px) {
     .quiz-detail {
-      margin-top: 16px;
-      gap: 20px;
+      padding-inline: 1rem;
     }
 
-    .quiz-header {
-      padding: 24px 18px 28px;
-    }
-
-    .content-card {
-      padding: 24px 18px;
-    }
-
-    .action-button {
+    .hint-button,
+    .answer-button {
       width: 100%;
-      padding-inline: 1.8rem;
-    }
-
-    .section-header {
-      gap: 10px;
     }
   }
 

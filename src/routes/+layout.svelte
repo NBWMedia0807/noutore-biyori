@@ -35,6 +35,18 @@
     jsonld: resolvedJsonLd
   };
   $: imageAlt = providedSeo.imageAlt ?? `${SITE.name}のイメージ`;
+  const footerLinks = [
+    { href: '/privacy', label: 'プライバシーポリシー' },
+    { href: '/disclaimer', label: '免責事項' },
+    { href: '/contact', label: 'お問い合わせ' },
+    { href: '/about', label: 'サイトについて' },
+    { href: '/about#author-info', label: '著者情報' },
+    { href: '/about#operator-info', label: '運営者情報' }
+  ];
+  const foundationYear = 2025;
+  const currentYear = new Date().getFullYear();
+  const copyrightYear =
+    currentYear <= foundationYear ? `${foundationYear}年` : `${foundationYear}年〜${currentYear}年`;
 </script>
 
 <svelte:head>
@@ -149,84 +161,17 @@
   <slot />
 </main>
 
-<footer>
-  <div class="footer-content">
-    <p>&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
-    <div class="footer-links">
-      <a href="/privacy">プライバシーポリシー</a>
-      <a href="/disclaimer">免責事項</a>
-      <a href="/contact">お問い合わせ</a>
-      <a href="/about">サイトについて</a>
-      <a href="/about#author-info">著者情報</a>
-      <a href="/about#operator-info">運営者情報</a>
-    </div>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <nav class="footer-nav" aria-label="フッターナビゲーション">
+      <ul class="footer-links">
+        {#each footerLinks as link (link.href)}
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        {/each}
+      </ul>
+    </nav>
+    <p class="footer-copy">&copy; {copyrightYear} 脳トレ日和 — 毎日の脳トレで健康な生活を</p>
   </div>
 </footer>
-
-<style>
-  .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1rem;
-  }
-
-  .logo-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s ease;
-  }
-
-  .logo-section:hover {
-    transform: scale(1.02);
-  }
-
-  .logo-image {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    background: var(--white);
-    border-radius: 12px;
-    padding: 8px;
-  }
-
-  .title-section {
-    text-align: left;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .breadcrumbs-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-
-  @media (max-width: 768px) {
-    .logo-section {
-      /* スマホでも横並びを維持 */
-      flex-direction: row;
-      text-align: left;
-      gap: 1rem;
-    }
-
-    .title-section {
-      text-align: left;
-    }
-
-    .logo-image {
-      width: 60px;
-      height: 60px;
-    }
-  }
-</style>
