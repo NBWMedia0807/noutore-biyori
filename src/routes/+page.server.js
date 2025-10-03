@@ -7,7 +7,12 @@ export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
 
 const QUIZZES_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_createdAt desc) {
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  && !(_id in path("drafts.**"))
+  && (!defined(publishedAt) || publishedAt <= now())
+] | order(coalesce(publishedAt, _createdAt) desc) {
   _id,
   title,
   "slug": slug.current,
@@ -22,7 +27,9 @@ const QUIZZES_QUERY = /* groq */ `
   },
   // SSR用のサムネイルURL（asset参照がない場合の保険）
   "thumbnailUrl": coalesce(problemImage.asset->url, mainImage.asset->url),
-  problemDescription
+  problemDescription,
+  publishedAt,
+  _createdAt
 }`;
 
 const createTopPageSeo = (path) =>
@@ -50,7 +57,14 @@ export const load = async (event) => {
   try {
     const result = await client.fetch(QUIZZES_QUERY);
     const quizzes = Array.isArray(result)
-      ? result.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
+      ? result.filter((quiz) => {
+          if (!quiz) return false;
+          if (typeof quiz.slug !== 'string' || quiz.slug.length === 0) return false;
+          if (quiz.publishedAt && new Date(quiz.publishedAt).getTime() > Date.now()) {
+            return false;
+          }
+          return true;
+        })
       : [];
 
     return { quizzes, seo: createTopPageSeo(url.pathname) };
