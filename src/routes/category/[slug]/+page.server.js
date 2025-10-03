@@ -17,20 +17,14 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**")) && (
-  (defined(category._ref) && category->slug.current == $slug) ||
-  (!defined(category._ref) && defined(category.slug.current) && category.slug.current == $slug) ||
-  (!defined(category._ref) && defined(category) && (category == $categoryTitle || category == $slug)) ||
-  (!defined(category) && defined($categoryMatch) && $categoryMatch != '' && title match $categoryMatch)
-)] | order(_createdAt desc) {
+*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**")) && defined(category._ref) && category->slug.current == $slug] | order(_createdAt desc) {
   _id,
   _createdAt,
   title,
   "slug": slug.current,
   category->{ _id, title, "slug": slug.current },
-  category,
   mainImage{
-    ..., 
+    ...,
     asset->{ url, metadata }
   },
   answerImage{
@@ -97,11 +91,7 @@ export const load = async (event) => {
       throw error(404, 'カテゴリが見つかりません');
     }
 
-    const quizzes = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, {
-      slug,
-      categoryTitle: category.title,
-      categoryMatch: `*${category.title}*`
-    });
+    const quizzes = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
     const normalizedQuizzes = Array.isArray(quizzes)
       ? quizzes.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
       : [];
