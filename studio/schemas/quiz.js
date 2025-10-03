@@ -18,6 +18,12 @@ export default {
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required()
     },
+    {
+      name: 'publishedAt',
+      title: '公開日時',
+      description: 'TOPページなどでの表示順に利用します。未設定の場合は作成日時が利用されます。',
+      type: 'datetime'
+    },
 
     // ── 問題 ─────────────────────────────
     {

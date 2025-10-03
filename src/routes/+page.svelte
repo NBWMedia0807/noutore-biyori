@@ -8,7 +8,14 @@
   $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
   const FALLBACK_IMAGE = '/logo.svg';
 
-  $: visibleQuizzes = quizzes.filter((quiz) => quiz?.slug);
+  $: visibleQuizzes = quizzes
+    .filter((quiz) => quiz?.slug)
+    .slice()
+    .sort((a, b) => {
+      const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
+      const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
+      return bDate - aDate;
+    });
 
   function getImageSet(quiz) {
     if (!quiz) return null;
