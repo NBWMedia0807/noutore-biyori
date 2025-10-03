@@ -51,9 +51,9 @@ export async function fetchQuizBySlug(slug) {
   }
 }
 
-export async function fetchQuizzesByCategory(category) {
+export async function fetchQuizzesByCategory(categorySlug) {
   const query = /* groq */ `
-    *[_type == "quiz" && !(_id in path("drafts.**")) && ((defined(category._ref) && category->title == $category) || (!defined(category._ref) && category == $category))] | order(_createdAt desc) {
+    *[_type == "quiz" && !(_id in path("drafts.**")) && defined(category._ref) && category->slug.current == $slug] | order(_createdAt desc) {
       _id,
       title,
       "slug": slug.current,
@@ -63,9 +63,9 @@ export async function fetchQuizzesByCategory(category) {
       _createdAt
     }
   `;
-  
+
   try {
-    const quizzes = await client.fetch(query, { category });
+    const quizzes = await client.fetch(query, { slug: categorySlug });
     return quizzes || [];
   } catch (error) {
     console.error('Error fetching quizzes by category:', error);
