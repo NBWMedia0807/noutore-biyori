@@ -12,7 +12,16 @@ const IGNORE_DIRS = new Set([
   'dist'
 ]);
 const IGNORE_FILES = new Set(['scripts/check-conflict-markers.mjs']);
-const MARKERS = ['<<<<<<<', '=======', '>>>>>>>'];
+const MARKER_PATTERNS = [/<{7}/, /={7}/, />{7}/];
+
+/**
+ * @param {string} value
+ */
+const hasMarker = (value) =>
+  MARKER_PATTERNS.some((pattern) => {
+    pattern.lastIndex = 0;
+    return pattern.test(value);
+  });
 
 /**
  * @param {string} dir
@@ -31,11 +40,11 @@ async function walk(dir) {
       const relativePath = relative(ROOT, fullPath);
       if (IGNORE_FILES.has(relativePath)) continue;
       const text = await readFile(fullPath, 'utf8');
-      if (MARKERS.some((marker) => text.includes(marker))) {
+      if (hasMarker(text)) {
         const lines = text.split(/\r?\n/);
         const markerLines = [];
         for (let i = 0; i < lines.length; i += 1) {
-          if (MARKERS.some((marker) => lines[i].includes(marker))) {
+          if (hasMarker(lines[i])) {
             markerLines.push(i + 1);
           }
         }
