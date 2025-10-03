@@ -114,7 +114,6 @@
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
-        <span class="section-icon" aria-hidden="true">🧠</span>
         <h2>問題</h2>
       </div>
       <div class="section-body">{@html bodyHtml}</div>
@@ -130,15 +129,13 @@
         aria-controls={hintsId}
         on:click={toggleHints}
       >
-        <span aria-hidden="true">💡</span>
-        {hintOpen ? 'ヒントを隠す' : `ヒントを見る（${hints.length}件）`}
+        {hintOpen ? 'ヒントを隠す' : 'ヒントを見る'}
       </button>
     </div>
 
     {#if hintOpen}
       <section class="hints content-card" id={hintsId}>
         <div class="section-header">
-          <span class="section-icon" aria-hidden="true">✨</span>
           <h2>ヒント</h2>
         </div>
         <ul>
@@ -230,22 +227,7 @@
   }
 
   .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     margin-bottom: 16px;
-  }
-
-  .section-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(254, 240, 138, 0.8), rgba(255, 230, 179, 0.95));
-    font-size: 1.3rem;
-    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.6), 0 8px 14px rgba(249, 115, 22, 0.18);
   }
 
   .section-header h2 {
@@ -378,7 +360,7 @@
     }
 
     .section-header {
-      gap: 10px;
+      margin-bottom: 14px;
     }
   }
 

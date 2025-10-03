@@ -12,28 +12,6 @@
     </div>
 
     <div class="about-section">
-      <h3><SectionIcon name="game-icon" className="section-icon" /> 提供ゲーム</h3>
-      <div class="games-grid">
-        <div class="game-info">
-          <h4>記憶力ゲーム</h4>
-          <p>数字の順番を覚える短期記憶のトレーニングゲームです。レベルが上がるにつれて桁数が増加し、段階的に難易度が上がります。</p>
-        </div>
-        <div class="game-info">
-          <h4>計算ゲーム</h4>
-          <p>簡単な足し算、引き算、掛け算の問題に答える計算力向上のゲームです。日常的な計算能力の維持に効果的です。</p>
-        </div>
-        <div class="game-info">
-          <h4>色判別ゲーム</h4>
-          <p>文字の色と内容が一致しているかを判断するゲームです。注意力と判断力を鍛えることができます。</p>
-        </div>
-        <div class="game-info">
-          <h4>文字並べゲーム</h4>
-          <p>バラバラになった文字を正しく並べて単語を完成させるゲームです。語彙力と思考力の向上に役立ちます。</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="about-section">
       <h3><SectionIcon name="features-icon" className="section-icon" /> サイトの特徴</h3>
       <ul class="features-list">
         <li><strong>シンプルな操作</strong> - 誰でも迷わず使える直感的なインターフェース</li>
@@ -182,33 +160,6 @@
     margin-bottom: 1rem;
   }
 
-  .games-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-
-  .game-info {
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 2px solid rgba(255, 235, 59, 0.2);
-  }
-
-  .game-info h4 {
-    font-size: 1.2rem;
-    color: #2d3436;
-    margin-bottom: 0.8rem;
-  }
-
-  .game-info p {
-    color: #636e72;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    margin: 0;
-  }
-
   .features-list, .target-users {
     list-style: none;
     padding: 0;
@@ -300,10 +251,6 @@
 
     .about-section {
       padding: 1.5rem;
-    }
-
-    .games-grid {
-      grid-template-columns: 1fr;
     }
 
     .info-table th, .info-table td {
