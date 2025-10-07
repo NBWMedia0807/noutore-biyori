@@ -13,7 +13,6 @@ Sanity Studio のスキーマを GitHub 上のコードから確実に反映さ�
 
 > いずれかが不足すると `src/lib/sanity.server.js` の警告ログに表示されます。ステージング環境でも同じリストで確認できます。
 
-codex/remove-unused-images-and-fix-sanity-integration-c1oawo
 ## ローカル検証のすすめ
 
 Sanity 設定を変更した後は、SvelteKit 側のフェッチ結果を自動テストで確認しておくと安心です。
@@ -24,7 +23,6 @@ pnpm test
 
 上記コマンドは `tests/quiz-pages.test.mjs` を実行し、クイズ詳細ページと回答ページのエンドポイントが 200 を返すかを検証します。`ENABLE_QUIZ_STUB=1` と `SKIP_SANITY=1` を有効化した状態で実行されるため、Sanity 接続が切れていてもテストが失敗しないよう配慮しつつ、ルーティングやテンプレートの問題を素早く検知できます。
 
-main
 ## トークン管理
 
 1. Sanity の **Manage project tokens** でロール **Deploy Studio (Token only)** を選択し、新しいトークンを発行します。
