@@ -26,6 +26,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body[data-review-mode='true'] [data-monetize],
+body[data-review-mode='true'] [data-affiliate],
+body[data-review-mode='true'] .monetize-block,
+body[data-review-mode='true'] .affiliate-block {
+  display: none !important;
+}
+
 a {
   color: inherit;
 }

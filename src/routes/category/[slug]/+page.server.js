@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { createCategoryDescription, createPageSeo } from '$lib/seo.js';
+import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import { SITE } from '$lib/config/site.js';
 
 export const prerender = false;
 
@@ -13,29 +14,82 @@ const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
   title,
   "slug": slug.current,
-  description
+  description,
+  overview
 }`;
 
-const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**")) && defined(category._ref) && category->slug.current == $slug] | order(_createdAt desc) {
-  _id,
-  _createdAt,
-  title,
-  "slug": slug.current,
-  category->{ _id, title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
+const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
+  "newest": *[
+    _type == "quiz"
+    && defined(slug.current)
+    && !(_id in path("drafts.**"))
+    && defined(category._ref)
+    && category->slug.current == $slug
+    && (!defined(publishedAt) || publishedAt <= now())
+  ] | order(coalesce(publishedAt, _createdAt) desc)[0...24]{
+    _id,
+    title,
+    "slug": slug.current,
+    category->{ title, "slug": slug.current },
+    mainImage{ asset->{ url, metadata } },
+    problemImage{ asset->{ url, metadata } },
+    answerImage{ asset->{ url, metadata } },
+    publishedAt,
+    _createdAt
   },
-  answerImage{
-    ..., 
-    asset->{ url, metadata }
+  "popular": *[
+    _type == "quiz"
+    && defined(slug.current)
+    && !(_id in path("drafts.**"))
+    && defined(category._ref)
+    && category->slug.current == $slug
+    && (!defined(publishedAt) || publishedAt <= now())
+  ] | order(
+    coalesce(popularityScore, viewCount, totalViews, impressions, 0) desc,
+    coalesce(publishedAt, _createdAt) desc
+  )[0...12]{
+    _id,
+    title,
+    "slug": slug.current,
+    category->{ title, "slug": slug.current },
+    mainImage{ asset->{ url, metadata } },
+    problemImage{ asset->{ url, metadata } },
+    answerImage{ asset->{ url, metadata } },
+    publishedAt,
+    _createdAt
   },
-  problemImage{
-    ..., 
-    asset->{ url, metadata }
-  }
+  "total": count(*[
+    _type == "quiz"
+    && defined(slug.current)
+    && !(_id in path("drafts.**"))
+    && defined(category._ref)
+    && category->slug.current == $slug
+    && (!defined(publishedAt) || publishedAt <= now())
+  ])
 }`;
+
+const pickImage = (quiz) =>
+  quiz?.problemImage?.asset?.url
+    ? quiz.problemImage
+    : quiz?.mainImage?.asset?.url
+      ? quiz.mainImage
+      : quiz?.answerImage?.asset?.url
+        ? quiz.answerImage
+        : null;
+
+const toPreview = (quiz) => {
+  if (!quiz?.slug) return null;
+  const image = pickImage(quiz);
+  return {
+    id: quiz._id ?? quiz.slug,
+    title: quiz.title ?? '脳トレ問題',
+    slug: quiz.slug,
+    category: quiz.category ?? null,
+    image,
+    publishedAt: quiz?.publishedAt,
+    createdAt: quiz?._createdAt
+  };
+};
 
 export const entries = async () => {
   if (shouldSkipSanityFetch()) {
@@ -59,16 +113,22 @@ const createFallbackResponse = (slug, path) => {
       ? {
           title: normalizedTitle,
           slug,
-          description: ''
+          description: '',
+          overview: ''
         }
       : null,
+    overview: '',
+    newest: [],
+    popular: [],
     quizzes: [],
+    totalCount: 0,
     seo: createPageSeo({
       title: normalizedTitle,
       description: `${normalizedTitle}のクイズ一覧ページです。`,
       path,
       breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
-    })
+    }),
+    breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
   };
 };
 
@@ -91,23 +151,38 @@ export const load = async (event) => {
       throw error(404, 'カテゴリが見つかりません');
     }
 
-    const quizzes = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
-    const normalizedQuizzes = Array.isArray(quizzes)
-      ? quizzes.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
+    const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
+    const newest = Array.isArray(quizzesResult?.newest)
+      ? quizzesResult.newest.map(toPreview).filter(Boolean)
       : [];
+    const popular = Array.isArray(quizzesResult?.popular)
+      ? quizzesResult.popular.map(toPreview).filter(Boolean)
+      : [];
+    const totalCount = typeof quizzesResult?.total === 'number' ? quizzesResult.total : newest.length;
 
     const description = createCategoryDescription(category.title, category.description);
+    const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
+    const overview = overviewPlain.trim() || description;
     const breadcrumbs = [{ name: category.title, url: url.pathname }];
+    const heroImage = pickImage(newest[0]);
+    const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+
     const seo = createPageSeo({
       title: category.title,
-      description,
+      description: overview,
       path: url.pathname,
+      image: imageUrl,
       breadcrumbs
     });
 
     return {
-      category,
-      quizzes: normalizedQuizzes,
+      category: { ...category, overview },
+      overview,
+      newest,
+      popular,
+      totalCount,
+      quizzes: newest,
+      breadcrumbs,
       seo
     };
   } catch (err) {
