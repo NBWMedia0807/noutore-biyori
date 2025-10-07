@@ -1,6 +1,9 @@
 <script>
+  import { createSanityImageSet } from '$lib/utils/images.js';
+
   export let data;
   const { quiz } = data;
+  const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
@@ -61,6 +64,35 @@
     return text.trim().length ? text.trim() : closingDefault;
   })();
   const questionPath = `/quiz/${quiz?.slug ?? ''}`;
+  const fallbackImageUrl = quiz?.answerImage?.asset?.url ?? '/logo.svg';
+
+  const getPreviewImageSet = (relatedQuiz) => {
+    const source = relatedQuiz?.image ?? null;
+    const fallback = source?.asset?.url ?? fallbackImageUrl;
+    return createSanityImageSet(source ?? fallback, {
+      width: 480,
+      height: 288,
+      quality: 75,
+      fallbackUrl: fallback
+    });
+  };
+
+  const getPreviewDimensions = (relatedQuiz) => {
+    const source = relatedQuiz?.image ?? null;
+    return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day}日`;
+  };
+
+  const hasRelated = relatedQuizzes.length > 0;
 </script>
 
 <main class="answer-page hide-chrome">
@@ -91,6 +123,49 @@
       問題ページに戻る
     </a>
   </nav>
+
+  {#if hasRelated}
+    <section class="related content-card" aria-labelledby="related-heading">
+      <div class="section-header">
+        <h2 id="related-heading">関連記事</h2>
+      </div>
+      <div class="related-grid">
+        {#each relatedQuizzes as relatedQuiz (relatedQuiz.slug)}
+          {@const imageSet = getPreviewImageSet(relatedQuiz)}
+          {@const dims = getPreviewDimensions(relatedQuiz)}
+          <a class="related-card" href={`/quiz/${relatedQuiz.slug}`}>
+            {#if imageSet?.src}
+              <picture>
+                {#if imageSet.avifSrcset}
+                  <source srcset={imageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 300px, 90vw" />
+                {/if}
+                {#if imageSet.webpSrcset}
+                  <source srcset={imageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 300px, 90vw" />
+                {/if}
+                <img
+                  src={imageSet.src}
+                  srcset={imageSet.srcset}
+                  sizes="(min-width: 768px) 300px, 90vw"
+                  alt={`${relatedQuiz.title}の問題イメージ`}
+                  loading="lazy"
+                  decoding="async"
+                  width={Math.round(dims.width)}
+                  height={Math.round(dims.height)}
+                />
+              </picture>
+            {/if}
+            <div class="related-card-body">
+              <p class="related-card-category">#{relatedQuiz?.category?.title ?? '脳トレ'}</p>
+              <h4>{relatedQuiz.title}</h4>
+              {#if relatedQuiz?.publishedAt || relatedQuiz?.createdAt}
+                <p class="related-card-date">{formatDate(relatedQuiz.publishedAt ?? relatedQuiz.createdAt)}</p>
+              {/if}
+            </div>
+          </a>
+        {/each}
+      </div>
+    </section>
+  {/if}
 
   <footer class="closing">
     <div class="closing-card">
@@ -226,6 +301,76 @@
     text-align: center;
   }
 
+  .related-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .related-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fffef6;
+    border: 1px solid rgba(248, 196, 113, 0.35);
+    box-shadow: 0 14px 32px rgba(249, 115, 22, 0.14);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .related-card:hover,
+  .related-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(234, 88, 12, 0.24);
+    outline: none;
+  }
+
+  .related-card picture,
+  .related-card img {
+    display: block;
+    width: 100%;
+  }
+
+  .related-card picture {
+    aspect-ratio: calc(4 / 3);
+    overflow: hidden;
+  }
+
+  .related-card img {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .related-card-body {
+    padding: 0 1.2rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .related-card-category {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #b45309;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .related-card h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #78350f;
+    line-height: 1.4;
+  }
+
+  .related-card-date {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
   .closing {
     margin: 0;
   }
@@ -261,6 +406,14 @@
     .action-button {
       width: 100%;
       padding-inline: 1.8rem;
+    }
+
+    .section-header {
+      margin-bottom: 14px;
+    }
+
+    .related-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
