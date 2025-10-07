@@ -155,6 +155,7 @@
     <nav aria-label="固定ページリンク">
       <ul class="footer-links">
         <li><a href="/privacy">プライバシーポリシー</a></li>
+        <li><a href="/terms">利用規約</a></li>
         <li><a href="/disclaimer">免責事項</a></li>
         <li><a href="/contact">お問い合わせ</a></li>
         <li><a href="/about">サイトについて</a></li>

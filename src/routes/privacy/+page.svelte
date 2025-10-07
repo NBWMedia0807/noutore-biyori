@@ -8,7 +8,7 @@
     
     <div class="policy-intro">
       <p>脳トレ日和（以下「当サイト」）は、ユーザーの皆様の個人情報保護を重要視し、以下のプライバシーポリシーに従って適切に取り扱います。</p>
-      <p class="last-updated">最終更新日：2024年1月1日</p>
+      <p class="last-updated">最終更新日：2025年3月1日</p>
     </div>
 
     <div class="policy-section">
@@ -80,7 +80,18 @@
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="brain-icon" className="section-icon" /> 5. セキュリティ</h3>
+      <h3><SectionIcon name="game-icon" className="section-icon" /> 5. 広告配信について</h3>
+      <div class="policy-content">
+        <p>当サイトでは、ユーザーに有益な情報を提供し続けるための収益確保を目的として、Google AdSenseなどの第三者配信による広告サービスを利用する場合があります。これらの広告配信事業者は、ユーザーの興味・関心に応じた広告を表示するため、Cookieを使用してアクセス情報を収集することがあります。</p>
+        <h4>5.1 パーソナライズ広告の無効化</h4>
+        <p>Googleによる広告パーソナライズを無効にしたい場合は、<a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">広告設定ページ</a>から設定を変更できます。</p>
+        <h4>5.2 Cookieの利用と第三者への情報提供</h4>
+        <p>Cookieによって取得される情報には、氏名・住所・メールアドレス・電話番号など個人を特定できる情報は含まれません。また、Googleの広告サービスによるデータの取扱いについては、<a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Googleのポリシーと規約</a>をご確認ください。</p>
+      </div>
+    </div>
+
+    <div class="policy-section">
+      <h3><SectionIcon name="brain-icon" className="section-icon" /> 6. セキュリティ</h3>
       <div class="policy-content">
         <p>当サイトは、収集した個人情報の安全性を確保するため、以下の対策を講じています：</p>
         <ul>
@@ -93,7 +104,7 @@
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="home-icon" className="section-icon" /> 6. 個人情報の開示・訂正・削除</h3>
+      <h3><SectionIcon name="home-icon" className="section-icon" /> 7. 個人情報の開示・訂正・削除</h3>
       <div class="policy-content">
         <p>ユーザーは、当サイトが保有する自己の個人情報について、以下の権利を有します：</p>
         <ul>
@@ -106,31 +117,34 @@
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="news-icon" className="section-icon" /> 7. 外部サービスの利用</h3>
+      <h3><SectionIcon name="news-icon" className="section-icon" /> 8. 外部サービスの利用</h3>
       <div class="policy-content">
         <p>当サイトでは、以下の外部サービスを利用する場合があります：</p>
-        
-        <h4>7.1 Google Analytics</h4>
+
+        <h4>8.1 Google Analytics</h4>
         <p>サイトの利用状況を分析するためにGoogle Analyticsを使用しています。Google Analyticsは、Cookieを使用してユーザーの情報を収集します。詳細は<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googleのプライバシーポリシー</a>をご確認ください。</p>
+
+        <h4>8.2 Google AdSense</h4>
+        <p>広告配信の最適化や効果測定のためにGoogle AdSenseを利用する場合があります。Google AdSenseは、ユーザーの過去のアクセス情報に基づき広告を表示します。収集された情報の利用方法については、Googleの<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>をご確認ください。</p>
       </div>
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="game-icon" className="section-icon" /> 8. 未成年者の個人情報</h3>
+      <h3><SectionIcon name="game-icon" className="section-icon" /> 9. 未成年者の個人情報</h3>
       <div class="policy-content">
         <p>当サイトは、13歳未満の児童から個人情報を意図的に収集することはありません。13歳未満の児童が個人情報を提供した場合は、保護者の方は<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
       </div>
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="text-icon" className="section-icon" /> 9. プライバシーポリシーの変更</h3>
+      <h3><SectionIcon name="text-icon" className="section-icon" /> 10. プライバシーポリシーの変更</h3>
       <div class="policy-content">
         <p>当サイトは、必要に応じてプライバシーポリシーを変更する場合があります。重要な変更については、サイト上で通知いたします。</p>
       </div>
     </div>
 
     <div class="policy-section">
-      <h3><SectionIcon name="clock-icon" className="section-icon" /> 10. お問い合わせ</h3>
+      <h3><SectionIcon name="clock-icon" className="section-icon" /> 11. お問い合わせ</h3>
       <div class="policy-content">
         <p>プライバシーポリシーに関するご質問やご意見がございましたら、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
         
