@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
+import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -29,8 +30,14 @@ export async function load({ params, setHeaders }) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
+  const related = await fetchRelatedQuizzes({
+    slug: quiz.slug,
+    categorySlug: quiz.category?.slug ?? null
+  });
+
   return {
     quiz,
+    related,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
