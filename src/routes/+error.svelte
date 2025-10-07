@@ -12,10 +12,13 @@
   const suggestionLinks = [
     { href: '/', label: 'トップページに戻る', type: 'link' },
     { href: '/quiz', label: 'クイズ一覧を見る', type: 'link' },
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+
     {
       type: 'message',
       message: 'カテゴリページは記事のパンくずからアクセスできます'
     },
+main
     { href: '/contact', label: 'お問い合わせ', type: 'link' }
   ];
 </script>

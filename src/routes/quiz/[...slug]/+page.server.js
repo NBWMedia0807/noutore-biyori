@@ -162,10 +162,26 @@ export async function load({ params, setHeaders }) {
     }
   }
 
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+  const filteredRelated = related.filter((item) => item.slug !== doc.slug);
+  const filteredPopular = popular.filter((item) => item.slug !== doc.slug);
+  const mergedRelated = filteredRelated.slice(0, 6);
+
+  if (mergedRelated.length < 6 && filteredPopular.length) {
+    const seen = new Set(mergedRelated.map((item) => item.slug));
+    for (const item of filteredPopular) {
+      if (mergedRelated.length >= 6) break;
+      if (seen.has(item.slug)) continue;
+      mergedRelated.push(item);
+      seen.add(item.slug);
+    }
+  }
+
   const filteredRelated = related.filter((item) => item.slug !== doc.slug).slice(0, 3);
   const filteredPopular = popular.filter((item) => item.slug !== doc.slug).slice(0, 5);
   const mergedRelatedSlugs = new Set(filteredRelated.map((item) => item.slug));
   const popularWithoutDuplicates = filteredPopular.filter((item) => !mergedRelatedSlugs.has(item.slug)).slice(0, 2);
+main
 
   const path = `/quiz/${doc.slug}`;
   const breadcrumbs = [];
@@ -179,8 +195,12 @@ export async function load({ params, setHeaders }) {
 
   return {
     doc,
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+    related: mergedRelated,
+
     related: filteredRelated,
     popular: popularWithoutDuplicates,
+main
     breadcrumbs,
     ui: {
       showHeader: true,
