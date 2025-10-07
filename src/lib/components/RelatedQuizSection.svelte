@@ -2,9 +2,13 @@
   import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let quizzes = [];
-  export let heading = '関連記事';
   export let headingId = 'related-heading';
   export let fallbackImageUrl = '/logo.svg';
+
+  const MAX_ITEMS = 6;
+  const headingText = '関連記事';
+  const responsiveImageSizes =
+    '(min-width: 768px) 260px, (min-width: 480px) 45vw, 90vw';
 
   const formatDate = (value) => {
     if (!value) return '';
@@ -32,14 +36,14 @@
     return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
   };
 
-  $: items = Array.isArray(quizzes) ? quizzes : [];
+  $: items = Array.isArray(quizzes) ? quizzes.slice(0, MAX_ITEMS) : [];
   $: hasItems = items.length > 0;
 </script>
 
 {#if hasItems}
   <section class="related-section" aria-labelledby={headingId}>
     <div class="related-header">
-      <h2 id={headingId}>{heading}</h2>
+      <h2 id={headingId}>{headingText}</h2>
     </div>
     <div class="related-grid">
       {#each items as quiz (quiz.slug)}
@@ -52,20 +56,20 @@
                 <source
                   srcset={imageSet.avifSrcset}
                   type="image/avif"
-                  sizes="(min-width: 768px) 360px, 90vw"
+                  sizes={responsiveImageSizes}
                 />
               {/if}
               {#if imageSet.webpSrcset}
                 <source
                   srcset={imageSet.webpSrcset}
                   type="image/webp"
-                  sizes="(min-width: 768px) 360px, 90vw"
+                  sizes={responsiveImageSizes}
                 />
               {/if}
               <img
                 src={imageSet.src}
                 srcset={imageSet.srcset}
-                sizes="(min-width: 768px) 360px, 90vw"
+                sizes={responsiveImageSizes}
                 alt={`${quiz.title}の問題イメージ`}
                 loading="lazy"
                 decoding="async"
@@ -110,7 +114,7 @@
   .related-grid {
     display: grid;
     gap: 1.4rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .related-card {
@@ -136,7 +140,9 @@
   .related-card picture {
     aspect-ratio: calc(4 / 3);
     overflow: hidden;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #fff7ed;
   }
 
@@ -144,7 +150,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .related-card-body {
@@ -176,14 +182,20 @@
     color: #6b7280;
   }
 
+  @media (min-width: 768px) {
+    .related-section {
+      padding: 32px 28px 36px;
+    }
+
+    .related-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
   @media (max-width: 768px) {
     .related-section {
       padding: 24px 18px 28px;
       gap: 1.5rem;
-    }
-
-    .related-grid {
-      grid-template-columns: minmax(0, 1fr);
     }
 
     .related-card {
