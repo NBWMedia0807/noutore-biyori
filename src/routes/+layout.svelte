@@ -158,11 +158,10 @@
 
 <footer data-review-mode={reviewMode}>
   <div class="footer-content">
-    <p class="footer-tagline">
-      毎日の脳トレで<br class="footer-tagline-break" />健康な生活を
+    <p class="footer-copy">
+      <span class="footer-copy-line">&copy; 2025年9月 脳トレ日和</span>
+      <span class="footer-copy-line">毎日の脳トレで健康な生活を</span>
     </p>
-
-    <p class="footer-copy">&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
     <nav aria-label="固定ページリンク">
       <ul class="footer-links">
         <li><a href="/privacy">プライバシーポリシー</a></li>
@@ -285,16 +284,13 @@
     color: #4b5563;
     font-size: 0.95rem;
     line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
-  .footer-tagline {
-    margin: 0;
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #b45309;
-    line-height: 1.8;
-    letter-spacing: 0.04em;
+  .footer-copy-line {
+    display: block;
   }
 
 
@@ -351,9 +347,5 @@
       padding: 2rem 1.5rem 2.5rem;
     }
 
-    .footer-tagline {
-      font-size: 1rem;
-      line-height: 1.7;
-    }
   }
 </style>
