@@ -32,7 +32,11 @@
     return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
   };
 
+codex/update-footer-text-and-related-articles-layout-hejw2r
   $: items = Array.isArray(quizzes) ? quizzes.slice(0, 6) : [];
+
+  $: items = Array.isArray(quizzes) ? quizzes : [];
+main
   $: hasItems = items.length > 0;
 </script>
 
@@ -182,6 +186,13 @@
       gap: 1.5rem;
     }
 
+codex/update-footer-text-and-related-articles-layout-hejw2r
+
+    .related-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+main
     .related-card {
       box-shadow: 0 14px 34px rgba(249, 115, 22, 0.18);
     }
