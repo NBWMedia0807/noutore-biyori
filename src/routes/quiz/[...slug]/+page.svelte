@@ -4,6 +4,10 @@
 
   export let data;
   const { doc } = data;
+codex/implement-code-improvements-for-adsense-review-j69ap6
+  const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+
+
 codex/implement-code-improvements-for-adsense-review-3ewrjj
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
 
@@ -11,6 +15,7 @@ codex/implement-code-improvements-for-adsense-review-3ewrjj
   const popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
 main
 
+main
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
     fallbackQuizImage?.asset?.url ?? doc?.answerImage?.asset?.url ?? '/logo.svg';
@@ -48,12 +53,17 @@ main
     return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
   };
 
+codex/implement-code-improvements-for-adsense-review-j69ap6
+  const hasRelated = relatedQuizzes.length > 0;
+
+
 codex/implement-code-improvements-for-adsense-review-3ewrjj
   const hasRelated = relatedQuizzes.length > 0;
 
   const hasRelated = sameCategoryQuizzes.length > 0 || popularQuizzes.length > 0;
 main
 
+main
   const formatDate = (value) => {
     if (!value) return '';
     const date = new Date(value);
@@ -249,7 +259,10 @@ main
       <div class="section-header">
         <h2 id="related-heading">関連記事</h2>
       </div>
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
 codex/implement-code-improvements-for-adsense-review-3ewrjj
+main
       <div class="related-grid">
         {#each relatedQuizzes as quiz (quiz.slug)}
           {@const imageSet = getPreviewImageSet(quiz)}
@@ -284,6 +297,8 @@ codex/implement-code-improvements-for-adsense-review-3ewrjj
             </div>
           </a>
         {/each}
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
 
       <div class="related-section-body">
         {#if sameCategoryQuizzes.length}
@@ -367,6 +382,7 @@ codex/implement-code-improvements-for-adsense-review-3ewrjj
             </div>
           </div>
         {/if}
+main
 main
       </div>
     </section>
@@ -587,11 +603,16 @@ main
     text-align: center;
   }
 
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
 codex/implement-code-improvements-for-adsense-review-3ewrjj
+main
   .related-grid {
     display: grid;
     gap: 1.2rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
 
   .related-section-body {
     display: flex;
@@ -609,6 +630,7 @@ codex/implement-code-improvements-for-adsense-review-3ewrjj
     display: grid;
     gap: 1.2rem;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+main
 main
   }
 
@@ -712,10 +734,14 @@ main
     }
 
     .related-grid {
+codex/implement-code-improvements-for-adsense-review-j69ap6
+      grid-template-columns: minmax(0, 1fr);
+
 codex/implement-code-improvements-for-adsense-review-3ewrjj
       grid-template-columns: minmax(0, 1fr);
 
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+main
 main
     }
   }
