@@ -14,6 +14,8 @@
   $: breadcrumbs = Array.isArray(currentPage?.data?.breadcrumbs)
     ? currentPage.data.breadcrumbs
     : [];
+  $: reviewMode = Boolean(data?.flags?.adsenseReviewMode);
+  $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
@@ -35,6 +37,11 @@
     jsonld: resolvedJsonLd
   };
   $: imageAlt = providedSeo.imageAlt ?? `${SITE.name}のイメージ`;
+  $: robotsContent = hasQuery ? 'noindex, follow' : 'max-image-preview:large';
+  $: if (typeof document !== 'undefined') {
+    document.documentElement.dataset.reviewMode = reviewMode ? 'true' : 'false';
+    document.body.dataset.reviewMode = reviewMode ? 'true' : 'false';
+  }
 </script>
 
 <svelte:head>
@@ -44,7 +51,7 @@
   {#if seo.description}
     <meta name="description" content={seo.description} />
   {/if}
-  <meta name="robots" content="max-image-preview:large" />
+  <meta name="robots" content={robotsContent} />
   {#if seo.canonical}
     <link rel="canonical" href={seo.canonical} />
   {/if}
@@ -102,7 +109,7 @@
 </svelte:head>
 
 {#if ui.showHeader !== false}
-  <header class="site-header">
+  <header class="site-header" data-review-mode={reviewMode}>
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
         <img
@@ -149,9 +156,9 @@
   <slot />
 </main>
 
-<footer>
+<footer data-review-mode={reviewMode}>
   <div class="footer-content">
-    <p>&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
+    <p class="footer-copy">&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
     <nav aria-label="固定ページリンク">
       <ul class="footer-links">
         <li><a href="/privacy">プライバシーポリシー</a></li>
@@ -209,10 +216,102 @@
     justify-content: center;
   }
 
+  .main-nav {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(6px);
+  }
+
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .nav-menu {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 0;
+    margin: 0;
+    justify-content: center;
+  }
+
+  .nav-link {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 600;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    background: rgba(250, 204, 21, 0.2);
+    outline: none;
+  }
+
   .breadcrumbs-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
+  }
+
+  footer {
+    background: #faf8f4;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 1rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .footer-copy {
+    margin: 0;
+    text-align: center;
+    color: #4b5563;
+    font-size: 0.95rem;
+  }
+
+  .footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+    max-width: 280px;
+    margin-inline: auto;
+  }
+
+  .footer-links a {
+    text-decoration: none;
+    color: #1f2937;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    display: block;
+    text-align: center;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-links a:hover,
+  .footer-links a:focus-visible {
+    background: rgba(250, 204, 21, 0.2);
+    outline: none;
   }
 
   @media (max-width: 768px) {
@@ -230,6 +329,10 @@
     .logo-image {
       width: 60px;
       height: 60px;
+    }
+
+    .footer-content {
+      padding: 2rem 1.5rem 2.5rem;
     }
   }
 </style>

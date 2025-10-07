@@ -1,5 +1,80 @@
 <script>
   import SectionIcon from '$lib/components/SectionIcon.svelte';
+
+  const subjectOptions = [
+    { value: 'game', label: 'ゲームについて' },
+    { value: 'bug', label: '不具合の報告' },
+    { value: 'suggestion', label: '改善提案' },
+    { value: 'other', label: 'その他' }
+  ];
+
+  const initialValues = { name: '', email: '', subject: '', message: '' };
+
+  let formValues = { ...initialValues };
+  let touched = { name: false, email: false, subject: false, message: false };
+  let errors = {};
+  let status = 'idle';
+  let feedback = '';
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validate = (values = formValues) => {
+    const nextErrors = {};
+    if (!values.name.trim()) {
+      nextErrors.name = 'お名前を入力してください。';
+    }
+    if (!values.email.trim()) {
+      nextErrors.email = 'メールアドレスを入力してください。';
+    } else if (!emailPattern.test(values.email.trim())) {
+      nextErrors.email = 'メールアドレスの形式が正しくありません。';
+    }
+    if (!values.subject) {
+      nextErrors.subject = 'お問い合わせ種別を選択してください。';
+    }
+    if (!values.message.trim()) {
+      nextErrors.message = 'お問い合わせ内容を入力してください。';
+    } else if (values.message.trim().length < 10) {
+      nextErrors.message = '10文字以上で詳しい内容をご記入ください。';
+    }
+    return nextErrors;
+  };
+
+  const handleBlur = (field) => {
+    touched = { ...touched, [field]: true };
+    errors = validate();
+  };
+
+  const handleInput = (field, event) => {
+    formValues = { ...formValues, [field]: event.target.value };
+    if (touched[field]) {
+      errors = validate();
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    touched = { name: true, email: true, subject: true, message: true };
+    errors = validate();
+    if (Object.keys(errors).length > 0) {
+      status = 'invalid';
+      feedback = '入力内容をご確認ください。';
+      return;
+    }
+
+    status = 'submitting';
+    feedback = '';
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    status = 'success';
+    feedback = 'お問い合わせを送信しました。2〜3営業日以内に担当者よりご連絡いたします。';
+    formValues = { ...initialValues };
+    touched = { name: false, email: false, subject: false, message: false };
+    errors = {};
+  };
+
+  const isSubmitting = () => status === 'submitting';
+  const hasError = (field) => touched[field] && errors[field];
 </script>
 
 <div class="content-page">
@@ -12,37 +87,107 @@
     </div>
 
     <div class="contact-form-section">
-      <form class="contact-form">
+      <form class="contact-form" novalidate on:submit|preventDefault={handleSubmit}>
         <div class="form-group">
           <label for="name">お名前 <span class="required">*</span></label>
-          <input type="text" id="name" name="name" required>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            autocomplete="name"
+            bind:value={formValues.name}
+            on:input={(event) => handleInput('name', event)}
+            on:blur={() => handleBlur('name')}
+            aria-invalid={hasError('name')}
+            aria-describedby={hasError('name') ? 'error-name' : undefined}
+            class:input-error={hasError('name')}
+            required
+          />
+          {#if hasError('name')}
+            <p id="error-name" class="error-message" role="alert">{errors.name}</p>
+          {/if}
         </div>
 
         <div class="form-group">
           <label for="email">メールアドレス <span class="required">*</span></label>
-          <input type="email" id="email" name="email" required>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            autocomplete="email"
+            bind:value={formValues.email}
+            on:input={(event) => handleInput('email', event)}
+            on:blur={() => handleBlur('email')}
+            aria-invalid={hasError('email')}
+            aria-describedby={hasError('email') ? 'error-email' : undefined}
+            class:input-error={hasError('email')}
+            required
+          />
+          {#if hasError('email')}
+            <p id="error-email" class="error-message" role="alert">{errors.email}</p>
+          {/if}
         </div>
 
         <div class="form-group">
           <label for="subject">件名 <span class="required">*</span></label>
-          <select id="subject" name="subject" required>
+          <select
+            id="subject"
+            name="subject"
+            bind:value={formValues.subject}
+            on:change={(event) => handleInput('subject', event)}
+            on:blur={() => handleBlur('subject')}
+            aria-invalid={hasError('subject')}
+            aria-describedby={hasError('subject') ? 'error-subject' : undefined}
+            class:input-error={hasError('subject')}
+            required
+          >
             <option value="">選択してください</option>
-            <option value="game">ゲームについて</option>
-            <option value="bug">不具合の報告</option>
-            <option value="suggestion">改善提案</option>
-            <option value="other">その他</option>
+            {#each subjectOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
           </select>
+          {#if hasError('subject')}
+            <p id="error-subject" class="error-message" role="alert">{errors.subject}</p>
+          {/if}
         </div>
 
         <div class="form-group">
           <label for="message">お問い合わせ内容 <span class="required">*</span></label>
-          <textarea id="message" name="message" rows="6" required placeholder="お問い合わせ内容をご記入ください"></textarea>
+          <textarea
+            id="message"
+            name="message"
+            rows="6"
+            placeholder="お問い合わせ内容をご記入ください"
+            bind:value={formValues.message}
+            on:input={(event) => handleInput('message', event)}
+            on:blur={() => handleBlur('message')}
+            aria-invalid={hasError('message')}
+            aria-describedby={hasError('message') ? 'error-message' : undefined}
+            class:input-error={hasError('message')}
+            required
+          ></textarea>
+          {#if hasError('message')}
+            <p id="error-message" class="error-message" role="alert">{errors.message}</p>
+          {/if}
         </div>
 
         <div class="form-group">
-          <button type="submit" class="submit-button">送信する</button>
+          <button type="submit" class="submit-button" disabled={isSubmitting()}>
+            {isSubmitting() ? '送信中…' : '送信する'}
+          </button>
         </div>
       </form>
+
+      {#if feedback}
+        <p
+          class="form-feedback"
+          class:success-message={status === 'success'}
+          class:error-message={status !== 'success'}
+          role={status === 'success' ? 'status' : 'alert'}
+        >
+          {feedback}
+        </p>
+      {/if}
     </div>
 
     <div class="contact-info">
@@ -124,6 +269,18 @@
     margin-bottom: 0.5rem;
   }
 
+  .input-error {
+    border-color: #f59e0b;
+    background: rgba(254, 243, 199, 0.3);
+  }
+
+  .error-message {
+    margin-top: 0.5rem;
+    color: #b45309;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
   .required {
     color: #e74c3c;
   }
@@ -165,6 +322,34 @@
   .submit-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 235, 59, 0.4);
+  }
+
+  .submit-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(255, 235, 59, 0.2);
+  }
+
+  .form-feedback {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .form-feedback.success-message {
+    background: rgba(187, 247, 208, 0.5);
+    color: #166534;
+    border: 1px solid rgba(22, 101, 52, 0.3);
+  }
+
+  .form-feedback.error-message {
+    background: rgba(254, 215, 170, 0.4);
+    color: #9a3412;
+    border: 1px solid rgba(154, 52, 18, 0.3);
   }
 
   .contact-info {
