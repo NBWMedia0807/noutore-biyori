@@ -1,8 +1,59 @@
 <script>
   import { tick } from 'svelte';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   const { doc } = data;
+  const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+
+  const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
+  const fallbackImageUrl =
+    fallbackQuizImage?.asset?.url ?? doc?.answerImage?.asset?.url ?? '/logo.svg';
+
+  const problemImageSource = doc?.problemImage ?? doc?.mainImage ?? null;
+  const problemImageSet = problemImageSource
+    ? createSanityImageSet(problemImageSource, {
+        width: 960,
+        height: 540,
+        quality: 80,
+        fallbackUrl: fallbackImageUrl
+      })
+    : null;
+  const problemImageDimensions = problemImageSource?.asset?.metadata?.dimensions ?? {
+    width: 960,
+    height: 540
+  };
+
+  const category = doc?.category?.title && doc?.category?.slug ? doc.category : null;
+  const categoryUrl = category ? `/category/${category.slug}` : null;
+
+  const getPreviewImageSet = (quiz) => {
+    const source = quiz?.image ?? quiz?.problemImage ?? quiz?.mainImage ?? null;
+    const fallback = source?.asset?.url ?? fallbackImageUrl;
+    return createSanityImageSet(source ?? fallback, {
+      width: 480,
+      height: 288,
+      quality: 75,
+      fallbackUrl: fallback
+    });
+  };
+
+  const getPreviewDimensions = (quiz) => {
+    const source = quiz?.image ?? quiz?.problemImage ?? quiz?.mainImage;
+    return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
+  };
+
+  const hasRelated = relatedQuizzes.length > 0;
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day}日`;
+  };
 
   let hintOpen = false;
   let firstHintItem;
@@ -100,14 +151,40 @@
 
 <main class="quiz-detail hide-chrome">
   <header class="quiz-header">
-    <p class="quiz-meta" aria-hidden="true">今日の脳トレ</p>
+    <div class="quiz-meta-row">
+      <p class="quiz-meta" aria-hidden="true">今日の脳トレ</p>
+      {#if category}
+        <a class="category-chip" href={categoryUrl}>#{category.title}</a>
+      {/if}
+    </div>
     <h1 class="quiz-title">{doc.title}</h1>
     <p class="quiz-subtitle">ひらめきスイッチを入れて、ゆったり挑戦しましょう。</p>
+    {#if doc?.publishedAt || doc?._createdAt}
+      <p class="quiz-date">公開日: {formatDate(doc.publishedAt ?? doc._createdAt)}</p>
+    {/if}
   </header>
 
-  {#if doc.problemImage?.asset?.url}
+  {#if problemImageSet?.src}
     <div class="problem-image">
-      <img src={doc.problemImage.asset.url} alt="問題画像" loading="lazy" decoding="async" />
+      <picture>
+        {#if problemImageSet.avifSrcset}
+          <source srcset={problemImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        {#if problemImageSet.webpSrcset}
+          <source srcset={problemImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+        {/if}
+        <img
+          src={problemImageSet.src}
+          srcset={problemImageSet.srcset}
+          sizes="(min-width: 768px) 720px, 100vw"
+          alt={`${doc.title}の問題イメージ`}
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          width={Math.round(problemImageDimensions.width)}
+          height={Math.round(problemImageDimensions.height)}
+        />
+      </picture>
     </div>
   {/if}
 
@@ -157,6 +234,49 @@
       <span aria-hidden="true">→</span>
     </a>
   </nav>
+
+  {#if hasRelated}
+    <section class="related content-card" aria-labelledby="related-heading">
+      <div class="section-header">
+        <h2 id="related-heading">関連記事</h2>
+      </div>
+      <div class="related-grid">
+        {#each relatedQuizzes as quiz (quiz.slug)}
+          {@const imageSet = getPreviewImageSet(quiz)}
+          {@const dims = getPreviewDimensions(quiz)}
+          <a class="related-card" href={`/quiz/${quiz.slug}`}>
+            {#if imageSet?.src}
+              <picture>
+                {#if imageSet.avifSrcset}
+                  <source srcset={imageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 300px, 90vw" />
+                {/if}
+                {#if imageSet.webpSrcset}
+                  <source srcset={imageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 300px, 90vw" />
+                {/if}
+                <img
+                  src={imageSet.src}
+                  srcset={imageSet.srcset}
+                  sizes="(min-width: 768px) 300px, 90vw"
+                  alt={`${quiz.title}の問題イメージ`}
+                  loading="lazy"
+                  decoding="async"
+                  width={Math.round(dims.width)}
+                  height={Math.round(dims.height)}
+                />
+              </picture>
+            {/if}
+            <div class="related-card-body">
+              <p class="related-card-category">#{quiz?.category?.title ?? '脳トレ'}</p>
+              <h4>{quiz.title}</h4>
+              {#if quiz?.publishedAt || quiz?.createdAt}
+                <p class="related-card-date">{formatDate(quiz.publishedAt ?? quiz.createdAt)}</p>
+              {/if}
+            </div>
+          </a>
+        {/each}
+      </div>
+    </section>
+  {/if}
 </main>
 
 <style>
@@ -177,6 +297,17 @@
     box-shadow: 0 18px 45px rgba(255, 193, 7, 0.18);
     border: 1px solid rgba(250, 204, 21, 0.35);
     backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .quiz-meta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
   .quiz-meta {
@@ -184,13 +315,32 @@
     letter-spacing: 0.08em;
     color: #b45309;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin: 0;
+  }
+
+  .category-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    background: rgba(248, 196, 113, 0.35);
+    color: #78350f;
+    font-weight: 700;
+    text-decoration: none;
+    min-height: 36px;
+  }
+
+  .category-chip:hover,
+  .category-chip:focus-visible {
+    background: rgba(245, 158, 11, 0.45);
+    outline: none;
   }
 
   .quiz-title {
     font-size: clamp(1.8rem, 4vw, 2.4rem);
     line-height: 1.4;
-    margin-bottom: 12px;
+    margin: 0;
     color: #78350f;
     font-weight: 800;
   }
@@ -199,6 +349,14 @@
     font-size: 1rem;
     color: #92400e;
     opacity: 0.9;
+    margin: 0;
+  }
+
+  .quiz-date {
+    margin: 0;
+    color: #92400e;
+    font-weight: 600;
+    font-size: 0.95rem;
   }
 
   .problem-image {
@@ -211,11 +369,17 @@
     border: 1px solid rgba(253, 224, 71, 0.45);
   }
 
+  .problem-image picture,
   .problem-image img {
-    max-width: 100%;
-    height: auto;
+    display: block;
+    width: 100%;
     border-radius: 18px;
     box-shadow: 0 10px 25px rgba(249, 115, 22, 0.16);
+  }
+
+  .problem-image picture {
+    overflow: hidden;
+    aspect-ratio: calc(16 / 9);
   }
 
   .content-card {
@@ -256,7 +420,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.85rem 2.4rem;
+    padding: 0.95rem 2.4rem;
     border-radius: 999px;
     border: none;
     text-decoration: none;
@@ -267,6 +431,7 @@
     color: #78350f;
     box-shadow: 0 18px 32px rgba(249, 115, 22, 0.28);
     transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    min-height: 48px;
   }
 
   .action-button:hover {
@@ -328,6 +493,76 @@
     text-align: center;
   }
 
+  .related-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .related-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fffef6;
+    border: 1px solid rgba(248, 196, 113, 0.35);
+    box-shadow: 0 14px 32px rgba(249, 115, 22, 0.14);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .related-card:hover,
+  .related-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(234, 88, 12, 0.24);
+    outline: none;
+  }
+
+  .related-card picture,
+  .related-card img {
+    display: block;
+    width: 100%;
+  }
+
+  .related-card picture {
+    aspect-ratio: calc(4 / 3);
+    overflow: hidden;
+  }
+
+  .related-card img {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .related-card-body {
+    padding: 0 1.2rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .related-card-category {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #b45309;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .related-card h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #78350f;
+    line-height: 1.4;
+  }
+
+  .related-card-date {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
   .sr-only {
     position: absolute;
     width: 1px;
@@ -362,6 +597,10 @@
     .section-header {
       margin-bottom: 14px;
     }
-  }
 
+    .related-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 </style>
+
