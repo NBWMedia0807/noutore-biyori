@@ -8,7 +8,7 @@
 
     <div class="policy-intro">
       <p>脳トレ日和（以下「当サイト」）のコンテンツおよび広告をご利用いただく際の注意事項と責任範囲について定めています。ご利用の前に必ずご一読ください。</p>
-      <p class="last-updated">最終更新日：2024年1月1日</p>
+      <p class="last-updated">最終更新日：2025年9月1日</p>
     </div>
 
     <div class="policy-section">
