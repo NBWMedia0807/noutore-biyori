@@ -10,9 +10,22 @@
       : 'お探しのページは削除されたか、URLが変更された可能性があります。';
 
   const suggestionLinks = [
+codex/implement-code-improvements-for-adsense-review-j69ap6
     { href: '/', label: 'トップページに戻る' },
     { href: '/quiz', label: 'クイズ一覧を見る' },
     { href: '/contact', label: 'お問い合わせ' }
+
+    { href: '/', label: 'トップページに戻る', type: 'link' },
+    { href: '/quiz', label: 'クイズ一覧を見る', type: 'link' },
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+
+    {
+      type: 'message',
+      message: 'カテゴリページは記事のパンくずからアクセスできます'
+    },
+main
+    { href: '/contact', label: 'お問い合わせ', type: 'link' }
+main
   ];
 </script>
 
@@ -25,8 +38,17 @@
 
   <section class="error-actions" aria-label="サポートリンク">
     <ul>
+codex/implement-code-improvements-for-adsense-review-j69ap6
       {#each suggestionLinks as link (link.href)}
         <li><a href={link.href} class="action-link">{link.label}</a></li>
+
+      {#each suggestionLinks as link, index (link.type === 'message' ? `message-${index}` : link.href)}
+        {#if link.type === 'message'}
+          <li class="link-disabled" role="note">{link.message}</li>
+        {:else}
+          <li><a href={link.href} class="action-link">{link.label}</a></li>
+        {/if}
+main
       {/each}
     </ul>
   </section>
@@ -97,6 +119,18 @@
     outline: none;
   }
 
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
+  .link-disabled {
+    text-align: center;
+    color: #9a3412;
+    font-weight: 600;
+    padding: 0.9rem 1.5rem;
+    border-radius: 999px;
+    background: rgba(253, 230, 138, 0.6);
+  }
+
+main
   @media (max-width: 640px) {
     .error-page {
       padding: 3rem 1rem;

@@ -162,6 +162,10 @@ export async function load({ params, setHeaders }) {
     }
   }
 
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+main
   const filteredRelated = related.filter((item) => item.slug !== doc.slug);
   const filteredPopular = popular.filter((item) => item.slug !== doc.slug);
   const mergedRelated = filteredRelated.slice(0, 6);
@@ -176,6 +180,15 @@ export async function load({ params, setHeaders }) {
     }
   }
 
+codex/implement-code-improvements-for-adsense-review-j69ap6
+
+  const filteredRelated = related.filter((item) => item.slug !== doc.slug).slice(0, 3);
+  const filteredPopular = popular.filter((item) => item.slug !== doc.slug).slice(0, 5);
+  const mergedRelatedSlugs = new Set(filteredRelated.map((item) => item.slug));
+  const popularWithoutDuplicates = filteredPopular.filter((item) => !mergedRelatedSlugs.has(item.slug)).slice(0, 2);
+main
+
+main
   const path = `/quiz/${doc.slug}`;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
@@ -188,7 +201,16 @@ export async function load({ params, setHeaders }) {
 
   return {
     doc,
+codex/implement-code-improvements-for-adsense-review-j69ap6
     related: mergedRelated,
+
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+    related: mergedRelated,
+
+    related: filteredRelated,
+    popular: popularWithoutDuplicates,
+main
+main
     breadcrumbs,
     ui: {
       showHeader: true,
