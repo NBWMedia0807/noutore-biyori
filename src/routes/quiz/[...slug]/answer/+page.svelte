@@ -1,6 +1,10 @@
 <script>
+  import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+
   export let data;
   const { quiz } = data;
+  const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+  const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
@@ -84,6 +88,12 @@
       <div class="section-body">{@html answerHtml}</div>
     </section>
   {/if}
+
+  <RelatedQuizSection
+    quizzes={relatedQuizzes}
+    fallbackImageUrl={relatedFallback}
+    headingId="related-answer-heading"
+  />
 
   <nav class="back-nav">
     <a class="action-button secondary" href={questionPath}>

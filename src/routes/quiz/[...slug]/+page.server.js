@@ -1,8 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
-import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
+import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -34,68 +34,6 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in pat
   _createdAt,
   _updatedAt
 }`;
-
-const RELATED_QUERY = /* groq */ `{
-  "sameCategory": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && !(_id in path("drafts.**"))
-    && slug.current != $slug
-    && $categorySlug != null
-    && defined(category._ref)
-    && category->slug.current == $categorySlug
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(coalesce(publishedAt, _createdAt) desc)[0...6]{
-    _id,
-    title,
-    "slug": slug.current,
-    category->{ title, "slug": slug.current },
-    mainImage{ asset->{ url, metadata } },
-    problemImage{ asset->{ url, metadata } },
-    publishedAt,
-    _createdAt
-  },
-  "popular": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && !(_id in path("drafts.**"))
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(
-    coalesce(popularityScore, viewCount, totalViews, impressions, 0) desc,
-    coalesce(publishedAt, _createdAt) desc
-  )[0...8]{
-    _id,
-    title,
-    "slug": slug.current,
-    category->{ title, "slug": slug.current },
-    mainImage{ asset->{ url, metadata } },
-    problemImage{ asset->{ url, metadata } },
-    publishedAt,
-    _createdAt
-  }
-}`;
-
-const pickImage = (quiz) =>
-  quiz?.problemImage?.asset?.url
-    ? quiz.problemImage
-    : quiz?.mainImage?.asset?.url
-      ? quiz.mainImage
-      : null;
-
-const toPreview = (quiz) => {
-  if (!quiz?.slug) return null;
-  const image = pickImage(quiz);
-  const publishedAt = quiz?.publishedAt ?? quiz?._createdAt;
-  return {
-    id: quiz._id ?? quiz.slug,
-    title: quiz.title ?? '脳トレ問題',
-    slug: quiz.slug,
-    category: quiz.category ?? null,
-    image,
-    publishedAt,
-    createdAt: quiz?._createdAt
-  };
-};
 
 const buildSeo = ({ doc, path }) => {
   const plainBody = portableTextToPlain(doc?.body);
@@ -143,45 +81,8 @@ export async function load({ params, setHeaders }) {
   if (typeof doc.slug === 'string' && doc.slug !== slug) {
     throw redirect(308, `/quiz/${doc.slug}`);
   }
+
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
-
-  let related = [];
-  let popular = [];
-  if (!shouldSkipSanityFetch()) {
-    try {
-      const payload = await client.fetch(RELATED_QUERY, {
-        slug: doc.slug,
-        categorySlug: doc.category?.slug ?? null
-      });
-      related = Array.isArray(payload?.sameCategory)
-        ? payload.sameCategory.map(toPreview).filter(Boolean)
-        : [];
-      popular = Array.isArray(payload?.popular) ? payload.popular.map(toPreview).filter(Boolean) : [];
-    } catch (relatedError) {
-      console.error('[quiz/[...slug]] failed to fetch related quizzes', relatedError);
-    }
-  }
-
-codex/implement-code-improvements-for-adsense-review-3ewrjj
-  const filteredRelated = related.filter((item) => item.slug !== doc.slug);
-  const filteredPopular = popular.filter((item) => item.slug !== doc.slug);
-  const mergedRelated = filteredRelated.slice(0, 6);
-
-  if (mergedRelated.length < 6 && filteredPopular.length) {
-    const seen = new Set(mergedRelated.map((item) => item.slug));
-    for (const item of filteredPopular) {
-      if (mergedRelated.length >= 6) break;
-      if (seen.has(item.slug)) continue;
-      mergedRelated.push(item);
-      seen.add(item.slug);
-    }
-  }
-
-  const filteredRelated = related.filter((item) => item.slug !== doc.slug).slice(0, 3);
-  const filteredPopular = popular.filter((item) => item.slug !== doc.slug).slice(0, 5);
-  const mergedRelatedSlugs = new Set(filteredRelated.map((item) => item.slug));
-  const popularWithoutDuplicates = filteredPopular.filter((item) => !mergedRelatedSlugs.has(item.slug)).slice(0, 2);
-main
 
   const path = `/quiz/${doc.slug}`;
   const breadcrumbs = [];
@@ -193,14 +94,14 @@ main
   }
   breadcrumbs.push({ name: doc?.title ?? 'クイズ', url: path });
 
+  const related = await fetchRelatedQuizzes({
+    slug: doc.slug,
+    categorySlug: doc.category?.slug ?? null
+  });
+
   return {
     doc,
-codex/implement-code-improvements-for-adsense-review-3ewrjj
-    related: mergedRelated,
-
-    related: filteredRelated,
-    popular: popularWithoutDuplicates,
-main
+    related,
     breadcrumbs,
     ui: {
       showHeader: true,
