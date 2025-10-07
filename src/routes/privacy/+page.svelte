@@ -8,7 +8,7 @@
     
     <div class="policy-intro">
       <p>脳トレ日和（以下「当サイト」）は、ユーザーの皆様の個人情報保護を重要視し、以下のプライバシーポリシーに従って適切に取り扱います。</p>
-      <p class="last-updated">最終更新日：2025年3月1日</p>
+      <p class="last-updated">最終更新日：2025年9月1日</p>
     </div>
 
     <div class="policy-section">

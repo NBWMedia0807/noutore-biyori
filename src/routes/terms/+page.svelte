@@ -8,7 +8,7 @@
 
     <div class="policy-intro">
       <p>この利用規約（以下「本規約」）は、脳トレ日和（以下「当サイト」）が提供するサービスの利用条件を定めるものです。ご利用に先立ち、本規約を必ずご確認ください。</p>
-      <p class="last-updated">最終更新日：2025年3月1日</p>
+      <p class="last-updated">最終更新日：2025年9月1日</p>
     </div>
 
     <div class="policy-section">
