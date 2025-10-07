@@ -54,20 +54,32 @@
                 <source
                   srcset={imageSet.avifSrcset}
                   type="image/avif"
+codex/add-recommended-articles-section-layout-cfedwy
+                  sizes="(min-width: 768px) 260px, (min-width: 480px) 45vw, 90vw"
+
                   sizes="(min-width: 960px) 260px, (min-width: 640px) 45vw, 90vw"
+main
                 />
               {/if}
               {#if imageSet.webpSrcset}
                 <source
                   srcset={imageSet.webpSrcset}
                   type="image/webp"
+codex/add-recommended-articles-section-layout-cfedwy
+                  sizes="(min-width: 768px) 260px, (min-width: 480px) 45vw, 90vw"
+
                   sizes="(min-width: 960px) 260px, (min-width: 640px) 45vw, 90vw"
+main
                 />
               {/if}
               <img
                 src={imageSet.src}
                 srcset={imageSet.srcset}
+codex/add-recommended-articles-section-layout-cfedwy
+                sizes="(min-width: 768px) 260px, (min-width: 480px) 45vw, 90vw"
+
                 sizes="(min-width: 960px) 260px, (min-width: 640px) 45vw, 90vw"
+main
                 alt={`${quiz.title}の問題イメージ`}
                 loading="lazy"
                 decoding="async"
@@ -138,7 +150,9 @@
   .related-card picture {
     aspect-ratio: calc(4 / 3);
     overflow: hidden;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #fff7ed;
   }
 
@@ -146,7 +160,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .related-card-body {
@@ -178,6 +192,9 @@
     color: #6b7280;
   }
 
+codex/add-recommended-articles-section-layout-cfedwy
+  @media (min-width: 768px) {
+
   @media (min-width: 640px) {
     .related-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -185,6 +202,7 @@
   }
 
   @media (min-width: 960px) {
+main
     .related-section {
       padding: 32px 28px 36px;
     }
