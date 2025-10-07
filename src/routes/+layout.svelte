@@ -158,10 +158,20 @@
 
 <footer data-review-mode={reviewMode}>
   <div class="footer-content">
+codex/implement-code-improvements-for-adsense-review-cyn3si
+
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+main
     <p class="footer-copy">
       &copy; 2025年9月 脳トレ日和<br />
       <span class="footer-tagline">毎日の脳トレで健康な生活を</span>
     </p>
+codex/implement-code-improvements-for-adsense-review-cyn3si
+
+
+    <p class="footer-copy">&copy; 2025年9月 脳トレ日和 - 毎日の脳トレで健康な生活を</p>
+main
+main
     <nav aria-label="固定ページリンク">
       <ul class="footer-links">
         <li><a href="/privacy">プライバシーポリシー</a></li>
@@ -283,12 +293,21 @@
     text-align: center;
     color: #4b5563;
     font-size: 0.95rem;
+codex/implement-code-improvements-for-adsense-review-cyn3si
+
+codex/implement-code-improvements-for-adsense-review-3ewrjj
+main
     line-height: 1.6;
   }
 
   .footer-tagline {
     display: block;
     margin-top: 0.25rem;
+codex/implement-code-improvements-for-adsense-review-cyn3si
+
+
+main
+
   }
 
   .footer-links {
