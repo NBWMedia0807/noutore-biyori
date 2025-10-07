@@ -12,7 +12,7 @@
     "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
-    "check:conflicts": "node scripts/check-conflict-markers.mjs"
+    "check:conflicts": "node scripts/check-conflicts.mjs"
   },
   "repository": {
     "type": "git",
