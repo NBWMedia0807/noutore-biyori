@@ -4,7 +4,12 @@
 
   export let data;
   const { doc } = data;
+codex/implement-code-improvements-for-adsense-review-3ewrjj
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+
+  const sameCategoryQuizzes = Array.isArray(data?.related) ? data.related : [];
+  const popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
+main
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
@@ -43,7 +48,11 @@
     return source?.asset?.metadata?.dimensions ?? { width: 480, height: 288 };
   };
 
+codex/implement-code-improvements-for-adsense-review-3ewrjj
   const hasRelated = relatedQuizzes.length > 0;
+
+  const hasRelated = sameCategoryQuizzes.length > 0 || popularQuizzes.length > 0;
+main
 
   const formatDate = (value) => {
     if (!value) return '';
@@ -240,6 +249,7 @@
       <div class="section-header">
         <h2 id="related-heading">関連記事</h2>
       </div>
+codex/implement-code-improvements-for-adsense-review-3ewrjj
       <div class="related-grid">
         {#each relatedQuizzes as quiz (quiz.slug)}
           {@const imageSet = getPreviewImageSet(quiz)}
@@ -274,6 +284,90 @@
             </div>
           </a>
         {/each}
+
+      <div class="related-section-body">
+        {#if sameCategoryQuizzes.length}
+          <div class="related-group">
+            <h3>同じカテゴリの新着</h3>
+            <div class="related-grid">
+              {#each sameCategoryQuizzes as quiz (quiz.slug)}
+                {@const imageSet = getPreviewImageSet(quiz)}
+                {@const dims = getPreviewDimensions(quiz)}
+                <a class="related-card" href={`/quiz/${quiz.slug}`}>
+                  {#if imageSet?.src}
+                    <picture>
+                      {#if imageSet.avifSrcset}
+                        <source srcset={imageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 300px, 90vw" />
+                      {/if}
+                      {#if imageSet.webpSrcset}
+                        <source srcset={imageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 300px, 90vw" />
+                      {/if}
+                      <img
+                        src={imageSet.src}
+                        srcset={imageSet.srcset}
+                        sizes="(min-width: 768px) 300px, 90vw"
+                        alt={`${quiz.title}の問題イメージ`}
+                        loading="lazy"
+                        decoding="async"
+                        width={Math.round(dims.width)}
+                        height={Math.round(dims.height)}
+                      />
+                    </picture>
+                  {/if}
+                  <div class="related-card-body">
+                    <p class="related-card-category">#{quiz?.category?.title ?? '脳トレ'}</p>
+                    <h4>{quiz.title}</h4>
+                    {#if quiz?.publishedAt || quiz?.createdAt}
+                      <p class="related-card-date">{formatDate(quiz.publishedAt ?? quiz.createdAt)}</p>
+                    {/if}
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        {#if popularQuizzes.length}
+          <div class="related-group">
+            <h3>人気の脳トレ</h3>
+            <div class="related-grid popular">
+              {#each popularQuizzes as quiz (quiz.slug)}
+                {@const imageSet = getPreviewImageSet(quiz)}
+                {@const dims = getPreviewDimensions(quiz)}
+                <a class="related-card" href={`/quiz/${quiz.slug}`}>
+                  {#if imageSet?.src}
+                    <picture>
+                      {#if imageSet.avifSrcset}
+                        <source srcset={imageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 220px, 90vw" />
+                      {/if}
+                      {#if imageSet.webpSrcset}
+                        <source srcset={imageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 220px, 90vw" />
+                      {/if}
+                      <img
+                        src={imageSet.src}
+                        srcset={imageSet.srcset}
+                        sizes="(min-width: 768px) 220px, 90vw"
+                        alt={`${quiz.title}の問題イメージ`}
+                        loading="lazy"
+                        decoding="async"
+                        width={Math.round(dims.width)}
+                        height={Math.round(dims.height)}
+                      />
+                    </picture>
+                  {/if}
+                  <div class="related-card-body">
+                    <p class="related-card-category">#{quiz?.category?.title ?? '脳トレ'}</p>
+                    <h4>{quiz.title}</h4>
+                    {#if quiz?.publishedAt || quiz?.createdAt}
+                      <p class="related-card-date">{formatDate(quiz.publishedAt ?? quiz.createdAt)}</p>
+                    {/if}
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </div>
+        {/if}
+main
       </div>
     </section>
   {/if}
@@ -493,10 +587,29 @@
     text-align: center;
   }
 
+codex/implement-code-improvements-for-adsense-review-3ewrjj
   .related-grid {
     display: grid;
     gap: 1.2rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  .related-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .related-group h3 {
+    margin: 0 0 1rem;
+    font-size: 1.15rem;
+    color: #92400e;
+  }
+
+  .related-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+main
   }
 
   .related-card {
@@ -599,7 +712,11 @@
     }
 
     .related-grid {
+codex/implement-code-improvements-for-adsense-review-3ewrjj
       grid-template-columns: minmax(0, 1fr);
+
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+main
     }
   }
 </style>
