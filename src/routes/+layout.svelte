@@ -1,13 +1,17 @@
-<script>
+<script lang="ts">
   import '../lib/styles/global.css';
+  import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
-  import { createPageSeo } from '$lib/seo.js';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import { SITE } from '$lib/config/site.js';
+  import { loadGtagOnce, sendPageView } from '$lib/ga';
+  import { createPageSeo } from '$lib/seo.js';
 
   export let data;
 
   const twitterHandle = SITE.twitterHandle ?? '';
+  let initialized = false;
 
   $: currentPage = $page;
   $: ui = currentPage?.data?.ui ?? {};
@@ -42,6 +46,31 @@
     document.documentElement.dataset.reviewMode = reviewMode ? 'true' : 'false';
     document.body.dataset.reviewMode = reviewMode ? 'true' : 'false';
   }
+
+  onMount(() => {
+    loadGtagOnce();
+    initialized = true;
+
+    let hasHandledInitialNavigation = false;
+
+    const unsubscribe = afterNavigate((nav) => {
+      if (!initialized) return;
+
+      if (!hasHandledInitialNavigation) {
+        hasHandledInitialNavigation = true;
+        return;
+      }
+
+      const targetUrl = nav.to?.url ?? new URL(window.location.href);
+      const path = `${targetUrl.pathname}${targetUrl.search}`;
+      sendPageView(path);
+    });
+
+    return () => {
+      initialized = false;
+      unsubscribe();
+    };
+  });
 </script>
 
 <svelte:head>
