@@ -21,8 +21,8 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 ### Vercel 設定メモ
 
-- Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
-- 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
+- Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **20.x** に設定してください。
+- 本リポジトリは Node.js 20 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
 ## Google Analytics 4（GA4）
 
@@ -53,3 +53,10 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 Playwright ベースの E2E テストは未導入です。導入する場合の参考コマンドを以下に記載します。
 - `pnpm dlx playwright install`
 - `pnpm e2e`
+
+## 依存管理（pnpm）
+
+- 依存を追加・更新したら必ずローカルで `pnpm install` を実行し、生成された `pnpm-lock.yaml` をコミットしてください。
+- Vercel で `ERR_PNPM_OUTDATED_LOCKFILE` が発生した場合は、ロックファイルがコミットされているかと、Deploy 前に `pnpm install` を走らせたかを確認してください。
+- やむを得ずロックファイルが古い状態でデプロイする場合のみ、Project Settings → Build & Development Settings → Install Command を `pnpm install --no-frozen-lockfile` に変更してリトライしてください（恒久対応ではありません）。
+- Node.js バージョンはローカル/CI/Vercel すべてで 20.x に揃えるとビルド差異が抑制できます。
