@@ -2,6 +2,7 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import { createPageSeo } from '$lib/seo.js';
+import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
@@ -13,23 +14,7 @@ const QUIZZES_QUERY = /* groq */ `
   && !(_id in path("drafts.**"))
   && (!defined(publishedAt) || publishedAt <= now())
 ] | order(coalesce(publishedAt, _createdAt) desc) {
-  _id,
-  title,
-  "slug": slug.current,
-  category->{ _id, title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  // SSR用のサムネイルURL（asset参照がない場合の保険）
-  "thumbnailUrl": coalesce(problemImage.asset->url, mainImage.asset->url),
-  problemDescription,
-  publishedAt,
-  _createdAt
+  ${QUIZ_PREVIEW_PROJECTION}
 }`;
 
 const createTopPageSeo = (path) =>
