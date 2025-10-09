@@ -114,7 +114,10 @@ const createFallbackResponse = (slug, path) => {
       path,
       breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
     }),
-    breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
+    breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : [],
+    ui: {
+      hideBreadcrumbs: true
+    }
   };
 };
 
@@ -169,7 +172,10 @@ export const load = async (event) => {
       totalCount,
       quizzes: newest,
       breadcrumbs,
-      seo
+      seo,
+      ui: {
+        hideBreadcrumbs: true
+      }
     };
   } catch (err) {
     if (err?.status === 404) {
