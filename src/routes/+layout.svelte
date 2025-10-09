@@ -10,6 +10,16 @@
 
   export let data;
 
+  const gaMeasurementId = import.meta.env.VITE_GA_ID;
+  const gaBootstrapScript = gaMeasurementId
+    ? [
+        'window.dataLayer = window.dataLayer || [];',
+        'function gtag(){window.dataLayer.push(arguments);}',
+        'window.gtag = gtag;',
+        "gtag('js', new Date());",
+        `gtag('config', ${JSON.stringify(gaMeasurementId)}, {"send_page_view": false});`
+      ].join('')
+    : '';
   const twitterHandle = SITE.twitterHandle ?? '';
 
   $: currentPage = $page;
@@ -69,6 +79,14 @@
 
 <svelte:head>
   <title>{seo.title}</title>
+  {#if gaMeasurementId}
+    <script
+      id="ga4-gtag-script"
+      async
+      src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+    ></script>
+    {@html `<script id="ga4-gtag-script-inline">${gaBootstrapScript}</script>`}
+  {/if}
   <script
     async
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846"

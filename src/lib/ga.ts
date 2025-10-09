@@ -1,4 +1,5 @@
 const SCRIPT_ID = 'ga4-gtag-script';
+const INLINE_SCRIPT_ID = `${SCRIPT_ID}-inline-bootstrap`;
 let isInitialized = false;
 let hasWarnedMissingId = false;
 
@@ -21,27 +22,26 @@ export const loadGtagOnce = () => {
     return;
   }
 
-  if (document.getElementById(SCRIPT_ID)) {
-    isInitialized = true;
-    return;
+  if (!document.getElementById(SCRIPT_ID)) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+    script.id = SCRIPT_ID;
+    document.head.appendChild(script);
   }
 
-  window.dataLayer = window.dataLayer || [];
-  function gtag(..._args: unknown[]) {
-    window.dataLayer.push(arguments);
+  if (!document.getElementById(INLINE_SCRIPT_ID)) {
+    const inlineScript = document.createElement('script');
+    inlineScript.id = INLINE_SCRIPT_ID;
+    inlineScript.text = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', ${JSON.stringify(measurementId)}, {"send_page_view": false});
+    `;
+    document.head.appendChild(inlineScript);
   }
-
-  window.gtag = gtag;
-  window.gtag('js', new Date());
-  window.gtag('config', measurementId, {
-    send_page_view: false
-  });
-
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-  script.id = SCRIPT_ID;
-  document.head.appendChild(script);
 
   isInitialized = true;
 };
