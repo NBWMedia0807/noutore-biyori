@@ -44,7 +44,8 @@ const sanitizeCategories = (entries) => {
 };
 
 const getFallbackCategories = () => {
-  if (!isQuizStubEnabled()) return [];
+  const skipSanity = shouldSkipSanityFetch();
+  if (!isQuizStubEnabled() && !skipSanity) return [];
   try {
     return sanitizeCategories(getQuizStubCategories());
   } catch (error) {
