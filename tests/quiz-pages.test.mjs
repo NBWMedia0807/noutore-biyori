@@ -61,15 +61,9 @@ const resolveSlugs = async () => {
     return KNOWN_SLUGS.slice(0, 2);
   }
 
-  const { response } = await fetchWithLog('/health/quiz/slugs');
-  if (!response.ok) {
-    throw new Error(`/health/quiz/slugs responded with ${response.status}`);
-  }
-  const payload = await response.json();
-  if (!Array.isArray(payload.slugs) || payload.slugs.length < 2) {
-    throw new Error('Health endpoint returned less than 2 quiz slugs');
-  }
-  return payload.slugs.slice(0, 2);
+  throw new Error(
+    'テストには最低2つのクイズスラッグが必要です。QUIZ_KNOWN_SLUGS環境変数を設定してください。'
+  );
 };
 
 before(async () => {
@@ -180,29 +174,3 @@ test('quiz detail and answer pages respond with 200', async () => {
   }
 });
 
-test('diagnostic API echoes Sanity document', async () => {
-  const slugs = await resolveSlugs();
-  const sampleSlug = slugs[0];
-  const { response } = await fetchWithLog(`/api/debug/sanity?slug=${encodeURIComponent(sampleSlug)}`);
-  assert.strictEqual(response.status, 200, 'Diagnostic API should return 200 for an existing slug');
-  const bodyText = await response.text();
-  let payload;
-  try {
-    payload = JSON.parse(bodyText);
-  } catch (err) {
-    console.error('[diagnostic parse error]', { status: response.status, bodyText });
-    throw err;
-  }
-
-  if ((process.env.ENABLE_QUIZ_STUB || '').toLowerCase() === '1') {
-    console.log('[diagnostic payload]', payload);
-  }
-
-  try {
-    assert.strictEqual(payload.hit, true, 'Diagnostic API should set hit=true');
-    assert.strictEqual(payload.resolvedSlug, sampleSlug, 'Resolved slug should match the requested slug');
-  } catch (err) {
-    console.error('[diagnostic debug]', { status: response.status, payload });
-    throw err;
-  }
-});

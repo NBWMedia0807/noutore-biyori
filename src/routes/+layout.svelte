@@ -70,6 +70,11 @@
 
 <svelte:head>
   <title>{seo.title}</title>
+  <script
+    async
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846"
+    crossorigin="anonymous"
+  ></script>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
   <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
   {#if seo.description}
