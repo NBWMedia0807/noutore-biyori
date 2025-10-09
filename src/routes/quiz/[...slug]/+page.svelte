@@ -142,7 +142,6 @@
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
-    <p class="quiz-subtitle">ひらめきスイッチを入れて、ゆったり挑戦しましょう。</p>
     {#if doc?.publishedAt || doc?._createdAt}
       <p class="quiz-date">公開日: {formatDate(doc.publishedAt ?? doc._createdAt)}</p>
     {/if}
@@ -220,7 +219,7 @@
   </nav>
 
   {#if hasRelated}
-    <RelatedQuizSection quizzes={relatedQuizzes} fallbackImageUrl={fallbackImageUrl} />
+    <RelatedQuizSection quizzes={relatedQuizzes} />
   {/if}
 </main>
 
@@ -279,13 +278,6 @@
     margin: 0;
     color: #78350f;
     font-weight: 800;
-  }
-
-  .quiz-subtitle {
-    font-size: 1rem;
-    color: #92400e;
-    opacity: 0.9;
-    margin: 0;
   }
 
   .quiz-date {
