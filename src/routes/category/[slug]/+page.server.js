@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
+import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 
 export const prerender = false;
 
@@ -27,15 +28,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && category->slug.current == $slug
     && (!defined(publishedAt) || publishedAt <= now())
   ] | order(coalesce(publishedAt, _createdAt) desc)[0...24]{
-    _id,
-    title,
-    "slug": slug.current,
-    category->{ title, "slug": slug.current },
-    mainImage{ asset->{ url, metadata } },
-    problemImage{ asset->{ url, metadata } },
-    answerImage{ asset->{ url, metadata } },
-    publishedAt,
-    _createdAt
+    ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
     _type == "quiz"
@@ -44,19 +37,8 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && defined(category._ref)
     && category->slug.current == $slug
     && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(
-    coalesce(popularityScore, viewCount, totalViews, impressions, 0) desc,
-    coalesce(publishedAt, _createdAt) desc
-  )[0...12]{
-    _id,
-    title,
-    "slug": slug.current,
-    category->{ title, "slug": slug.current },
-    mainImage{ asset->{ url, metadata } },
-    problemImage{ asset->{ url, metadata } },
-    answerImage{ asset->{ url, metadata } },
-    publishedAt,
-    _createdAt
+  ] | order(coalesce(publishedAt, _createdAt) desc)[0...12]{
+    ${QUIZ_PREVIEW_PROJECTION}
   },
   "total": count(*[
     _type == "quiz"
@@ -86,6 +68,10 @@ const toPreview = (quiz) => {
     slug: quiz.slug,
     category: quiz.category ?? null,
     image,
+    problemImage: quiz.problemImage ?? null,
+    mainImage: quiz.mainImage ?? null,
+    answerImage: quiz.answerImage ?? null,
+    thumbnailUrl: quiz.thumbnailUrl ?? null,
     publishedAt: quiz?.publishedAt,
     createdAt: quiz?._createdAt
   };
