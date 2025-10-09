@@ -8,10 +8,12 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
+    "check": "vitest run --reporter=verbose",
     "check:conflicts": "node scripts/check-conflict-markers.mjs"
   },
   "repository": {
@@ -33,7 +35,10 @@
   },
   "devDependencies": {
     "svelte": "5.38.3",
-    "@sveltejs/adapter-vercel": "5.10.2"
+    "@sveltejs/adapter-vercel": "5.10.2",
+    "@types/node": "24.3.0",
+    "jsdom": "26.0.0",
+    "vitest": "2.1.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -41,6 +46,6 @@
     ]
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }
