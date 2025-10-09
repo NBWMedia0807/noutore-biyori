@@ -11,6 +11,7 @@
   export let data;
 
   const twitterHandle = SITE.twitterHandle ?? '';
+  const gaMeasurementId = import.meta.env.VITE_GA_ID;
 
   $: currentPage = $page;
   $: ui = currentPage?.data?.ui ?? {};
@@ -122,6 +123,27 @@
   <meta name="twitter:title" content={seo.title} />
   {#if seo.description}
     <meta name="twitter:description" content={seo.description} />
+  {/if}
+  {#if gaMeasurementId}
+    <script
+      id="ga4-gtag-script"
+      async
+      src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+      data-measurement-id={gaMeasurementId}
+    ></script>
+    <script id="ga4-gtag-inline" data-measurement-id={gaMeasurementId}>
+      (function () {
+        const measurementId = document.currentScript?.dataset.measurementId;
+        if (!measurementId) return;
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          window.dataLayer.push(arguments);
+        }
+        window.gtag = window.gtag || gtag;
+        window.gtag('js', new Date());
+        window.gtag('config', measurementId, { send_page_view: false });
+      })();
+    </script>
   {/if}
   {#if seo.image}
     <meta name="twitter:image" content={seo.image} />

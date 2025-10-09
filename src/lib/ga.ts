@@ -21,6 +21,30 @@ export const loadGtagOnce = () => {
     return;
   }
 
+codex/implement-ga4-basic-tag-in-sveltekit-lqemxl
+  if (typeof window.gtag !== 'function') {
+    window.dataLayer = window.dataLayer || [];
+    const dataLayer = window.dataLayer;
+    function gtag(...args: unknown[]) {
+      dataLayer.push(args);
+    }
+
+    window.gtag = gtag;
+    window.gtag('js', new Date());
+    window.gtag('config', measurementId, {
+      send_page_view: false
+    });
+  }
+
+  if (!document.getElementById(SCRIPT_ID)) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+    script.id = SCRIPT_ID;
+    document.head.appendChild(script);
+  }
+
+
   if (document.getElementById(SCRIPT_ID)) {
     isInitialized = true;
     return;
@@ -43,6 +67,7 @@ export const loadGtagOnce = () => {
   script.id = SCRIPT_ID;
   document.head.appendChild(script);
 
+main
   isInitialized = true;
 };
 
