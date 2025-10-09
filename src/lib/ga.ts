@@ -1,5 +1,8 @@
 const SCRIPT_ID = 'ga4-gtag-script';
+codex/implement-ga4-basic-tag-in-sveltekit-vo3s3q
 const MEASUREMENT_DATA_ATTRIBUTE = 'measurementId';
+
+main
 let isInitialized = false;
 let hasWarnedMissingId = false;
 
@@ -21,6 +24,7 @@ export const loadGtagOnce = () => {
   if (!measurementId) {
     return;
   }
+codex/implement-ga4-basic-tag-in-sveltekit-vo3s3q
 
   if (typeof window.gtag !== 'function') {
     window.dataLayer = window.dataLayer || [];
@@ -50,6 +54,31 @@ export const loadGtagOnce = () => {
     document.head?.appendChild(script);
   }
 
+
+
+  if (document.getElementById(SCRIPT_ID)) {
+    isInitialized = true;
+    return;
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  function gtag(..._args: unknown[]) {
+    window.dataLayer.push(arguments);
+  }
+
+  window.gtag = gtag;
+  window.gtag('js', new Date());
+  window.gtag('config', measurementId, {
+    send_page_view: false
+  });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  script.id = SCRIPT_ID;
+  document.head.appendChild(script);
+
+main
   isInitialized = true;
 };
 
