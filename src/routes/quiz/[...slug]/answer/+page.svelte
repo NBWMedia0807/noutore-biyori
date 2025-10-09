@@ -89,12 +89,6 @@
     </section>
   {/if}
 
-  <RelatedQuizSection
-    quizzes={relatedQuizzes}
-    fallbackImageUrl={relatedFallback}
-    headingId="related-answer-heading"
-  />
-
   <nav class="back-nav">
     <a class="action-button secondary" href={questionPath}>
       <span aria-hidden="true">←</span>
@@ -102,11 +96,17 @@
     </a>
   </nav>
 
-  <footer class="closing">
+  <section class="closing">
     <div class="closing-card">
       <p>{closingText || closingDefault}</p>
     </div>
-  </footer>
+  </section>
+
+  <RelatedQuizSection
+    quizzes={relatedQuizzes}
+    fallbackImageUrl={relatedFallback}
+    headingId="related-answer-heading"
+  />
 </main>
 
 <style>
