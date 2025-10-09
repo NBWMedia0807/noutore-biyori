@@ -6,15 +6,17 @@
 
   const FALLBACK_IMAGE = '/logo.svg';
 
-  const pickPrimaryImage = (item) => {
+  // 優先画像の選択（Sanity Asset の有無で判定）
+  const pickImageSource = (item) => {
     if (!item) return null;
-    if (item?.image) return item.image;
-    if (item?.problemImage) return item.problemImage;
-    if (item?.mainImage) return item.mainImage;
-    if (item?.answerImage) return item.answerImage;
+    if (item?.image?.asset?._ref) return item.image;
+    if (item?.problemImage?.asset?._ref) return item.problemImage;
+    if (item?.mainImage?.asset?._ref) return item.mainImage;
+    if (item?.answerImage?.asset?._ref) return item.answerImage;
     return null;
   };
 
+  // URLフォールバック（どれかのasset.url or 手動URL）
   const pickFallbackUrl = (item) =>
     item?.image?.asset?.url ||
     item?.problemImage?.asset?.url ||
@@ -25,10 +27,12 @@
     FALLBACK_IMAGE;
 
   const buildImageSet = (item) => {
+    if (!item) return null;
     const fallback = pickFallbackUrl(item);
-    const source = pickPrimaryImage(item) ?? fallback;
-    if (!source && !fallback) return null;
-    return createSanityImageSet(source, {
+    const source = pickImageSource(item);
+    const builderSource = source ?? fallback;
+    if (!builderSource && !fallback) return null;
+    return createSanityImageSet(builderSource, {
       width: 600,
       height: 360,
       quality: 80,
@@ -37,7 +41,7 @@
   };
 
   const pickDimensions = (item) => {
-    const source = pickPrimaryImage(item);
+    const source = pickImageSource(item);
     return source?.asset?.metadata?.dimensions ?? { width: 600, height: 360 };
   };
 
@@ -125,17 +129,15 @@
     overflow: hidden;
   }
 
-  .article-card__image picture,
-  .article-card__image img {
+  .article-card__image picture {
     display: block;
     width: 100%;
-  }
-
-  .article-card__image picture {
     aspect-ratio: calc(5 / 3);
   }
 
   .article-card__image img {
+    display: block;
+    width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
