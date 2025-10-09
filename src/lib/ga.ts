@@ -1,73 +1,72 @@
-const GA_SCRIPT_ID = 'ga-gtag';
+const SCRIPT_ID = 'ga4-gtag-script';
 let isInitialized = false;
 let hasWarnedMissingId = false;
 
-const getMeasurementId = (): string | null => {
-  const id = import.meta.env.VITE_GA_ID?.toString().trim();
-  if (!id) {
-    if (typeof window !== 'undefined' && !hasWarnedMissingId) {
-      console.warn('VITE_GA_IDが設定されていないため、Google Analyticsを初期化しません。');
-      hasWarnedMissingId = true;
-    }
-    return null;
+const getMeasurementId = (): string | undefined => {
+  const id = import.meta.env.VITE_GA_ID;
+  if (!id && !hasWarnedMissingId && typeof window !== 'undefined') {
+    console.warn('Google Analytics 4: VITE_GA_ID が設定されていません。計測をスキップします。');
+    hasWarnedMissingId = true;
   }
   return id;
 };
 
-const ensureGtagFunction = () => {
-  if (typeof window === 'undefined') return;
-  if (!window.dataLayer) {
-    window.dataLayer = [];
-  }
-  if (typeof window.gtag !== 'function') {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer.push(args);
-    };
-  }
-};
-
 export const loadGtagOnce = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || isInitialized) {
+    return;
+  }
 
   const measurementId = getMeasurementId();
-  if (!measurementId) return;
-  if (isInitialized) return;
-
-  ensureGtagFunction();
-
-  if (!document.getElementById(GA_SCRIPT_ID)) {
-    const script = document.createElement('script');
-    script.id = GA_SCRIPT_ID;
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-    document.head.appendChild(script);
+  if (!measurementId) {
+    return;
   }
 
-  window.gtag?.('js', new Date());
-  window.gtag?.('config', measurementId, { send_page_view: false });
+  if (document.getElementById(SCRIPT_ID)) {
+    isInitialized = true;
+    return;
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  function gtag(..._args: unknown[]) {
+    window.dataLayer.push(arguments);
+  }
+
+  window.gtag = gtag;
+  window.gtag('js', new Date());
+  window.gtag('config', measurementId, {
+    send_page_view: false
+  });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  script.id = SCRIPT_ID;
+  document.head.appendChild(script);
 
   isInitialized = true;
 };
 
-export const sendPageView = (path?: string) => {
-  if (typeof window === 'undefined') return;
+export const sendPageView = (path: string) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
   const measurementId = getMeasurementId();
-  if (!measurementId) return;
+  if (!measurementId || typeof window.gtag !== 'function') {
+    return;
+  }
 
-  ensureGtagFunction();
-
-  const pagePath = path ?? `${window.location.pathname}${window.location.search}`;
-
-  window.gtag?.('event', 'page_view', {
-    page_path: pagePath,
+  window.gtag('event', 'page_view', {
+    page_path: path,
     page_location: window.location.href,
+    page_title: document.title,
+    send_to: measurementId
   });
 };
 
 declare global {
   interface Window {
-    dataLayer: unknown[];
+    dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
   }
 }
