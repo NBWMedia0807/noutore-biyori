@@ -136,12 +136,11 @@
 
 <main class="quiz-detail hide-chrome">
   <header class="quiz-header">
-    <div class="quiz-meta-row">
-      <p class="quiz-meta" aria-hidden="true">今日の脳トレ</p>
-      {#if category}
+    {#if category}
+      <div class="quiz-meta-row">
         <a class="category-chip" href={categoryUrl}>#{category.title}</a>
-      {/if}
-    </div>
+      </div>
+    {/if}
     <h1 class="quiz-title">{doc.title}</h1>
     <p class="quiz-subtitle">ひらめきスイッチを入れて、ゆったり挑戦しましょう。</p>
     {#if doc?.publishedAt || doc?._createdAt}
@@ -228,7 +227,7 @@
 <style>
   .quiz-detail {
     max-width: 820px;
-    margin: 24px auto 56px;
+    margin: 0 auto 48px;
     padding: 0 16px 32px;
     display: flex;
     flex-direction: column;
@@ -250,18 +249,9 @@
 
   .quiz-meta-row {
     display: flex;
-    gap: 12px;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-  }
-
-  .quiz-meta {
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    color: #b45309;
-    font-weight: 700;
-    margin: 0;
   }
 
   .category-chip {
