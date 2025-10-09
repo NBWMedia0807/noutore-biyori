@@ -87,9 +87,6 @@
             height={Math.round(dimensions.height)}
           />
         </picture>
-        {#if categoryTitle}
-          <div class="article-card__category">#{categoryTitle}</div>
-        {/if}
       </div>
     {/if}
     <div class="article-card__content">
@@ -149,20 +146,6 @@
   .article-card:hover .article-card__image img,
   .article-card:focus-within .article-card__image img {
     transform: scale(1.03);
-  }
-
-  .article-card__category {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(250, 204, 21, 0.95);
-    color: #7c2d12;
-    padding: 0.4rem 0.9rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    box-shadow: 0 8px 18px rgba(250, 204, 21, 0.35);
   }
 
   .article-card__content {
