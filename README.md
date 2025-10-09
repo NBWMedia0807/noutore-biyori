@@ -23,3 +23,20 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 - Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
 - 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
+
+### Google アナリティクス (GA4) 設定
+
+1. Vercel のダッシュボードで対象プロジェクトを開き、**Settings > Environment Variables** を選択します。
+2. 以下の値を Production と Preview の両方に設定してください。
+
+   | Key         | Value           |
+   | ----------- | --------------- |
+   | `VITE_GA_ID` | `G-855Y7S6M95` |
+
+3. 必要に応じてローカル環境でも `.env.local` に同じキーを追加すると、開発中に GA 連携を確認できます。
+
+#### 動作確認手順
+
+1. 上記設定を適用後、デプロイされた環境にアクセスします。
+2. ブラウザで `https://analytics.google.com/` にログインし、対象プロパティの **DebugView** を開きます。
+3. サイトを初回ロードおよび内部リンクで遷移し、`page_view` イベントが DebugView に表示されることを確認します。

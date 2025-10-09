@@ -4,6 +4,9 @@
   import { SITE } from '$lib/config/site.js';
   import { createPageSeo } from '$lib/seo.js';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
+  import { loadGtagOnce, sendPageView } from '$lib/ga';
 
   export let data;
 
@@ -16,6 +19,7 @@
     : [];
   $: reviewMode = Boolean(data?.flags?.adsenseReviewMode);
   $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
+  let shouldSkipNextPageView = true;
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
@@ -42,6 +46,25 @@
     document.documentElement.dataset.reviewMode = reviewMode ? 'true' : 'false';
     document.body.dataset.reviewMode = reviewMode ? 'true' : 'false';
   }
+
+  onMount(() => {
+    loadGtagOnce();
+
+    if (typeof window !== 'undefined') {
+      sendPageView(`${window.location.pathname}${window.location.search}`);
+    }
+
+    afterNavigate((navigation) => {
+      if (shouldSkipNextPageView) {
+        shouldSkipNextPageView = false;
+        return;
+      }
+
+      const path = navigation?.to?.url?.pathname ?? window.location.pathname;
+      const search = navigation?.to?.url?.search ?? window.location.search;
+      sendPageView(`${path}${search}`);
+    });
+  });
 </script>
 
 <svelte:head>
