@@ -66,6 +66,22 @@ export const getQuizStubDocument = (slug) => {
   return doc ? clone(doc) : null;
 };
 
+export const getQuizStubCategories = () => {
+  const map = new Map();
+  for (const doc of STUB_QUIZZES) {
+    const category = doc?.category;
+    if (!category || typeof category.slug !== 'string' || typeof category.title !== 'string') {
+      continue;
+    }
+    const slug = category.slug.trim();
+    const title = category.title.trim();
+    if (!slug || !title || map.has(slug)) continue;
+    map.set(slug, { slug, title });
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+};
+
 export const resolveQuizStubSlug = (slugCandidates, lowerSlugCandidates) => {
   const slugCandidateSet = new Set(slugCandidates);
   const lowerCandidateSet = new Set(lowerSlugCandidates);
