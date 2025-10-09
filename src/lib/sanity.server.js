@@ -1,6 +1,5 @@
 // src/lib/sanity.server.js
 import { createClient } from '@sanity/client';
-import imageUrlBuilder from '@sanity/image-url';
 import { env } from '$env/dynamic/private';
 import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
 
@@ -47,12 +46,6 @@ if (publicDataset && publicDataset !== dataset) {
   );
 }
 
-export const sanityEnv = {
-  projectId,
-  dataset,
-  apiVersion
-};
-
 const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
 const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true';
 
@@ -69,8 +62,4 @@ export const client = createClient({
   perspective: enablePreviewDrafts ? 'previewDrafts' : 'published'
 });
 
-const builder = imageUrlBuilder(client);
-export const urlFor = (source) => builder.image(source);
-
 export const shouldSkipSanityFetch = () => shouldBypassSanity;
-export const isSanityPreviewEnabled = () => enablePreviewDrafts;

@@ -23,7 +23,7 @@ const safeDecode = (value) => {
   }
 };
 
-export const createSlugCandidates = (value) => {
+const createSlugCandidates = (value) => {
   if (!value) return [];
 
   const decoded = safeDecode(value);
@@ -50,21 +50,4 @@ export const createSlugQueryPayload = (value) => {
   const candidates = createSlugCandidates(value);
   const lowerCandidates = unique(candidates.map((entry) => entry.toLowerCase()));
   return { candidates, lowerCandidates };
-};
-
-export const mergeSlugCandidateLists = (...lists) => {
-  const seen = new Set();
-  const merged = [];
-  for (const list of lists) {
-    if (!Array.isArray(list)) continue;
-    for (const value of list) {
-      if (typeof value !== 'string') continue;
-      const trimmed = value.trim();
-      if (!trimmed) continue;
-      if (seen.has(trimmed)) continue;
-      seen.add(trimmed);
-      merged.push(trimmed);
-    }
-  }
-  return merged;
 };

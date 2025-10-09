@@ -31,56 +31,6 @@ export const QUIZ_SLUGS_QUERY = /* groq */ `
   _updatedAt
 }`;
 
-export const QUIZ_DETAIL_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  _createdAt,
-  _updatedAt,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemDescription,
-  "hints": select(
-    defined(hints) => hints,
-    defined(hint) => [hint],
-    []
-  ),
-  adCode1,
-  adCode2
-}`;
-
-export const QUIZ_ANSWER_BY_ID_QUERY = /* groq */ `
-*[_type == "quiz" && _id == $id && !(_id in path("drafts.**"))][0]{
-  _id,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  answerImage{ asset->{ url, metadata } },
-  answerExplanation,
-  closingMessage,
-  adCode1,
-  adCode2,
-  _createdAt,
-  _updatedAt
-}`;
-
-export const QUIZ_DIAGNOSTIC_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  title,
-  "slug": slug.current,
-  _createdAt,
-  _updatedAt
-}`;
-
 export const createSlugContext = (rawSlug) => {
   const original = typeof rawSlug === 'string' ? rawSlug : '';
   let decoded = original;
