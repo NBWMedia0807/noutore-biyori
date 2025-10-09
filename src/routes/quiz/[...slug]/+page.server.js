@@ -106,7 +106,8 @@ export async function load({ params, setHeaders }) {
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
-      hideBreadcrumbs: false
+      hideBreadcrumbs: false,
+      mainClass: 'main--flush'
     },
     seo: buildSeo({ doc, path })
   };

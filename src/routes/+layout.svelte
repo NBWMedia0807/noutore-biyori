@@ -29,6 +29,7 @@
     : [];
   $: reviewMode = Boolean(data?.flags?.adsenseReviewMode);
   $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
+  $: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
   let shouldSkipNextPageView = true;
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
@@ -198,7 +199,7 @@
   </div>
 {/if}
 
-<main>
+<main class={mainClass}>
   <slot />
 </main>
 
