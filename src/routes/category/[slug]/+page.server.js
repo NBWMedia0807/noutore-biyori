@@ -3,6 +3,7 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
+import { getQuizStubCategory, getQuizStubQuizzesByCategory } from '$lib/server/quiz-stub.js';
 
 export const prerender = false;
 
@@ -91,6 +92,41 @@ export const entries = async () => {
   }
 };
 
+const createStubCategoryResponse = (slug, path) => {
+  const stubCategory = getQuizStubCategory(slug);
+  const stubQuizzes = getQuizStubQuizzesByCategory(slug);
+  const previews = Array.isArray(stubQuizzes) ? stubQuizzes.map(toPreview).filter(Boolean) : [];
+
+  if (!stubCategory) {
+    return null;
+  }
+
+  const overview = createCategoryDescription(stubCategory.title, '');
+  const breadcrumbs = [{ name: stubCategory.title, url: path }];
+  const heroImage = pickImage(previews[0]);
+  const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+
+  return {
+    category: { ...stubCategory, description: '', overview },
+    overview,
+    newest: previews,
+    popular: previews,
+    quizzes: previews,
+    totalCount: previews.length,
+    breadcrumbs,
+    seo: createPageSeo({
+      title: stubCategory.title,
+      description: overview,
+      path,
+      image: imageUrl,
+      breadcrumbs
+    }),
+    ui: {
+      hideBreadcrumbs: true
+    }
+  };
+};
+
 const createFallbackResponse = (slug, path) => {
   const fallbackTitle = slug ? slug.replace(/-/g, ' ') : 'カテゴリ';
   const normalizedTitle = fallbackTitle || 'カテゴリ';
@@ -130,6 +166,10 @@ export const load = async (event) => {
   }
 
   if (shouldSkipSanityFetch()) {
+    const stubResponse = createStubCategoryResponse(slug, url.pathname);
+    if (stubResponse) {
+      return stubResponse;
+    }
     return createFallbackResponse(slug, url.pathname);
   }
 

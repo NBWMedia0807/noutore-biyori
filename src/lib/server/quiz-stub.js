@@ -3,6 +3,13 @@ import { createSlugQueryPayload } from '$lib/utils/slug.js';
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
 const clone = (value) => (hasStructuredClone ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
+const sanitizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const fallbackTitleFromSlug = (value) => {
+  const sanitized = sanitizeText(value);
+  if (!sanitized) return '';
+  return sanitized.replace(/[-_]+/g, ' ');
+};
+
 const STUB_QUIZZES = [
   {
     _id: 'stub-quiz-a',
@@ -73,13 +80,45 @@ export const getQuizStubCategories = () => {
     if (!category || typeof category.slug !== 'string' || typeof category.title !== 'string') {
       continue;
     }
-    const slug = category.slug.trim();
-    const title = category.title.trim();
+    const slug = sanitizeText(category.slug);
+    const title = sanitizeText(category.title);
     if (!slug || !title || map.has(slug)) continue;
     map.set(slug, { slug, title });
   }
 
   return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+};
+
+export const getQuizStubCategory = (slug) => {
+  const normalizedSlug = sanitizeText(slug);
+  if (!normalizedSlug) return null;
+
+  for (const doc of STUB_QUIZZES) {
+    const categorySlug = sanitizeText(doc?.category?.slug);
+    if (!categorySlug || categorySlug !== normalizedSlug) continue;
+    const title = sanitizeText(doc.category.title) || fallbackTitleFromSlug(normalizedSlug) || normalizedSlug;
+    return { slug: categorySlug, title };
+  }
+
+  return null;
+};
+
+export const getQuizStubQuizzesByCategory = (slug) => {
+  const normalizedSlug = sanitizeText(slug);
+  if (!normalizedSlug) return [];
+
+  return STUB_QUIZZES.filter((doc) => sanitizeText(doc?.category?.slug) === normalizedSlug).map((doc) =>
+    clone({
+      ...doc,
+      category: doc?.category
+        ? {
+            slug: sanitizeText(doc.category.slug) || normalizedSlug,
+            title:
+              sanitizeText(doc.category.title) || fallbackTitleFromSlug(normalizedSlug) || normalizedSlug
+          }
+        : null
+    })
+  );
 };
 
 export const resolveQuizStubSlug = (slugCandidates, lowerSlugCandidates) => {
