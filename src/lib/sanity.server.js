@@ -47,7 +47,12 @@ if (publicDataset && publicDataset !== dataset) {
 }
 
 const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
-const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true';
+const hasExplicitProjectId = typeof env.SANITY_PROJECT_ID === 'string' && env.SANITY_PROJECT_ID.trim().length > 0;
+const shouldAutoBypass = !hasExplicitProjectId && !hasToken;
+if (shouldAutoBypass) {
+  console.info('[sanity.server] SKIP_SANITY inferred because SANITY_PROJECT_ID is not configured.');
+}
+const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true' || shouldAutoBypass;
 
 if (!env.SANITY_PROJECT_ID) {
   console.warn('[sanity.server] SANITY_PROJECT_ID is missing; falling back to default projectId.');

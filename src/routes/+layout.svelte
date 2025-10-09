@@ -86,7 +86,11 @@
       async
       src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
     ></script>
-    {@html `<script id="ga4-gtag-script-inline">${gaBootstrapScript}</script>`}
+    {#if gaBootstrapScript}
+      <script id="ga4-gtag-script-inline">
+        {gaBootstrapScript}
+      </script>
+    {/if}
   {/if}
   <script
     async
