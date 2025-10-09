@@ -22,7 +22,7 @@
 {#if !visibleQuizzes.length}
   <p>まだクイズが投稿されていません。</p>
 {:else}
-  <ArticleGrid>
+  <ArticleGrid minWidth={280} gap={24}>
     {#each visibleQuizzes as quiz (quiz.slug)}
       <ArticleCard {quiz} />
     {/each}
