@@ -2,7 +2,7 @@
 import {defineConfig, ScheduleAction, ScheduledBadge} from 'sanity'
 import {deskTool} from 'sanity/desk'
 import {visionTool} from '@sanity/vision'
-import schemaTypes from './schemas/index.js'
+import schemaTypes from './schemas'
 import { SANITY_DEFAULTS } from '../src/lib/sanityDefaults.js'
 
 export default defineConfig({
