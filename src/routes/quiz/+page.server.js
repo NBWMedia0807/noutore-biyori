@@ -27,7 +27,9 @@ const QUIZZES_QUERY = /* groq */ `
     ...,
     asset->{ url, metadata }
   },
-  problemDescription
+  problemDescription,
+  "publishedAt": coalesce(publishedAt, _createdAt),
+  _createdAt
 }`;
 
 const createQuizListSeo = (path) =>
