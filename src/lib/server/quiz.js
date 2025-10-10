@@ -39,6 +39,7 @@ export const QUIZ_SLUGS_QUERY = /* groq */ `
 ] | order(${QUIZ_ORDER_BY_PUBLISHED}){
   _id,
   "slug": slug.current,
+  publishedAt,
   _updatedAt
 }`;
 

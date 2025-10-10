@@ -39,7 +39,6 @@ const pickImage = (quiz) =>
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
-  const publishedAt = quiz?.publishedAt ?? quiz?._createdAt;
   return {
     id: quiz._id ?? quiz.slug,
     title: quiz.title ?? '脳トレ問題',
@@ -50,8 +49,7 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt,
-    createdAt: quiz?._createdAt
+    publishedAt: quiz?.publishedAt ?? null
   };
 };
 

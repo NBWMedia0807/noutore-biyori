@@ -52,7 +52,7 @@ const buildSeo = ({ doc, path }) => {
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
   const image = doc?.problemImage?.asset?.url || doc?.mainImage?.asset?.url;
-  const publishedAt = doc?.publishedAt ?? doc?._createdAt;
+  const publishedAt = doc?.publishedAt ?? null;
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {

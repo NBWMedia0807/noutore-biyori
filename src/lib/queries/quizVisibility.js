@@ -10,9 +10,7 @@ export const QUIZ_PUBLISHED_FILTER = shouldRestrictToPublishedContent
   && publishedAt <= now()`
   : '';
 
-export const QUIZ_ORDER_BY_PUBLISHED = shouldRestrictToPublishedContent
-  ? 'publishedAt desc'
-  : 'coalesce(publishedAt, _createdAt) desc';
+export const QUIZ_ORDER_BY_PUBLISHED = 'publishedAt desc';
 
 export const CATEGORY_DRAFT_FILTER = shouldRestrictToPublishedContent
   ? `
@@ -51,12 +49,18 @@ export const filterVisibleQuizzes = (items) => {
       const slug = toSlugString(quiz);
       if (!slug) return false;
 
+      const publishedAt = quiz?.publishedAt;
+
       if (!shouldRestrictToPublishedContent) {
-        return true;
+        return Boolean(publishedAt);
       }
 
-      const publishedAt = quiz?.publishedAt;
       if (!publishedAt) return false;
+
+      if (Number.isNaN(Date.parse(publishedAt))) {
+        console.warn('[quizVisibility] Invalid publishedAt value detected', publishedAt, quiz?._id);
+        return false;
+      }
 
       return !isFutureScheduled(publishedAt);
     });

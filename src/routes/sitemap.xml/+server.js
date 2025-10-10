@@ -90,7 +90,7 @@ export const GET = async () => {
   quizzes.forEach((quiz) => {
     const slug = quiz?.slug;
     if (!slug) return;
-    const lastmod = toIsoString(quiz._updatedAt ?? quiz.publishedAt ?? quiz._createdAt);
+    const lastmod = toIsoString(quiz.publishedAt);
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',

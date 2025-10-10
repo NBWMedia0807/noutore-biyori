@@ -32,6 +32,7 @@ const STUB_QUIZZES = [
     closingMessage: [
       { _type: 'block', children: [{ _type: 'span', text: '明日も新しい問題を公開予定です。ぜひ挑戦してください！' }] }
     ],
+    publishedAt: '2024-01-01T00:00:00Z',
     _createdAt: '2024-01-01T00:00:00Z',
     _updatedAt: '2024-01-02T00:00:00Z'
   },
@@ -55,6 +56,7 @@ const STUB_QUIZZES = [
     closingMessage: [
       { _type: 'block', children: [{ _type: 'span', text: '他のマッチ棒クイズにも挑戦してみましょう！' }] }
     ],
+    publishedAt: '2024-01-05T00:00:00Z',
     _createdAt: '2024-01-05T00:00:00Z',
     _updatedAt: '2024-01-06T00:00:00Z'
   },
@@ -85,6 +87,7 @@ const STUB_QUIZZES = [
         children: [{ _type: 'span', text: '他の間違い探しにも挑戦して観察力を鍛えましょう！' }]
       }
     ],
+    publishedAt: '2024-01-10T00:00:00Z',
     _createdAt: '2024-01-10T00:00:00Z',
     _updatedAt: '2024-01-11T00:00:00Z'
   }
@@ -96,7 +99,12 @@ export const isQuizStubEnabled = () => {
 };
 
 export const getQuizStubCatalog = () =>
-  STUB_QUIZZES.map((doc) => ({ _id: doc._id, slug: doc.slug, _updatedAt: doc._updatedAt }));
+  STUB_QUIZZES.map((doc) => ({
+    _id: doc._id,
+    slug: doc.slug,
+    publishedAt: doc.publishedAt,
+    _updatedAt: doc._updatedAt
+  }));
 
 export const getQuizStubDocument = (slug) => {
   const doc = STUB_QUIZZES.find((entry) => entry.slug === slug);
