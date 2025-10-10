@@ -42,7 +42,7 @@ const Q = /* groq */ `*[
   closingMessage,
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
-  publishedAt,
+  "publishedAt": coalesce(publishedAt, _createdAt),
   _createdAt,
   _updatedAt
 }`;
