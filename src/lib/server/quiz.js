@@ -6,6 +6,13 @@ import {
   getQuizStubDocument,
   resolveQuizStubSlug
 } from '$lib/server/quiz-stub.js';
+import {
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes,
+  isFutureScheduled,
+  shouldRestrictToPublishedContent
+} from '$lib/queries/quizVisibility.js';
 
 const formatPrefix = (prefix) => (prefix ? `[${prefix}]` : '[quiz]');
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
@@ -25,7 +32,11 @@ const uniqueStrings = (values) => {
 };
 
 export const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  ${QUIZ_PUBLISHED_FILTER}
+] | order(${QUIZ_ORDER_BY_PUBLISHED}){
   _id,
   "slug": slug.current,
   _updatedAt
@@ -64,7 +75,7 @@ export const fetchQuizCatalog = async (logPrefix = 'quiz catalog') => {
     try {
       const result = await client.fetch(QUIZ_SLUGS_QUERY);
       if (Array.isArray(result)) {
-        catalog = result.filter((entry) => typeof entry?.slug === 'string' && entry.slug.length > 0);
+        catalog = filterVisibleQuizzes(result);
       }
     } catch (error) {
       console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz catalog`, error);
@@ -93,6 +104,16 @@ export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
     try {
       const doc = await client.fetch(query, { slug });
       if (doc) {
+        if (
+          shouldRestrictToPublishedContent &&
+          doc.publishedAt &&
+          isFutureScheduled(doc.publishedAt)
+        ) {
+          console.info(
+            `${formatPrefix(logPrefix)} Ignoring future publish date for slug:${slug} (${doc.publishedAt})`
+          );
+          return null;
+        }
         return doc;
       }
     } catch (error) {

@@ -1,5 +1,10 @@
 import { client } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
+import {
+  CATEGORY_DRAFT_FILTER,
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER
+} from '$lib/queries/quizVisibility.js';
 
 const STATIC_ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
@@ -9,15 +14,20 @@ const STATIC_ROUTES = [
 ];
 
 const QUERY = /* groq */ `{
-  "categories": *[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
+  "categories": *[_type == "category" && defined(slug.current)${CATEGORY_DRAFT_FILTER}] | order(_updatedAt desc) {
     "slug": slug.current,
     _updatedAt
   },
-  "quizzes": *[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_updatedAt desc) {
+  "quizzes": *[
+    _type == "quiz"
+    && defined(slug.current)
+    ${QUIZ_PUBLISHED_FILTER}
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
     _id,
     "slug": slug.current,
     _updatedAt,
-    _createdAt
+    _createdAt,
+    publishedAt
   }
 }`;
 
@@ -80,7 +90,7 @@ export const GET = async () => {
   quizzes.forEach((quiz) => {
     const slug = quiz?.slug;
     if (!slug) return;
-    const lastmod = toIsoString(quiz._updatedAt ?? quiz._createdAt);
+    const lastmod = toIsoString(quiz._updatedAt ?? quiz.publishedAt ?? quiz._createdAt);
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',

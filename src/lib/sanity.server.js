@@ -68,3 +68,4 @@ export const client = createClient({
 });
 
 export const shouldSkipSanityFetch = () => shouldBypassSanity;
+export const previewDraftsEnabled = enablePreviewDrafts;
