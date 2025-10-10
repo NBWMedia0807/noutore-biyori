@@ -3,6 +3,13 @@ import { createSlugQueryPayload } from '$lib/utils/slug.js';
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
 const clone = (value) => (hasStructuredClone ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
+const sanitizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const fallbackTitleFromSlug = (value) => {
+  const sanitized = sanitizeText(value);
+  if (!sanitized) return '';
+  return sanitized.replace(/[-_]+/g, ' ');
+};
+
 const STUB_QUIZZES = [
   {
     _id: 'stub-quiz-a',
@@ -50,6 +57,36 @@ const STUB_QUIZZES = [
     ],
     _createdAt: '2024-01-05T00:00:00Z',
     _updatedAt: '2024-01-06T00:00:00Z'
+  },
+  {
+    _id: 'stub-quiz-c',
+    slug: 'spot-the-difference-sample',
+    title: 'サンプル間違い探し',
+    category: { title: '間違い探し', slug: 'spot-the-difference' },
+    mainImage: null,
+    problemImage: null,
+    problemDescription: '2枚のイラストから異なる部分を3つ見つけてください。',
+    hints: [
+      { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: キャラクターの持ち物に注目。' }] },
+      { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 背景の小物も確認しましょう。' }] }
+    ],
+    adCode1: '',
+    adCode2: '',
+    answerImage: null,
+    answerExplanation: [
+      {
+        _type: 'block',
+        children: [{ _type: 'span', text: '帽子の模様、テーブル上のカップ、壁の絵が異なっています。' }]
+      }
+    ],
+    closingMessage: [
+      {
+        _type: 'block',
+        children: [{ _type: 'span', text: '他の間違い探しにも挑戦して観察力を鍛えましょう！' }]
+      }
+    ],
+    _createdAt: '2024-01-10T00:00:00Z',
+    _updatedAt: '2024-01-11T00:00:00Z'
   }
 ];
 
@@ -73,13 +110,45 @@ export const getQuizStubCategories = () => {
     if (!category || typeof category.slug !== 'string' || typeof category.title !== 'string') {
       continue;
     }
-    const slug = category.slug.trim();
-    const title = category.title.trim();
+    const slug = sanitizeText(category.slug);
+    const title = sanitizeText(category.title);
     if (!slug || !title || map.has(slug)) continue;
     map.set(slug, { slug, title });
   }
 
   return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+};
+
+export const getQuizStubCategory = (slug) => {
+  const normalizedSlug = sanitizeText(slug);
+  if (!normalizedSlug) return null;
+
+  for (const doc of STUB_QUIZZES) {
+    const categorySlug = sanitizeText(doc?.category?.slug);
+    if (!categorySlug || categorySlug !== normalizedSlug) continue;
+    const title = sanitizeText(doc.category.title) || fallbackTitleFromSlug(normalizedSlug) || normalizedSlug;
+    return { slug: categorySlug, title };
+  }
+
+  return null;
+};
+
+export const getQuizStubQuizzesByCategory = (slug) => {
+  const normalizedSlug = sanitizeText(slug);
+  if (!normalizedSlug) return [];
+
+  return STUB_QUIZZES.filter((doc) => sanitizeText(doc?.category?.slug) === normalizedSlug).map((doc) =>
+    clone({
+      ...doc,
+      category: doc?.category
+        ? {
+            slug: sanitizeText(doc.category.slug) || normalizedSlug,
+            title:
+              sanitizeText(doc.category.title) || fallbackTitleFromSlug(normalizedSlug) || normalizedSlug
+          }
+        : null
+    })
+  );
 };
 
 export const resolveQuizStubSlug = (slugCandidates, lowerSlugCandidates) => {
