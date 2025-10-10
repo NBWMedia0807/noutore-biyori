@@ -165,8 +165,14 @@ export const load = async (event) => {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
+  const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname);
+
   if (shouldSkipSanityFetch()) {
+codex-xhn1t3
+    const stubResponse = resolveStubResponse();
+
     const stubResponse = createStubCategoryResponse(slug, url.pathname);
+main
     if (stubResponse) {
       return stubResponse;
     }
@@ -177,6 +183,11 @@ export const load = async (event) => {
     const category = await client.fetch(CATEGORY_QUERY, { slug });
 
     if (!category) {
+      const stubResponse = resolveStubResponse();
+      if (stubResponse) {
+        console.info(`[category/${slug}] Falling back to stub data because category is missing in Sanity`);
+        return stubResponse;
+      }
       throw error(404, 'カテゴリが見つかりません');
     }
 
@@ -222,6 +233,11 @@ export const load = async (event) => {
       throw err;
     }
     console.error(`[category/${slug}] Sanity fetch failed`, err);
+    const stubResponse = resolveStubResponse();
+    if (stubResponse) {
+      console.info(`[category/${slug}] Using stub data due to Sanity fetch failure`);
+      return stubResponse;
+    }
     return createFallbackResponse(slug, url.pathname);
   }
 };
