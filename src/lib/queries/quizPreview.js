@@ -24,6 +24,6 @@ export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
     mainImage.asset->url,
     answerImage.asset->url
   ),
-  publishedAt,
+  "publishedAt": coalesce(publishedAt, _createdAt),
   _createdAt
 `;

@@ -27,7 +27,7 @@ const QUERY = /* groq */ `{
     "slug": slug.current,
     _updatedAt,
     _createdAt,
-    publishedAt
+    "publishedAt": coalesce(publishedAt, _createdAt)
   }
 }`;
 
