@@ -48,7 +48,7 @@ if (publicDataset && publicDataset !== dataset) {
 
 const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
 const hasExplicitProjectId = typeof env.SANITY_PROJECT_ID === 'string' && env.SANITY_PROJECT_ID.trim().length > 0;
-const shouldAutoBypass = !hasExplicitProjectId && !hasToken;
+const shouldAutoBypass = nodeEnv !== 'production' && !hasExplicitProjectId && !hasToken;
 if (shouldAutoBypass) {
   console.info('[sanity.server] SKIP_SANITY inferred because SANITY_PROJECT_ID is not configured.');
 }
