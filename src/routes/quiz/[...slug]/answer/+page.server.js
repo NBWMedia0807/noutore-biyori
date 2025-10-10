@@ -1,12 +1,13 @@
 import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
+import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 
 export const prerender = false;
 export const ssr = true;
 export const config = { runtime: 'nodejs22.x' };
 
-const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
+const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED_FILTER}][0]{
   _id,
   title,
   "slug": slug.current,

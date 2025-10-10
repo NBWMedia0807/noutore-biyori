@@ -1,14 +1,26 @@
+import { env } from '$env/dynamic/private';
 import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
+import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 
 export const prerender = false;
 export const ssr = true;
-export const config = { runtime: 'nodejs22.x' };
+const quizBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
+const quizIsrConfig = { expiration: false };
+if (quizBypassToken) {
+  quizIsrConfig.bypassToken = quizBypassToken;
+}
 
-const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
+export const config = { runtime: 'nodejs22.x', isr: quizIsrConfig };
+
+const Q = /* groq */ `*[
+  _type == "quiz"
+  && slug.current == $slug
+  ${QUIZ_PUBLISHED_FILTER}
+][0]{
   _id,
   title,
   "slug": slug.current,

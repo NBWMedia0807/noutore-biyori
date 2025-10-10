@@ -1,11 +1,20 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
+import {
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes
+} from '$lib/queries/quizVisibility.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
 
 const QUIZZES_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))] | order(_createdAt desc) {
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  ${QUIZ_PUBLISHED_FILTER}
+] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
   _id,
   title,
   "slug": slug.current,
@@ -46,9 +55,7 @@ export const load = async (event) => {
 
   try {
     const result = await client.fetch(QUIZZES_QUERY);
-    const quizzes = Array.isArray(result)
-      ? result.filter((quiz) => quiz && typeof quiz.slug === 'string' && quiz.slug.length > 0)
-      : [];
+    const quizzes = filterVisibleQuizzes(result);
 
     return { quizzes, seo: createQuizListSeo(url.pathname) };
   } catch (error) {

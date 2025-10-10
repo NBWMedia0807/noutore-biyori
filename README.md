@@ -24,6 +24,26 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 - Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
 - 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
+### Sanity 予約公開と ISR 再検証の設定
+
+1. Vercel の Environment Variables に以下を追加します（Production / Preview 両方）。値は十分な長さのランダム文字列を推奨します。
+
+   | Key                         | 用途                                                                 |
+   | --------------------------- | -------------------------------------------------------------------- |
+   | `SANITY_REVALIDATE_SECRET`  | Sanity Webhook からの認証、および ISR の再検証トークンとして利用します。 |
+   | `VERCEL_REVALIDATE_TOKEN`※ | 任意。`SANITY_REVALIDATE_SECRET` と別値にしたい場合のみ設定します。     |
+
+   ※未設定の場合は `SANITY_REVALIDATE_SECRET` の値が再検証トークンとして使われます。
+
+2. Sanity Studio > Project settings > API > Webhooks で新しい Webhook を作成します。
+
+   - **URL**: `https://<your-domain>/api/revalidate?secret=<SANITY_REVALIDATE_SECRET>`
+   - **Trigger on**: `Create`, `Update`, `Delete`, `Publish`, `Unpublish`, `Schedule execute`
+   - **Filter**: `_type == "quiz"`
+   - **HTTP method**: `POST`
+
+3. 予約公開が実行された際に Vercel のログに `revalidate` の出力が記録されます。必要に応じて Vercel の Functions ログで確認してください。
+
 ### Google アナリティクス (GA4) 設定
 
 1. Vercel のダッシュボードで対象プロジェクトを開き、**Settings > Environment Variables** を選択します。

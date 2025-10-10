@@ -21,8 +21,17 @@ export default {
     {
       name: 'publishedAt',
       title: '公開日時',
-      description: 'TOPページなどでの表示順に利用します。未設定の場合は作成日時が利用されます。',
-      type: 'datetime'
+      description:
+        '公開開始日時です。未来の日時を指定すると予約公開になります。スタジオでは日本時間 (Asia/Tokyo) で表示されます。',
+      type: 'datetime',
+      options: {
+        dateFormat: 'YYYY-MM-DD',
+        timeFormat: 'HH:mm',
+        calendarTodayLabel: '今日',
+        timeStep: 5
+      },
+      validation: (Rule) => Rule.required(),
+      initialValue: () => new Date().toISOString()
     },
 
     // ── 問題 ─────────────────────────────

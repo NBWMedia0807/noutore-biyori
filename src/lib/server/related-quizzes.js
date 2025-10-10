@@ -1,25 +1,28 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
+import {
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes
+} from '$lib/queries/quizVisibility.js';
 
 const RELATED_QUERY = /* groq */ `{
   "sameCategory": *[
     _type == "quiz"
     && defined(slug.current)
     && slug.current != $slug
-    && !(_id in path("drafts.**"))
-    && (!defined(publishedAt) || publishedAt <= now())
+    ${QUIZ_PUBLISHED_FILTER}
     && defined(category._ref)
     && category->slug.current == $categorySlug
-  ] | order(coalesce(publishedAt, _createdAt) desc)[0...12]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "latest": *[
     _type == "quiz"
     && defined(slug.current)
     && slug.current != $slug
-    && !(_id in path("drafts.**"))
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(coalesce(publishedAt, _createdAt) desc)[0...24]{
+    ${QUIZ_PUBLISHED_FILTER}
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
     ${QUIZ_PREVIEW_PROJECTION}
   }
 }`;
@@ -61,10 +64,8 @@ export async function fetchRelatedQuizzes({ slug, categorySlug }) {
       categorySlug: categorySlug ?? null
     });
 
-    const sameCategory = Array.isArray(payload?.sameCategory)
-      ? payload.sameCategory.map(toPreview).filter(Boolean)
-      : [];
-    const latest = Array.isArray(payload?.latest) ? payload.latest.map(toPreview).filter(Boolean) : [];
+    const sameCategory = filterVisibleQuizzes(payload?.sameCategory).map(toPreview).filter(Boolean);
+    const latest = filterVisibleQuizzes(payload?.latest).map(toPreview).filter(Boolean);
 
     const seen = new Set();
     const limit = 6;

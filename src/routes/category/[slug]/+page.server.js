@@ -4,16 +4,22 @@ import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$
 import { SITE } from '$lib/config/site.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 import { getQuizStubCategory, getQuizStubQuizzesByCategory } from '$lib/server/quiz-stub.js';
+import {
+  CATEGORY_DRAFT_FILTER,
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes
+} from '$lib/queries/quizVisibility.js';
 
 export const prerender = false;
 
 const CATEGORY_SLUGS_QUERY = /* groq */ `
-*[_type == "category" && defined(slug.current) && !(_id in path("drafts.**"))]{
+*[_type == "category" && defined(slug.current)${CATEGORY_DRAFT_FILTER}]{
   "slug": slug.current
 }`;
 
 const CATEGORY_QUERY = /* groq */ `
-*[_type == "category" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
+*[_type == "category" && slug.current == $slug${CATEGORY_DRAFT_FILTER}][0]{
   title,
   "slug": slug.current,
   description,
@@ -24,30 +30,27 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
     && defined(slug.current)
-    && !(_id in path("drafts.**"))
     && defined(category._ref)
     && category->slug.current == $slug
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(coalesce(publishedAt, _createdAt) desc)[0...24]{
+    ${QUIZ_PUBLISHED_FILTER}
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
     _type == "quiz"
     && defined(slug.current)
-    && !(_id in path("drafts.**"))
     && defined(category._ref)
     && category->slug.current == $slug
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(coalesce(publishedAt, _createdAt) desc)[0...12]{
+    ${QUIZ_PUBLISHED_FILTER}
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "total": count(*[
     _type == "quiz"
     && defined(slug.current)
-    && !(_id in path("drafts.**"))
     && defined(category._ref)
     && category->slug.current == $slug
-    && (!defined(publishedAt) || publishedAt <= now())
+    ${QUIZ_PUBLISHED_FILTER}
   ])
 }`;
 
@@ -188,13 +191,15 @@ export const load = async (event) => {
     }
 
     const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
-    const newest = Array.isArray(quizzesResult?.newest)
-      ? quizzesResult.newest.map(toPreview).filter(Boolean)
-      : [];
-    const popular = Array.isArray(quizzesResult?.popular)
-      ? quizzesResult.popular.map(toPreview).filter(Boolean)
-      : [];
-    const totalCount = typeof quizzesResult?.total === 'number' ? quizzesResult.total : newest.length;
+    const newestSource = filterVisibleQuizzes(quizzesResult?.newest);
+    const popularSource = filterVisibleQuizzes(quizzesResult?.popular);
+
+    const newest = newestSource.map(toPreview).filter(Boolean);
+    const popular = popularSource.map(toPreview).filter(Boolean);
+
+    const totalCount = typeof quizzesResult?.total === 'number'
+      ? quizzesResult.total
+      : newestSource.length;
 
     const description = createCategoryDescription(category.title, category.description);
     const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
