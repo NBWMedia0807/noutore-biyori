@@ -3,6 +3,7 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
+import { getQuizStubCategory, getQuizStubQuizzesByCategory } from '$lib/server/quiz-stub.js';
 
 export const prerender = false;
 
@@ -91,6 +92,41 @@ export const entries = async () => {
   }
 };
 
+const createStubCategoryResponse = (slug, path) => {
+  const stubCategory = getQuizStubCategory(slug);
+  const stubQuizzes = getQuizStubQuizzesByCategory(slug);
+  const previews = Array.isArray(stubQuizzes) ? stubQuizzes.map(toPreview).filter(Boolean) : [];
+
+  if (!stubCategory) {
+    return null;
+  }
+
+  const overview = createCategoryDescription(stubCategory.title, '');
+  const breadcrumbs = [{ name: stubCategory.title, url: path }];
+  const heroImage = pickImage(previews[0]);
+  const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+
+  return {
+    category: { ...stubCategory, description: '', overview },
+    overview,
+    newest: previews,
+    popular: previews,
+    quizzes: previews,
+    totalCount: previews.length,
+    breadcrumbs,
+    seo: createPageSeo({
+      title: stubCategory.title,
+      description: overview,
+      path,
+      image: imageUrl,
+      breadcrumbs
+    }),
+    ui: {
+      hideBreadcrumbs: true
+    }
+  };
+};
+
 const createFallbackResponse = (slug, path) => {
   const fallbackTitle = slug ? slug.replace(/-/g, ' ') : 'カテゴリ';
   const normalizedTitle = fallbackTitle || 'カテゴリ';
@@ -129,7 +165,13 @@ export const load = async (event) => {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
+  const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname);
+
   if (shouldSkipSanityFetch()) {
+    const stubResponse = resolveStubResponse();
+    if (stubResponse) {
+      return stubResponse;
+    }
     return createFallbackResponse(slug, url.pathname);
   }
 
@@ -137,6 +179,11 @@ export const load = async (event) => {
     const category = await client.fetch(CATEGORY_QUERY, { slug });
 
     if (!category) {
+      const stubResponse = resolveStubResponse();
+      if (stubResponse) {
+        console.info(`[category/${slug}] Falling back to stub data because category is missing in Sanity`);
+        return stubResponse;
+      }
       throw error(404, 'カテゴリが見つかりません');
     }
 
@@ -182,6 +229,11 @@ export const load = async (event) => {
       throw err;
     }
     console.error(`[category/${slug}] Sanity fetch failed`, err);
+    const stubResponse = resolveStubResponse();
+    if (stubResponse) {
+      console.info(`[category/${slug}] Using stub data due to Sanity fetch failure`);
+      return stubResponse;
+    }
     return createFallbackResponse(slug, url.pathname);
   }
 };

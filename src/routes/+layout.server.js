@@ -44,7 +44,8 @@ const sanitizeCategories = (entries) => {
 };
 
 const getFallbackCategories = () => {
-  if (!isQuizStubEnabled()) return [];
+  const skipSanity = shouldSkipSanityFetch();
+  if (!isQuizStubEnabled() && !skipSanity) return [];
   try {
     return sanitizeCategories(getQuizStubCategories());
   } catch (error) {
@@ -67,8 +68,21 @@ export const load = async () => {
   try {
     const result = await client.fetch(CATEGORY_QUERY);
     const categories = sanitizeCategories(result);
-    const resolvedCategories =
-      categories.length > 0 ? categories : fallbackCategories;
+
+    let resolvedCategories = categories;
+    if (fallbackCategories.length > 0) {
+      const existingSlugs = new Set(categories.map((category) => category.slug));
+      const additionalCategories = fallbackCategories.filter(
+        (category) => !existingSlugs.has(category.slug)
+      );
+      if (additionalCategories.length > 0) {
+        resolvedCategories = sanitizeCategories([...categories, ...additionalCategories]);
+      }
+    }
+
+    if (resolvedCategories.length === 0) {
+      resolvedCategories = fallbackCategories;
+    }
 
     if (categories.length === 0 && fallbackCategories.length > 0) {
       console.info('[+layout.server] Falling back to stub categories for global navigation');
