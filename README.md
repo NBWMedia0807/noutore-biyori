@@ -60,6 +60,7 @@ node scripts/backfill-publishedAt.mjs
   - ローカル: `pnpm dev` を再起動
   - Hosted/Vercel: 対象の Studio デプロイを再実行
 
+codex/add-publishedat-field-to-quiz-document-6zd8p9
 ### Vision での確認用クエリ
 
 Sanity Studio の Vision で公開日時が正しく保存されているか確認する際は、以下のクエリを実行してください。
@@ -68,6 +69,8 @@ Sanity Studio の Vision で公開日時が正しく保存されているか確�
 *[_type == "quiz"]{title, publishedAt, _createdAt}
 ```
 
+
+main
 ### バックデート公開の運用手順
 
 - Sanity Studio の記事編集画面には `公開日時 (publishedAt)` フィールドがあります。新規作成時は自動で現在時刻がセットされます。
