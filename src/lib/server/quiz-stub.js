@@ -57,6 +57,36 @@ const STUB_QUIZZES = [
     ],
     _createdAt: '2024-01-05T00:00:00Z',
     _updatedAt: '2024-01-06T00:00:00Z'
+  },
+  {
+    _id: 'stub-quiz-c',
+    slug: 'spot-the-difference-sample',
+    title: 'サンプル間違い探し',
+    category: { title: '間違い探し', slug: 'spot-the-difference' },
+    mainImage: null,
+    problemImage: null,
+    problemDescription: '2枚のイラストから異なる部分を3つ見つけてください。',
+    hints: [
+      { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: キャラクターの持ち物に注目。' }] },
+      { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 背景の小物も確認しましょう。' }] }
+    ],
+    adCode1: '',
+    adCode2: '',
+    answerImage: null,
+    answerExplanation: [
+      {
+        _type: 'block',
+        children: [{ _type: 'span', text: '帽子の模様、テーブル上のカップ、壁の絵が異なっています。' }]
+      }
+    ],
+    closingMessage: [
+      {
+        _type: 'block',
+        children: [{ _type: 'span', text: '他の間違い探しにも挑戦して観察力を鍛えましょう！' }]
+      }
+    ],
+    _createdAt: '2024-01-10T00:00:00Z',
+    _updatedAt: '2024-01-11T00:00:00Z'
   }
 ];
 
