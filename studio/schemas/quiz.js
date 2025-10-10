@@ -18,6 +18,11 @@ export default {
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required()
     },
+    /**
+     * 公開日時（バックデート・未来日時の予約公開に利用）
+     * - 初期値は作成時刻
+     * - Studio 側では日本時間 (Asia/Tokyo) で表示
+     */
     {
       name: 'publishedAt',
       title: '公開日時',
