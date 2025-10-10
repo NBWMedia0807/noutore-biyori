@@ -168,7 +168,11 @@ export const load = async (event) => {
   const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname);
 
   if (shouldSkipSanityFetch()) {
+codex-xhn1t3
     const stubResponse = resolveStubResponse();
+
+    const stubResponse = createStubCategoryResponse(slug, url.pathname);
+main
     if (stubResponse) {
       return stubResponse;
     }
