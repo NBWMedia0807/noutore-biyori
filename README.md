@@ -44,18 +44,28 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 3. 予約公開が実行された際に Vercel のログに `revalidate` の出力が記録されます。必要に応じて Vercel の Functions ログで確認してください。
 
+## 公開日時（publishedAt）
+
+- `quiz` ドキュメントに `publishedAt: datetime` を追加しました（必須、初期値=作成時刻）。
+- Studio の記事編集画面では任意の日時（日本時間）に変更でき、並び順や公開可否の判定に利用します。
+- 既存データで `publishedAt` が未設定のものは `_createdAt` で補完できます。必要に応じて以下のスクリプトを実行してください。
+
+```bash
+SANITY_PROJECT_ID=<id> SANITY_DATASET=production SANITY_WRITE_TOKEN=<token> \
+node scripts/backfill-publishedAt.mjs
+```
+
+### 反映
+- Studio のスキーマを更新した際は **Studio を再ビルド** してください。
+  - ローカル: `pnpm dev` を再起動
+  - Hosted/Vercel: 対象の Studio デプロイを再実行
+
 ### バックデート公開の運用手順
 
 - Sanity Studio の記事編集画面には `公開日時 (publishedAt)` フィールドがあります。新規作成時は自動で現在時刻がセットされます。
 - 過去日に公開したい場合は、`公開日時` に任意の過去日時（日本時間）を入力してから **Publish** してください。サイト上の表示日と並び順はこの値で統一されます。
 - 未来日時を設定したまま Publish すると、プレビュー以外の公開サイトでは該当記事が非表示になります（日時が到来すると自動で表示されません。必要に応じて日時を手動で更新してください）。
-- 既存の公開記事で `publishedAt` が未設定のものには `_createdAt` をコピーして埋める移行スクリプトを用意しています。
-
-  ```bash
-  node scripts/backfill-published-at.mjs
-  ```
-
-  Sanity の書き込みトークンを環境変数にセットした状態で実行すると、公開済みクイズの `publishedAt` が `_createdAt` で補完されます（ドラフトは対象外）。
+- 上記のバックフィルスクリプトはドラフトを除外し、公開済みクイズのみを `_createdAt` で補完します。
 
 ### Google アナリティクス (GA4) 設定
 

@@ -1,4 +1,4 @@
-// scripts/backfill-published-at.mjs
+// scripts/backfill-publishedAt.mjs
 // 公開済みの quiz ドキュメントで publishedAt が未設定のものに _createdAt を補完します。
 // 必要な環境変数:
 // - SANITY_PROJECT_ID
