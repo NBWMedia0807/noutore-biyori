@@ -61,7 +61,7 @@
   $: href = slug ? `/quiz/${slug}` : '#';
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
-  $: publishedDate = quiz?.publishedAt ?? quiz?.createdAt ?? quiz?._createdAt ?? '';
+  $: publishedDate = quiz?.publishedAt ?? '';
   $: formattedDate = formatDate(publishedDate);
 </script>
 

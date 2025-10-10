@@ -25,10 +25,11 @@ export default {
         '公開開始日時です。未来の日時を指定すると予約公開になります。スタジオでは日本時間 (Asia/Tokyo) で表示されます。',
       type: 'datetime',
       options: {
-        dateFormat: 'YYYY-MM-DD',
+        dateFormat: 'YYYY/MM/DD',
         timeFormat: 'HH:mm',
         calendarTodayLabel: '今日',
-        timeStep: 5
+        timeStep: 1,
+        timeZone: 'Asia/Tokyo'
       },
       validation: (Rule) => Rule.required(),
       initialValue: () => new Date().toISOString()

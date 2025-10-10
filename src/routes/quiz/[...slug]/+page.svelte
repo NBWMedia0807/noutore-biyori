@@ -142,8 +142,8 @@
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
-    {#if doc?.publishedAt || doc?._createdAt}
-      <p class="quiz-date">公開日: {formatDate(doc.publishedAt ?? doc._createdAt)}</p>
+    {#if doc?.publishedAt}
+      <p class="quiz-date">公開日: {formatDate(doc.publishedAt)}</p>
     {/if}
   </header>
 

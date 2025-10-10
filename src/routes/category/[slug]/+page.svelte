@@ -20,8 +20,8 @@
       .filter((item) => item?.slug)
       .slice()
       .sort((a, b) => {
-        const aDate = new Date(a?.publishedAt ?? a?.createdAt ?? a?._createdAt ?? 0).getTime();
-        const bDate = new Date(b?.publishedAt ?? b?.createdAt ?? b?._createdAt ?? 0).getTime();
+        const aDate = new Date(a?.publishedAt ?? 0).getTime();
+        const bDate = new Date(b?.publishedAt ?? 0).getTime();
         return bDate - aDate;
       });
 
