@@ -4,25 +4,7 @@ export default {
   title: 'クイズ',
   type: 'document',
   fields: [
-    // ── 基本情報 ─────────────────────────
-    {
-      name: 'title',
-      title: 'タイトル',
-      type: 'string',
-      validation: (Rule) => Rule.required()
-    },
-    {
-      name: 'slug',
-      title: 'スラッグ',
-      type: 'slug',
-      options: { source: 'title', maxLength: 96 },
-      validation: (Rule) => Rule.required()
-    },
-    /**
-     * 公開日時（バックデート・未来日時の予約公開に利用）
-     * - 初期値は作成時刻
-     * - Studio 側では日本時間 (Asia/Tokyo) で表示
-     */
+    // ── 公開情報 ─────────────────────────
     {
       name: 'publishedAt',
       title: '公開日時',
@@ -38,6 +20,20 @@ export default {
       },
       validation: (Rule) => Rule.required(),
       initialValue: () => new Date().toISOString()
+    },
+    // ── 基本情報 ─────────────────────────
+    {
+      name: 'title',
+      title: 'タイトル',
+      type: 'string',
+      validation: (Rule) => Rule.required()
+    },
+    {
+      name: 'slug',
+      title: 'スラッグ',
+      type: 'slug',
+      options: { source: 'title', maxLength: 96 },
+      validation: (Rule) => Rule.required()
     },
 
     // ── 問題 ─────────────────────────────

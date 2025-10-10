@@ -56,9 +56,16 @@ node scripts/backfill-publishedAt.mjs
 ```
 
 ### 反映
-- Studio のスキーマを更新した際は **Studio を再ビルド** してください。
-  - ローカル: `pnpm dev` を再起動
-  - Hosted/Vercel: 対象の Studio デプロイを再実行
+Sanity Studio のスキーマを更新した際は、以下の手順で反映・キャッシュクリアを行ってください。
+
+1. **ローカル開発環境**
+   - Studio を再起動します。`pnpm --dir studio dev` を一度停止し、再度起動してください。
+   - 既存のビルド結果が必要な場合は `pnpm --dir studio build` で再ビルドします。
+2. **ホスティング環境（Vercel など）**
+   - 対象の Studio デプロイを再実行し、新しいスキーマを含んだビルドを作成します。
+3. **ブラウザキャッシュのクリア**
+   - Studio にアクセスする際は `https://<studio-host>/?force=1` のように `?force=1` クエリを付与してキャッシュを強制リロードするか、シークレットモードで開き直してください。
+   - それでも更新が反映されない場合は、ブラウザのストレージ（localStorage / IndexedDB）をクリアしてから再読込します。
 
 codex/add-publishedat-field-to-quiz-document-6zd8p9
 ### Vision での確認用クエリ
