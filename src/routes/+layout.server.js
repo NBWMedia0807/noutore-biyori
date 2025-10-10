@@ -27,6 +27,17 @@ const resolveFlags = () => ({
   )
 });
 
+// グローバルナビでは「間違い探し」を常に先頭に配置したい。
+// Sanityから取得したカテゴリをソートする際に、特定スラッグの優先度を調整する。
+const CATEGORY_PRIORITY = new Map([
+  ['spot-the-difference', 0]
+]);
+
+const getCategoryPriority = (slug) => {
+  if (!slug) return Number.MAX_SAFE_INTEGER;
+  return CATEGORY_PRIORITY.get(slug) ?? Number.MAX_SAFE_INTEGER;
+};
+
 const sanitizeCategories = (entries) => {
   if (!Array.isArray(entries)) return [];
   const seen = new Set();
@@ -40,7 +51,13 @@ const sanitizeCategories = (entries) => {
     sanitized.push({ slug, title });
   }
 
-  return sanitized.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+  return sanitized.sort((a, b) => {
+    const priorityDiff = getCategoryPriority(a.slug) - getCategoryPriority(b.slug);
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+    return a.title.localeCompare(b.title, 'ja');
+  });
 };
 
 const getFallbackCategories = () => {
