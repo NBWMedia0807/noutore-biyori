@@ -61,11 +61,14 @@ Sanity Studio のスキーマを更新した際は、以下の手順で反映・
 1. **ローカル開発環境**
    - Studio を再起動します。`pnpm --dir studio dev` を一度停止し、再度起動してください。
    - 既存のビルド結果が必要な場合は `pnpm --dir studio build` で再ビルドします。
-2. **ホスティング環境（Vercel など）**
-   - 対象の Studio デプロイを再実行し、新しいスキーマを含んだビルドを作成します。
+2. **ホスティング環境**
+   - **Vercel**: 対象の Studio デプロイを再実行し、新しいスキーマを含んだビルドを作成します。
+   - **Sanity Hosted Studio**: `pnpm --dir studio dlx sanity@latest deploy` もしくは `npx sanity@latest deploy` で再デプロイします。
 3. **ブラウザキャッシュのクリア**
-   - Studio にアクセスする際は `https://<studio-host>/?force=1` のように `?force=1` クエリを付与してキャッシュを強制リロードするか、シークレットモードで開き直してください。
+   - Studio にアクセスする際は `https://<studio-host>/?force=1` のように `?force=1` クエリを付与してキャッシュを強制リロードするか、シークレットモードで開き直してください。もしくは **Cmd+Shift+R** / **Ctrl+Shift+R** でスーパーリロードします。
    - それでも更新が反映されない場合は、ブラウザのストレージ（localStorage / IndexedDB）をクリアしてから再読込します。
+
+Vercel 版と Hosted 版の Studio はどちらも `src/lib/sanityDefaults.js` に定義した `projectId` / `dataset` を参照します。環境変数で上書きしない限り、双方が同一の Sanity プロジェクト（`quljge22` / `production`）を指すため、データの参照先がズレない構成になっています。
 
 codex/add-publishedat-field-to-quiz-document-6zd8p9
 ### Vision での確認用クエリ
@@ -73,7 +76,7 @@ codex/add-publishedat-field-to-quiz-document-6zd8p9
 Sanity Studio の Vision で公開日時が正しく保存されているか確認する際は、以下のクエリを実行してください。
 
 ```
-*[_type == "quiz"]{title, publishedAt, _createdAt}
+*[_type == "quiz"]{_id, title, publishedAt} | order(_updatedAt desc)[0...5]
 ```
 
 
