@@ -103,6 +103,7 @@ export const getQuizStubCatalog = () =>
     _id: doc._id,
     slug: doc.slug,
     publishedAt: doc.publishedAt,
+    _createdAt: doc._createdAt,
     _updatedAt: doc._updatedAt
   }));
 
