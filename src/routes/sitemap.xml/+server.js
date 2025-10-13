@@ -3,7 +3,8 @@ import { SITE } from '$lib/config/site.js';
 import {
   CATEGORY_DRAFT_FILTER,
   QUIZ_ORDER_BY_PUBLISHED,
-  QUIZ_PUBLISHED_FILTER
+  QUIZ_PUBLISHED_FILTER,
+  resolvePublishedDate
 } from '$lib/queries/quizVisibility.js';
 
 const STATIC_ROUTES = [
@@ -90,7 +91,8 @@ export const GET = async () => {
   quizzes.forEach((quiz) => {
     const slug = quiz?.slug;
     if (!slug) return;
-    const lastmod = toIsoString(quiz.publishedAt);
+    const published = resolvePublishedDate(quiz, quiz?._id ?? slug);
+    const lastmod = published ?? toIsoString(quiz._updatedAt ?? quiz._createdAt);
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',

@@ -52,7 +52,7 @@ const buildSeo = ({ doc, path }) => {
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
   const image = doc?.problemImage?.asset?.url || doc?.mainImage?.asset?.url;
-  const publishedAt = doc?.publishedAt ?? null;
+  const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
@@ -90,29 +90,34 @@ export async function load({ params, setHeaders }) {
     logPrefix: 'quiz/[...slug]'
   });
   if (!doc) throw error(404, `Quiz not found: ${slug}`);
-  if (typeof doc.slug === 'string' && doc.slug !== slug) {
-    throw redirect(308, `/quiz/${doc.slug}`);
+  const effectivePublishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+  const normalizedDoc =
+    effectivePublishedAt && doc?.publishedAt !== effectivePublishedAt
+      ? { ...doc, publishedAt: effectivePublishedAt }
+      : doc;
+  if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
+    throw redirect(308, `/quiz/${normalizedDoc.slug}`);
   }
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
 
-  const path = `/quiz/${doc.slug}`;
+  const path = `/quiz/${normalizedDoc.slug}`;
   const breadcrumbs = [];
-  if (doc?.category?.title && doc?.category?.slug) {
+  if (normalizedDoc?.category?.title && normalizedDoc?.category?.slug) {
     breadcrumbs.push({
-      name: doc.category.title,
-      url: `/category/${doc.category.slug}`
+      name: normalizedDoc.category.title,
+      url: `/category/${normalizedDoc.category.slug}`
     });
   }
-  breadcrumbs.push({ name: doc?.title ?? 'クイズ', url: path });
+  breadcrumbs.push({ name: normalizedDoc?.title ?? 'クイズ', url: path });
 
   const related = await fetchRelatedQuizzes({
-    slug: doc.slug,
-    categorySlug: doc.category?.slug ?? null
+    slug: normalizedDoc.slug,
+    categorySlug: normalizedDoc.category?.slug ?? null
   });
 
   return {
-    doc,
+    doc: normalizedDoc,
     related,
     breadcrumbs,
     ui: {
@@ -121,6 +126,6 @@ export async function load({ params, setHeaders }) {
       hideBreadcrumbs: true,
       mainClass: 'main--flush'
     },
-    seo: buildSeo({ doc, path })
+    seo: buildSeo({ doc: normalizedDoc, path })
   };
 }
