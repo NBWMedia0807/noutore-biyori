@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { revalidateQuizTags } from '$lib/server/revalidate-tags.js';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 const REVALIDATE_TOKEN = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET || '';
@@ -234,6 +235,7 @@ export const POST = async (event) => {
     categories: categorySlugs
   });
 
+  const { tags, results: tagResults } = revalidateQuizTags({ slugs, categorySlugs });
   const results = await revalidatePaths({ event, paths: Array.from(paths) });
 
   const failed = results.filter((result) => result.error);
@@ -244,7 +246,9 @@ export const POST = async (event) => {
       ok: failed.length === 0,
       revalidated: results,
       slugs,
-      categories: categorySlugs
+      categories: categorySlugs,
+      tags,
+      tagResults
     },
     { status }
   );

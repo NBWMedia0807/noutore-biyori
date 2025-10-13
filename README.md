@@ -46,13 +46,20 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 ## 公開日時（publishedAt）
 
-- `quiz` ドキュメントに `publishedAt: datetime` を追加しました（必須、初期値=作成時刻）。
-- Studio の記事編集画面では任意の日時（日本時間）に変更でき、並び順や公開可否の判定に利用します。
+- `quiz` ドキュメントに `publishedAt: datetime` を追加しました（任意）。未設定の場合は `_createdAt` が実効公開日時として利用されます。
+- Studio の記事編集画面では任意の日時（日本時間）に変更でき、並び順や公開可否の判定に利用します。未来日時を指定すると予約公開になり、リストビューに「公開予定」バッジが表示されます。
 - 既存データで `publishedAt` が未設定のものは `_createdAt` で補完できます。必要に応じて以下のスクリプトを実行してください。
 
 ```bash
 SANITY_PROJECT_ID=<id> SANITY_DATASET=production SANITY_WRITE_TOKEN=<token> \
 node scripts/backfill-publishedAt.mjs
+```
+
+Dry-run で差分だけ確認したい場合は `--dry-run` オプションを付けてください。
+
+```bash
+SANITY_PROJECT_ID=<id> SANITY_DATASET=production SANITY_WRITE_TOKEN=<token> \
+node scripts/backfill-publishedAt.mjs --dry-run
 ```
 
 ### 反映

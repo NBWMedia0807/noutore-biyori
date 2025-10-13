@@ -8,8 +8,10 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
-    "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
+    "test": "pnpm run test:node && pnpm run test:playwright",
+    "test:node": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs tests/quiz-scheduling.test.mjs",
+    "test:quiz": "pnpm run test:node",
+    "test:playwright": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 node scripts/run-playwright-tests.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
     "check:conflicts": "node scripts/check-conflict-markers.mjs"
@@ -33,7 +35,8 @@
   },
   "devDependencies": {
     "svelte": "5.38.3",
-    "@sveltejs/adapter-vercel": "5.10.2"
+    "@sveltejs/adapter-vercel": "5.10.2",
+    "@playwright/test": "1.49.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

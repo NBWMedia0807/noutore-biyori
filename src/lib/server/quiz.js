@@ -7,6 +7,7 @@ import {
   resolveQuizStubSlug
 } from '$lib/server/quiz-stub.js';
 import {
+  QUIZ_EFFECTIVE_PUBLISHED_FIELD,
   QUIZ_ORDER_BY_PUBLISHED,
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes,
@@ -40,7 +41,9 @@ export const QUIZ_SLUGS_QUERY = /* groq */ `
   _id,
   "slug": slug.current,
   publishedAt,
-  _updatedAt
+  _createdAt,
+  _updatedAt,
+  "effectivePublishedAt": ${QUIZ_EFFECTIVE_PUBLISHED_FIELD}
 }`;
 
 export const createSlugContext = (rawSlug) => {
