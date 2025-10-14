@@ -61,7 +61,12 @@
   $: href = slug ? `/quiz/${slug}` : '#';
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
+codex/investigate-and-fix-article-display-issue-dgyft0
+  $: publishedDate =
+    quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? '';
+
   $: publishedDate = quiz?.publishedAt ?? quiz?._createdAt ?? '';
+main
   $: formattedDate = formatDate(publishedDate);
 </script>
 

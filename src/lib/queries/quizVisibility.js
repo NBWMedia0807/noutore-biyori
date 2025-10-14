@@ -1,5 +1,22 @@
 // src/lib/queries/quizVisibility.js
-import { previewDraftsEnabled } from '$lib/sanity.server.js';
+const toBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (value === null || value === undefined) return false;
+  const normalized = value.toString().trim().toLowerCase();
+  if (!normalized) return false;
+  return ['1', 'true', 'yes', 'y', 'on'].includes(normalized);
+};
+
+let previewDraftsEnabled = false;
+
+try {
+  const module = await import('../sanity.server.js');
+  if (typeof module?.previewDraftsEnabled === 'boolean') {
+    previewDraftsEnabled = module.previewDraftsEnabled;
+  }
+} catch (error) {
+  previewDraftsEnabled = toBoolean(process?.env?.SANITY_PREVIEW_DRAFTS);
+}
 
 export const shouldRestrictToPublishedContent = !previewDraftsEnabled;
 
@@ -19,6 +36,12 @@ const resolvePublishInfo = (source, context) => {
   if (typeof source === 'string') {
     candidates.push({ field: 'value', value: source });
   } else if (typeof source === 'object') {
+codex/investigate-and-fix-article-display-issue-dgyft0
+    if (source?.effectivePublishedAt) {
+      candidates.push({ field: 'effectivePublishedAt', value: source.effectivePublishedAt });
+    }
+
+main
     if (source?.publishedAt) {
       candidates.push({ field: 'publishedAt', value: source.publishedAt });
     }
@@ -40,16 +63,27 @@ const resolvePublishInfo = (source, context) => {
 
 export const resolvePublishedDate = (source, context) => resolvePublishInfo(source, context).iso;
 
+codex/investigate-and-fix-article-display-issue-dgyft0
+export const QUIZ_EFFECTIVE_PUBLISHED_FIELD = 'coalesce(publishedAt, _createdAt)';
+
 export const QUIZ_PUBLISHED_FIELD = 'coalesce(publishedAt, _createdAt)';
+main
 
 export const QUIZ_PUBLISHED_FILTER = shouldRestrictToPublishedContent
   ? `
   && !(_id in path("drafts.**"))
+codex/investigate-and-fix-article-display-issue-dgyft0
+  && ${QUIZ_EFFECTIVE_PUBLISHED_FIELD} <= now()`
+  : '';
+
+export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_EFFECTIVE_PUBLISHED_FIELD} desc, _updatedAt desc, _id desc`;
+
   && defined(${QUIZ_PUBLISHED_FIELD})
   && ${QUIZ_PUBLISHED_FIELD} <= now()`
   : '';
 
 export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_PUBLISHED_FIELD} desc`;
+main
 
 export const CATEGORY_DRAFT_FILTER = shouldRestrictToPublishedContent
   ? `
@@ -91,11 +125,23 @@ export const filterVisibleQuizzes = (items) => {
     }
 
     if (shouldRestrictToPublishedContent && timestamp > now) {
+codex/investigate-and-fix-article-display-issue-dgyft0
+      console.info(
+        `[quizVisibility] Excluding future-scheduled quiz ${context} (${new Date(timestamp).toISOString()})`
+      );
+
+main
       return acc;
     }
 
     const normalizedQuiz =
+codex/investigate-and-fix-article-display-issue-dgyft0
+      baseQuiz?.publishedAt === iso && baseQuiz?.effectivePublishedAt === iso
+        ? baseQuiz
+        : { ...baseQuiz, publishedAt: iso, effectivePublishedAt: iso };
+
       baseQuiz?.publishedAt === iso ? baseQuiz : { ...baseQuiz, publishedAt: iso };
+main
 
     acc.push(normalizedQuiz);
     return acc;
