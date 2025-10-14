@@ -96,8 +96,12 @@ export const GET = async ({ depends }) => {
   quizzes.forEach((quiz) => {
     const slug = quiz?.slug;
     if (!slug) return;
+codex/investigate-and-fix-article-display-issue-s6ldvy
     const published =
       quiz?.effectivePublishedAt ?? resolvePublishedDate(quiz, quiz?._id ?? slug);
+
+    const published = resolvePublishedDate(quiz, quiz?._id ?? slug);
+main
     const lastmod = published ?? toIsoString(quiz._updatedAt ?? quiz._createdAt);
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',

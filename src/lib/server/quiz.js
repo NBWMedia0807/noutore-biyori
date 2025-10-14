@@ -42,8 +42,12 @@ export const QUIZ_SLUGS_QUERY = /* groq */ `
   "slug": slug.current,
   publishedAt,
   _createdAt,
+codex/investigate-and-fix-article-display-issue-s6ldvy
   _updatedAt,
   "effectivePublishedAt": ${QUIZ_EFFECTIVE_PUBLISHED_FIELD}
+
+  _updatedAt
+main
 }`;
 
 export const createSlugContext = (rawSlug) => {

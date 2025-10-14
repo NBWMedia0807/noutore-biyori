@@ -109,8 +109,12 @@ export const getQuizStubCatalog = () =>
     slug: doc.slug,
     publishedAt: doc.publishedAt,
     _createdAt: doc._createdAt,
+codex/investigate-and-fix-article-display-issue-s6ldvy
     _updatedAt: doc._updatedAt,
     effectivePublishedAt: resolveEffectivePublishedAt(doc)
+
+    _updatedAt: doc._updatedAt
+main
   }));
 
 export const getQuizStubDocument = (slug) => {
