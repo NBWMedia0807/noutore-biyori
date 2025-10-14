@@ -1,10 +1,12 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
+import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 import {
   QUIZ_ORDER_BY_PUBLISHED,
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
+import { QUIZ_LIST_TAG } from '$lib/cache/tags.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
@@ -15,18 +17,7 @@ const QUIZZES_QUERY = /* groq */ `
   && defined(slug.current)
   ${QUIZ_PUBLISHED_FILTER}
 ] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
-  _id,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemImage{
-    ...,
-    asset->{ url, metadata }
-  },
+  ${QUIZ_PREVIEW_PROJECTION},
   problemDescription
 }`;
 
@@ -40,7 +31,9 @@ const createQuizListSeo = (path) =>
   });
 
 export const load = async (event) => {
-  const { url, setHeaders, isDataRequest } = event;
+  const { url, setHeaders, isDataRequest, depends } = event;
+
+  depends(QUIZ_LIST_TAG);
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
