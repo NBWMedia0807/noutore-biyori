@@ -7,7 +7,18 @@
   let visibleQuizzes = [];
 
   $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
+codex/investigate-and-fix-article-display-issue-bzrs9n
   $: visibleQuizzes = quizzes.filter((quiz) => quiz?.slug);
+
+  $: visibleQuizzes = quizzes
+    .filter((quiz) => quiz?.slug)
+    .slice()
+    .sort((a, b) => {
+      const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
+      const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
+      return bDate - aDate;
+    });
+main
 </script>
 
 <h1 style="margin:16px 0;text-align:center;">新着記事</h1>

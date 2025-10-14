@@ -36,9 +36,12 @@ const resolvePublishInfo = (source, context) => {
   if (typeof source === 'string') {
     candidates.push({ field: 'value', value: source });
   } else if (typeof source === 'object') {
+codex/investigate-and-fix-article-display-issue-bzrs9n
     if (source?.effectivePublishedAt) {
       candidates.push({ field: 'effectivePublishedAt', value: source.effectivePublishedAt });
     }
+
+main
     if (source?.publishedAt) {
       candidates.push({ field: 'publishedAt', value: source.publishedAt });
     }
@@ -60,15 +63,27 @@ const resolvePublishInfo = (source, context) => {
 
 export const resolvePublishedDate = (source, context) => resolvePublishInfo(source, context).iso;
 
+codex/investigate-and-fix-article-display-issue-bzrs9n
 export const QUIZ_EFFECTIVE_PUBLISHED_FIELD = 'coalesce(publishedAt, _createdAt)';
+
+export const QUIZ_PUBLISHED_FIELD = 'coalesce(publishedAt, _createdAt)';
+main
 
 export const QUIZ_PUBLISHED_FILTER = shouldRestrictToPublishedContent
   ? `
   && !(_id in path("drafts.**"))
+codex/investigate-and-fix-article-display-issue-bzrs9n
   && ${QUIZ_EFFECTIVE_PUBLISHED_FIELD} <= now()`
   : '';
 
 export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_EFFECTIVE_PUBLISHED_FIELD} desc, _updatedAt desc, _id desc`;
+
+  && defined(${QUIZ_PUBLISHED_FIELD})
+  && ${QUIZ_PUBLISHED_FIELD} <= now()`
+  : '';
+
+export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_PUBLISHED_FIELD} desc`;
+main
 
 export const CATEGORY_DRAFT_FILTER = shouldRestrictToPublishedContent
   ? `
@@ -110,16 +125,23 @@ export const filterVisibleQuizzes = (items) => {
     }
 
     if (shouldRestrictToPublishedContent && timestamp > now) {
+codex/investigate-and-fix-article-display-issue-bzrs9n
       console.info(
         `[quizVisibility] Excluding future-scheduled quiz ${context} (${new Date(timestamp).toISOString()})`
       );
+
+main
       return acc;
     }
 
     const normalizedQuiz =
+codex/investigate-and-fix-article-display-issue-bzrs9n
       baseQuiz?.publishedAt === iso && baseQuiz?.effectivePublishedAt === iso
         ? baseQuiz
         : { ...baseQuiz, publishedAt: iso, effectivePublishedAt: iso };
+
+      baseQuiz?.publishedAt === iso ? baseQuiz : { ...baseQuiz, publishedAt: iso };
+main
 
     acc.push(normalizedQuiz);
     return acc;

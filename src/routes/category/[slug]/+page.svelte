@@ -20,6 +20,19 @@
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
 
+codex/investigate-and-fix-article-display-issue-bzrs9n
+
+  const sortByPublishedAt = (list) =>
+    (Array.isArray(list) ? list : [])
+      .filter((item) => item?.slug)
+      .slice()
+      .sort((a, b) => {
+        const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
+        const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
+        return bDate - aDate;
+      });
+
+main
   let activeTab = 'newest';
 
   $: tabDefinitions = [
