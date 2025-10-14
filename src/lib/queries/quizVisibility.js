@@ -1,16 +1,74 @@
 // src/lib/queries/quizVisibility.js
-import { previewDraftsEnabled } from '$lib/sanity.server.js';
+const toBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (value === null || value === undefined) return false;
+  const normalized = value.toString().trim().toLowerCase();
+  if (!normalized) return false;
+  return ['1', 'true', 'yes', 'y', 'on'].includes(normalized);
+};
+
+let previewDraftsEnabled = false;
+
+try {
+  const module = await import('../sanity.server.js');
+  if (typeof module?.previewDraftsEnabled === 'boolean') {
+    previewDraftsEnabled = module.previewDraftsEnabled;
+  }
+} catch (error) {
+  previewDraftsEnabled = toBoolean(process?.env?.SANITY_PREVIEW_DRAFTS);
+}
 
 export const shouldRestrictToPublishedContent = !previewDraftsEnabled;
+
+const logInvalidDate = (field, value, context) => {
+  if (!value) return;
+  const contextInfo = context ? ` (${context})` : '';
+  console.warn(`[quizVisibility] Invalid ${field} value detected${contextInfo}`, value);
+};
+
+const resolvePublishInfo = (source, context) => {
+  if (!source) {
+    return { iso: null, timestamp: Number.NaN };
+  }
+
+  const candidates = [];
+
+  if (typeof source === 'string') {
+    candidates.push({ field: 'value', value: source });
+  } else if (typeof source === 'object') {
+    if (source?.effectivePublishedAt) {
+      candidates.push({ field: 'effectivePublishedAt', value: source.effectivePublishedAt });
+    }
+    if (source?.publishedAt) {
+      candidates.push({ field: 'publishedAt', value: source.publishedAt });
+    }
+    if (source?._createdAt) {
+      candidates.push({ field: '_createdAt', value: source._createdAt });
+    }
+  }
+
+  for (const candidate of candidates) {
+    const date = new Date(candidate.value);
+    if (!Number.isNaN(date.getTime())) {
+      return { iso: date.toISOString(), timestamp: date.getTime() };
+    }
+    logInvalidDate(candidate.field, candidate.value, context);
+  }
+
+  return { iso: null, timestamp: Number.NaN };
+};
+
+export const resolvePublishedDate = (source, context) => resolvePublishInfo(source, context).iso;
+
+export const QUIZ_EFFECTIVE_PUBLISHED_FIELD = 'coalesce(publishedAt, _createdAt)';
 
 export const QUIZ_PUBLISHED_FILTER = shouldRestrictToPublishedContent
   ? `
   && !(_id in path("drafts.**"))
-  && defined(publishedAt)
-  && publishedAt <= now()`
+  && ${QUIZ_EFFECTIVE_PUBLISHED_FIELD} <= now()`
   : '';
 
-export const QUIZ_ORDER_BY_PUBLISHED = 'publishedAt desc';
+export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_EFFECTIVE_PUBLISHED_FIELD} desc, _updatedAt desc, _id desc`;
 
 export const CATEGORY_DRAFT_FILTER = shouldRestrictToPublishedContent
   ? `
@@ -24,46 +82,48 @@ const toSlugString = (quiz) => {
   return typeof slugCandidate === 'string' ? slugCandidate.trim() : '';
 };
 
-export const isFutureScheduled = (value) => {
-  if (!value) return false;
-  try {
-    return new Date(value).getTime() > Date.now();
-  } catch (error) {
-    console.warn('[quizVisibility] Invalid publishedAt value detected', value, error);
+export const isFutureScheduled = (value, context) => {
+  const info = typeof value === 'object' ? resolvePublishInfo(value, context) : resolvePublishInfo({ publishedAt: value }, context);
+  if (Number.isNaN(info.timestamp)) {
     return false;
   }
+  return info.timestamp > Date.now();
 };
 
 export const filterVisibleQuizzes = (items) => {
   if (!Array.isArray(items)) return [];
 
-  return items
-    .map((quiz) => {
-      const slug = toSlugString(quiz);
-      if (slug && typeof quiz.slug !== 'string') {
-        return { ...quiz, slug };
-      }
-      return quiz;
-    })
-    .filter((quiz) => {
-      const slug = toSlugString(quiz);
-      if (!slug) return false;
+  const now = Date.now();
 
-      const publishedAt = quiz?.publishedAt;
+  return items.reduce((acc, originalQuiz) => {
+    const slug = toSlugString(originalQuiz);
+    if (!slug) return acc;
 
-      if (!shouldRestrictToPublishedContent) {
-        return Boolean(publishedAt);
-      }
+    const baseQuiz =
+      slug && typeof originalQuiz.slug !== 'string' ? { ...originalQuiz, slug } : originalQuiz;
 
-      if (!publishedAt) return false;
+    const context = originalQuiz?._id ?? slug;
+    const { iso, timestamp } = resolvePublishInfo(baseQuiz, context);
 
-      if (Number.isNaN(Date.parse(publishedAt))) {
-        console.warn('[quizVisibility] Invalid publishedAt value detected', publishedAt, quiz?._id);
-        return false;
-      }
+    if (!iso || Number.isNaN(timestamp)) {
+      return acc;
+    }
 
-      return !isFutureScheduled(publishedAt);
-    });
+    if (shouldRestrictToPublishedContent && timestamp > now) {
+      console.info(
+        `[quizVisibility] Excluding future-scheduled quiz ${context} (${new Date(timestamp).toISOString()})`
+      );
+      return acc;
+    }
+
+    const normalizedQuiz =
+      baseQuiz?.publishedAt === iso && baseQuiz?.effectivePublishedAt === iso
+        ? baseQuiz
+        : { ...baseQuiz, publishedAt: iso, effectivePublishedAt: iso };
+
+    acc.push(normalizedQuiz);
+    return acc;
+  }, []);
 };
 
 export const ensureArray = (value) => (Array.isArray(value) ? value : []);

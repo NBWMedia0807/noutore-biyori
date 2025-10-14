@@ -49,7 +49,8 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? null
+    publishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    effectivePublishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null
   };
 };
 
