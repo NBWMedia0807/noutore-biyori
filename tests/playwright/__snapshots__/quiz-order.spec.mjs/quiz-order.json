@@ -1,0 +1,37 @@
+[
+  {
+    "slug": "past-sample",
+    "id": "past-sample",
+    "effectivePublishedAt": "2024-01-20T00:00:00.000Z",
+    "publishedAt": "2024-01-20T00:00:00.000Z",
+    "updatedAt": "2024-01-21T00:00:00Z"
+  },
+  {
+    "slug": "fallback-sample",
+    "id": "fallback-sample",
+    "effectivePublishedAt": "2024-01-12T12:34:56.000Z",
+    "publishedAt": "2024-01-12T12:34:56.000Z",
+    "updatedAt": "2024-01-12T13:00:00Z"
+  },
+  {
+    "slug": "spot-the-difference-sample",
+    "id": "stub-quiz-c",
+    "effectivePublishedAt": "2024-01-10T00:00:00.000Z",
+    "publishedAt": "2024-01-10T00:00:00.000Z",
+    "updatedAt": "2024-01-11T00:00:00Z"
+  },
+  {
+    "slug": "sample-quiz-b",
+    "id": "stub-quiz-b",
+    "effectivePublishedAt": "2024-01-05T00:00:00.000Z",
+    "publishedAt": "2024-01-05T00:00:00.000Z",
+    "updatedAt": "2024-01-06T00:00:00Z"
+  },
+  {
+    "slug": "sample-quiz-a",
+    "id": "stub-quiz-a",
+    "effectivePublishedAt": "2024-01-01T00:00:00.000Z",
+    "publishedAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-02T00:00:00Z"
+  }
+]

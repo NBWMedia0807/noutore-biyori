@@ -4,7 +4,8 @@ import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
-import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { QUIZ_EFFECTIVE_PUBLISHED_FIELD, QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { createQuizAnswerTag, createQuizDetailTag } from '$lib/cache/tags.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -44,7 +45,8 @@ const Q = /* groq */ `*[
   answerExplanation,
   publishedAt,
   _createdAt,
-  _updatedAt
+  _updatedAt,
+  "effectivePublishedAt": ${QUIZ_EFFECTIVE_PUBLISHED_FIELD}
 }`;
 
 const buildSeo = ({ doc, path }) => {
@@ -52,7 +54,11 @@ const buildSeo = ({ doc, path }) => {
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
   const image = doc?.problemImage?.asset?.url || doc?.mainImage?.asset?.url;
+codex/investigate-and-fix-article-display-issue-bzrs9n
+  const publishedAt = doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
+
   const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+main
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
@@ -80,7 +86,7 @@ const buildSeo = ({ doc, path }) => {
   });
 };
 
-export async function load({ params, setHeaders }) {
+export async function load({ params, setHeaders, depends }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
   const slug = slugSegments.join('/');
   const slugContext = createSlugContext(slug);
@@ -90,14 +96,29 @@ export async function load({ params, setHeaders }) {
     logPrefix: 'quiz/[...slug]'
   });
   if (!doc) throw error(404, `Quiz not found: ${slug}`);
+codex/investigate-and-fix-article-display-issue-bzrs9n
+  const effectivePublishedAt =
+    doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
+  const normalizedDoc =
+    effectivePublishedAt &&
+    (doc?.publishedAt !== effectivePublishedAt || doc?.effectivePublishedAt !== effectivePublishedAt)
+      ? { ...doc, publishedAt: effectivePublishedAt, effectivePublishedAt }
+      : doc?.effectivePublishedAt
+        ? doc
+        : { ...doc, effectivePublishedAt };
+
   const effectivePublishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
   const normalizedDoc =
     effectivePublishedAt && doc?.publishedAt !== effectivePublishedAt
       ? { ...doc, publishedAt: effectivePublishedAt }
       : doc;
+main
   if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
     throw redirect(308, `/quiz/${normalizedDoc.slug}`);
   }
+
+  depends(createQuizDetailTag(normalizedDoc.slug));
+  depends(createQuizAnswerTag(normalizedDoc.slug));
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
 

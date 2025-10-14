@@ -1,4 +1,4 @@
-import { createSlugQueryPayload } from '$lib/utils/slug.js';
+import { createSlugQueryPayload } from '../utils/slug.js';
 
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
 const clone = (value) => (hasStructuredClone ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
@@ -9,6 +9,8 @@ const fallbackTitleFromSlug = (value) => {
   if (!sanitized) return '';
   return sanitized.replace(/[-_]+/g, ' ');
 };
+
+const resolveEffectivePublishedAt = (doc) => doc?.publishedAt ?? doc?._createdAt ?? null;
 
 const STUB_QUIZZES = [
   {
@@ -34,7 +36,8 @@ const STUB_QUIZZES = [
     ],
     publishedAt: '2024-01-01T00:00:00Z',
     _createdAt: '2024-01-01T00:00:00Z',
-    _updatedAt: '2024-01-02T00:00:00Z'
+    _updatedAt: '2024-01-02T00:00:00Z',
+    effectivePublishedAt: '2024-01-01T00:00:00Z'
   },
   {
     _id: 'stub-quiz-b',
@@ -58,7 +61,8 @@ const STUB_QUIZZES = [
     ],
     publishedAt: '2024-01-05T00:00:00Z',
     _createdAt: '2024-01-05T00:00:00Z',
-    _updatedAt: '2024-01-06T00:00:00Z'
+    _updatedAt: '2024-01-06T00:00:00Z',
+    effectivePublishedAt: '2024-01-05T00:00:00Z'
   },
   {
     _id: 'stub-quiz-c',
@@ -89,7 +93,8 @@ const STUB_QUIZZES = [
     ],
     publishedAt: '2024-01-10T00:00:00Z',
     _createdAt: '2024-01-10T00:00:00Z',
-    _updatedAt: '2024-01-11T00:00:00Z'
+    _updatedAt: '2024-01-11T00:00:00Z',
+    effectivePublishedAt: '2024-01-10T00:00:00Z'
   }
 ];
 
@@ -104,12 +109,18 @@ export const getQuizStubCatalog = () =>
     slug: doc.slug,
     publishedAt: doc.publishedAt,
     _createdAt: doc._createdAt,
+codex/investigate-and-fix-article-display-issue-bzrs9n
+    _updatedAt: doc._updatedAt,
+    effectivePublishedAt: resolveEffectivePublishedAt(doc)
+
     _updatedAt: doc._updatedAt
+main
   }));
 
 export const getQuizStubDocument = (slug) => {
   const doc = STUB_QUIZZES.find((entry) => entry.slug === slug);
-  return doc ? clone(doc) : null;
+  if (!doc) return null;
+  return clone({ ...doc, effectivePublishedAt: resolveEffectivePublishedAt(doc) });
 };
 
 export const getQuizStubCategories = () => {
@@ -149,6 +160,7 @@ export const getQuizStubQuizzesByCategory = (slug) => {
   return STUB_QUIZZES.filter((doc) => sanitizeText(doc?.category?.slug) === normalizedSlug).map((doc) =>
     clone({
       ...doc,
+      effectivePublishedAt: resolveEffectivePublishedAt(doc),
       category: doc?.category
         ? {
             slug: sanitizeText(doc.category.slug) || normalizedSlug,

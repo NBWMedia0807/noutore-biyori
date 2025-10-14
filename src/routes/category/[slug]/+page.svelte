@@ -7,13 +7,20 @@
   const category = data?.category ?? null;
   const categoryTitle = category?.title ?? 'カテゴリ';
   const slug = category?.slug ?? '';
-  const newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
-  const popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
-  const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
+  const items = Array.isArray(data?.quizzes) ? data.quizzes : [];
+
+  const toVisibleQuizzes = (list) =>
+    Array.isArray(list) ? list.filter((quiz) => quiz?.slug) : [];
+
+  $: newestQuizzes = toVisibleQuizzes(data?.newest ?? items);
+  $: popularQuizzes = toVisibleQuizzes(data?.popular);
+  $: totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
 
   const emptyMessage = categoryTitle
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
+
+codex/investigate-and-fix-article-display-issue-bzrs9n
 
   const sortByPublishedAt = (list) =>
     (Array.isArray(list) ? list : [])
@@ -25,13 +32,12 @@
         return bDate - aDate;
       });
 
+main
   let activeTab = 'newest';
 
-  $: sortedNewest = sortByPublishedAt(newestQuizzes);
-  $: sortedPopular = sortByPublishedAt(popularQuizzes);
   $: tabDefinitions = [
-    { id: 'newest', label: '新着', items: sortedNewest },
-    { id: 'popular', label: '人気', items: sortedPopular }
+    { id: 'newest', label: '新着', items: newestQuizzes },
+    { id: 'popular', label: '人気', items: popularQuizzes }
   ].filter((tab) => tab.id === 'newest' || tab.items.length > 0);
 
   $: {
@@ -40,7 +46,7 @@
     }
   }
 
-  $: visibleQuizzes = (tabDefinitions.find((tab) => tab.id === activeTab)?.items) ?? sortedNewest;
+  $: visibleQuizzes = tabDefinitions.find((tab) => tab.id === activeTab)?.items ?? newestQuizzes;
 
   const tabId = (value) => `tab-${value}`;
   const panelId = (value) => `panel-${value}`;
