@@ -6,6 +6,7 @@
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+  const publishedAt = doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
@@ -142,8 +143,8 @@
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
-    {#if doc?.publishedAt}
-      <p class="quiz-date">公開日: {formatDate(doc.publishedAt)}</p>
+    {#if publishedAt}
+      <p class="quiz-date">公開日: {formatDate(publishedAt)}</p>
     {/if}
   </header>
 
