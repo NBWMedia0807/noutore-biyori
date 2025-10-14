@@ -10,6 +10,7 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
+import { createQuizCategoryTag } from '$lib/cache/tags.js';
 
 export const prerender = false;
 
@@ -26,12 +27,17 @@ const CATEGORY_QUERY = /* groq */ `
   overview
 }`;
 
+const QUIZ_CATEGORY_MATCH = /* groq */ `select(
+  $slug in ["crossword", "kanji-mistake"] =>
+    count(categories[]->slug.current[@ in ["crossword", "kanji-mistake"] && @ == $slug]) > 0,
+  defined(category._ref) && category->slug.current == $slug
+)`;
+
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current == $slug
+    && ${QUIZ_CATEGORY_MATCH}
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -39,8 +45,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "popular": *[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current == $slug
+    && ${QUIZ_CATEGORY_MATCH}
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -48,8 +53,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "total": count(*[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current == $slug
+    && ${QUIZ_CATEGORY_MATCH}
     ${QUIZ_PUBLISHED_FILTER}
   ])
 }`;
@@ -76,7 +80,8 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? null
+    publishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    effectivePublishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null
   };
 };
 
@@ -160,8 +165,10 @@ const createFallbackResponse = (slug, path) => {
 };
 
 export const load = async (event) => {
-  const { params, setHeaders, url, isDataRequest } = event;
+  const { params, setHeaders, url, isDataRequest, depends } = event;
   const { slug } = params;
+
+  depends(createQuizCategoryTag(slug));
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':(exclude).github/workflows/**' ':(exclude).husky/**' ':(exclude)package.json' ':(exclude)pnpm-lock.yaml' ':(exclude)package-lock.json' ; then
+  echo "Conflict markers detected. Resolve before commit."
+  exit 1
+fi

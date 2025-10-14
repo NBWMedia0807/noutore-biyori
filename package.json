@@ -8,11 +8,16 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
-    "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
+    "test": "pnpm run test:node && pnpm run test:playwright",
+    "test:node": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs tests/quiz-scheduling.test.mjs",
+    "test:quiz": "pnpm run test:node",
+    "test:playwright": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 node scripts/run-playwright-tests.mjs",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
-    "check:conflicts": "node scripts/check-conflict-markers.mjs"
+    "check:lock": "pnpm install --frozen-lockfile --prefer-offline",
+    "check:conflicts": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':(exclude).github/workflows/**' ':(exclude).husky/**' ':(exclude)package.json' ':(exclude)pnpm-lock.yaml' ':(exclude)package-lock.json' && exit 1 || echo 'No conflict markers.'",
+    "ci:verify": "pnpm run check:lock && pnpm run check:conflicts",
+    "prepare": "node scripts/install-git-hooks.mjs"
   },
   "repository": {
     "type": "git",
@@ -32,8 +37,8 @@
     "vite": "7.1.3"
   },
   "devDependencies": {
-    "svelte": "5.38.3",
-    "@sveltejs/adapter-vercel": "5.10.2"
+    "@sveltejs/adapter-vercel": "5.10.2",
+    "svelte": "5.38.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -41,6 +46,6 @@
     ]
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }

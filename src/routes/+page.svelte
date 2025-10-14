@@ -7,14 +7,7 @@
   let visibleQuizzes = [];
 
   $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
-  $: visibleQuizzes = quizzes
-    .filter((quiz) => quiz?.slug)
-    .slice()
-    .sort((a, b) => {
-      const aDate = new Date(a?.publishedAt ?? 0).getTime();
-      const bDate = new Date(b?.publishedAt ?? 0).getTime();
-      return bDate - aDate;
-    });
+  $: visibleQuizzes = quizzes.filter((quiz) => quiz?.slug);
 </script>
 
 <h1 style="margin:16px 0;text-align:center;">新着記事</h1>

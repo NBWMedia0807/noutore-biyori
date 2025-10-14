@@ -4,6 +4,7 @@ import {deskTool} from 'sanity/desk'
 import {visionTool} from '@sanity/vision'
 import schemaTypes from './schemas'
 import { SANITY_DEFAULTS } from '../src/lib/sanityDefaults.js'
+import { createQuizPublishBadge } from './utils/quizPublishBadge.js'
 
 export default defineConfig({
   name: 'noutore-biyori-studio',
@@ -25,7 +26,9 @@ export default defineConfig({
     },
     badges: (previous, context) => {
       if (context.schemaType === 'quiz') {
-        return previous
+        const doc = context?.document || context?.draft || context?.published || null
+        const badge = createQuizPublishBadge(doc)
+        return badge ? [...previous, () => badge] : previous
       }
       return previous.filter((badge) => badge !== ScheduledBadge)
     }
