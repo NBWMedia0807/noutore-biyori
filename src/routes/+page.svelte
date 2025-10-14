@@ -11,8 +11,17 @@
     .filter((quiz) => quiz?.slug)
     .slice()
     .sort((a, b) => {
+codex/investigate-and-fix-article-display-issue-s6ldvy
+      const aDate = new Date(
+        a?.effectivePublishedAt ?? a?.publishedAt ?? a?._createdAt ?? 0
+      ).getTime();
+      const bDate = new Date(
+        b?.effectivePublishedAt ?? b?.publishedAt ?? b?._createdAt ?? 0
+      ).getTime();
+
       const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
       const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
+main
       return bDate - aDate;
     });
 </script>

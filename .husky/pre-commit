@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if git grep -n '<<<<<<<\\|=======\\|>>>>>>>' -- . ':!pnpm-lock.yaml' ':!package-lock.json' ; then
+  echo "Conflict markers detected. Resolve before commit."
+  exit 1
+fi

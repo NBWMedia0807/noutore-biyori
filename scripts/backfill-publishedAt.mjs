@@ -20,6 +20,8 @@ if (!projectId || !token) {
   process.exit(1);
 }
 
+const isDryRun = process.argv.includes('--dry-run');
+
 const client = createClient({
   projectId,
   dataset,
@@ -51,6 +53,7 @@ const toIsoString = (value) => {
 async function main() {
   console.log('=== Backfill quiz.publishedAt ===');
   console.log(`project: ${projectId}, dataset: ${dataset}`);
+  console.log(`mode: ${isDryRun ? 'dry-run (更新なし)' : 'write'}`);
 
   const targets = await client.fetch(QUERY);
   const docs = Array.isArray(targets) ? targets.filter((doc) => doc?._id) : [];
@@ -67,10 +70,13 @@ async function main() {
   for (const doc of docs) {
     const fallback = toIsoString(doc?._createdAt);
     try {
-      await client
-        .patch(doc._id)
-        .set({ publishedAt: fallback })
-        .commit();
+      if (isDryRun) {
+        success += 1;
+        console.log(`[dry-run] ${doc._id} -> ${fallback}`);
+        continue;
+      }
+
+      await client.patch(doc._id).set({ publishedAt: fallback }).commit();
       success += 1;
       console.log(`updated: ${doc._id} -> ${fallback}`);
     } catch (error) {
@@ -79,7 +85,11 @@ async function main() {
     }
   }
 
-  console.log(`更新完了: ${success}件 / 失敗 ${skipped}件`);
+  if (isDryRun) {
+    console.log(`dry-run完了: 対象 ${success}件 / エラー ${skipped}件`);
+  } else {
+    console.log(`更新完了: ${success}件 / 失敗 ${skipped}件`);
+  }
 }
 
 main().catch((error) => {

@@ -1,0 +1,28 @@
+name: CI - Lock & Conflict Check
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+      - name: Install dependencies with frozen lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Fail if conflict markers exist
+        run: |
+          if git grep -n '<<<<<<<\|=======\|>>>>>>>' -- . ':!pnpm-lock.yaml' ':!package-lock.json' ; then
+            echo "Conflict markers found. Please resolve before merging."
+            exit 1
+          fi

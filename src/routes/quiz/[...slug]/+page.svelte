@@ -6,7 +6,11 @@
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+codex/investigate-and-fix-article-display-issue-s6ldvy
+  const publishedAt = doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
+
   const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+main
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
