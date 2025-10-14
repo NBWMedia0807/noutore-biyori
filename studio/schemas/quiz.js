@@ -1,4 +1,21 @@
 // studio/schemas/quiz.js
+const formatPreviewDate = (value) => {
+  if (!value) return '';
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
+  } catch (error) {
+    console.warn('[studio][quiz] failed to format preview date', value, error);
+    return '';
+  }
+};
+
 export default {
   name: 'quiz',
   title: 'クイズ',
@@ -9,7 +26,7 @@ export default {
       name: 'publishedAt',
       title: '公開日時',
       description:
-        '公開開始日時です。未来の日時を指定すると予約公開になります。スタジオでは日本時間 (Asia/Tokyo) で表示されます。',
+        '公開開始日時です。未入力の場合は作成日時が公開日に利用されます。未来の日時を指定すると予約公開になり、公開予定として扱われます。スタジオでは日本時間 (Asia/Tokyo) で表示されます。',
       type: 'datetime',
       options: {
         dateFormat: 'YYYY/MM/DD',
@@ -18,8 +35,18 @@ export default {
         timeStep: 1,
         timeZone: 'Asia/Tokyo'
       },
-      validation: (Rule) => Rule.required(),
-      initialValue: () => new Date().toISOString()
+      validation: (Rule) =>
+        Rule.custom((value) => {
+          if (!value) return true;
+          const parsed = Date.parse(value);
+          if (Number.isNaN(parsed)) {
+            return '有効な日時を入力してください。';
+          }
+          if (parsed > Date.now()) {
+            return Rule.warning('未来日時が設定されています。公開予定として表示されます。');
+          }
+          return true;
+        })
     },
     // ── 基本情報 ─────────────────────────
     {
@@ -169,4 +196,48 @@ export default {
       validation: (Rule) => Rule.required()
     }
   ]
-}
+  ,
+  preview: {
+    select: {
+      title: 'title',
+      slug: 'slug.current',
+      publishedAt: 'publishedAt',
+      createdAt: '_createdAt',
+      updatedAt: '_updatedAt'
+    },
+    prepare(selection) {
+      const { title, slug, publishedAt, createdAt, updatedAt } = selection;
+      const now = Date.now();
+      const effective = publishedAt || createdAt || null;
+      const formattedDate = formatPreviewDate(effective);
+      const safeTitle = title || slug || 'クイズ';
+      const slugPath = slug ? `/${slug}` : '';
+
+      let badgeEmoji = '🟢';
+      let badgeLabel = '公開済み';
+
+      const publishedTime = publishedAt ? Date.parse(publishedAt) : Number.NaN;
+      if (!Number.isNaN(publishedTime) && publishedTime > now) {
+        badgeEmoji = '🟠';
+        badgeLabel = '公開予定';
+      }
+
+      const subtitleParts = [`${badgeEmoji} ${badgeLabel}`];
+      if (formattedDate) {
+        subtitleParts.push(`実効: ${formattedDate}`);
+      }
+      if (updatedAt) {
+        const formattedUpdated = formatPreviewDate(updatedAt);
+        if (formattedUpdated && formattedUpdated !== formattedDate) {
+          subtitleParts.push(`更新: ${formattedUpdated}`);
+        }
+      }
+
+      return {
+        title: safeTitle,
+        subtitle: subtitleParts.join(' ｜ '),
+        description: slugPath
+      };
+    }
+  }
+};

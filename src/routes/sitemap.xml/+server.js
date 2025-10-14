@@ -2,9 +2,12 @@ import { client } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import {
   CATEGORY_DRAFT_FILTER,
+  QUIZ_EFFECTIVE_PUBLISHED_FIELD,
   QUIZ_ORDER_BY_PUBLISHED,
-  QUIZ_PUBLISHED_FILTER
+  QUIZ_PUBLISHED_FILTER,
+  resolvePublishedDate
 } from '$lib/queries/quizVisibility.js';
+import { QUIZ_SITEMAP_TAG } from '$lib/cache/tags.js';
 
 const STATIC_ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
@@ -27,7 +30,8 @@ const QUERY = /* groq */ `{
     "slug": slug.current,
     _updatedAt,
     _createdAt,
-    publishedAt
+    publishedAt,
+    "effectivePublishedAt": ${QUIZ_EFFECTIVE_PUBLISHED_FIELD}
   }
 }`;
 
@@ -50,7 +54,9 @@ const createUrlElement = ({ loc, lastmod, changefreq, priority }) => {
   return `<url>\n${parts.join('\n')}\n  </url>`;
 };
 
-export const GET = async () => {
+export const GET = async ({ depends }) => {
+  depends(QUIZ_SITEMAP_TAG);
+
   let categories = [];
   let quizzes = [];
 
@@ -90,7 +96,9 @@ export const GET = async () => {
   quizzes.forEach((quiz) => {
     const slug = quiz?.slug;
     if (!slug) return;
-    const lastmod = toIsoString(quiz.publishedAt);
+    const published =
+      quiz?.effectivePublishedAt ?? resolvePublishedDate(quiz, quiz?._id ?? slug);
+    const lastmod = published ?? toIsoString(quiz._updatedAt ?? quiz._createdAt);
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',

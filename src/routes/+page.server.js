@@ -9,6 +9,7 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
+import { QUIZ_LIST_TAG } from '$lib/cache/tags.js';
 
 export const prerender = false;
 const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
@@ -37,7 +38,9 @@ const createTopPageSeo = (path) =>
   });
 
 export const load = async (event) => {
-  const { url, setHeaders, isDataRequest } = event;
+  const { url, setHeaders, isDataRequest, depends } = event;
+
+  depends(QUIZ_LIST_TAG);
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
