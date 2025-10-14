@@ -49,8 +49,12 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
+codex/investigate-and-fix-article-display-issue-dgyft0
     publishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null,
     effectivePublishedAt: quiz?.effectivePublishedAt ?? quiz?.publishedAt ?? quiz?._createdAt ?? null
+
+    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null
+main
   };
 };
 

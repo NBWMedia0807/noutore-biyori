@@ -54,7 +54,11 @@ const buildSeo = ({ doc, path }) => {
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
   const image = doc?.problemImage?.asset?.url || doc?.mainImage?.asset?.url;
+codex/investigate-and-fix-article-display-issue-dgyft0
   const publishedAt = doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
+
+  const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+main
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
@@ -92,6 +96,7 @@ export async function load({ params, setHeaders, depends }) {
     logPrefix: 'quiz/[...slug]'
   });
   if (!doc) throw error(404, `Quiz not found: ${slug}`);
+codex/investigate-and-fix-article-display-issue-dgyft0
   const effectivePublishedAt =
     doc?.effectivePublishedAt ?? doc?.publishedAt ?? doc?._createdAt ?? null;
   const normalizedDoc =
@@ -101,6 +106,13 @@ export async function load({ params, setHeaders, depends }) {
       : doc?.effectivePublishedAt
         ? doc
         : { ...doc, effectivePublishedAt };
+
+  const effectivePublishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+  const normalizedDoc =
+    effectivePublishedAt && doc?.publishedAt !== effectivePublishedAt
+      ? { ...doc, publishedAt: effectivePublishedAt }
+      : doc;
+main
   if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
     throw redirect(308, `/quiz/${normalizedDoc.slug}`);
   }
