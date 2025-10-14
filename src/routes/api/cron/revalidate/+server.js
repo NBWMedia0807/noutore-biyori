@@ -106,7 +106,7 @@ export const GET = async (event) => {
     categories: categorySlugs
   });
 
-  const { tags, results } = revalidateQuizTags({ slugs, categorySlugs });
+  const { tags, results } = await revalidateQuizTags({ slugs, categorySlugs });
 
   return json({ ok: true, slugs, categorySlugs, tags, tagResults: results });
 };

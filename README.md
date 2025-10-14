@@ -19,10 +19,22 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 上記コマンドで起動した状態では `/quiz/sample-quiz-a` や `/quiz/sample-quiz-a/answer` が常に 200 を返し、UI を安全に確認できます。
 
+### Node.js / pnpm のバージョン固定
+
+- Node.js 20.x と pnpm 10.15.0 の組み合わせで動作を検証しています。ローカルでは `nvm use` もしくは `.nvmrc` に従って Node.js 20.x を使用してください。
+- 依存関係をインストールする際は Corepack 経由で pnpm を有効化し、必ず `--frozen-lockfile` を付けてロックファイルの整合性を維持してください。
+
+  ```bash
+  corepack enable
+  corepack prepare pnpm@10.15.0 --activate
+  pnpm install --frozen-lockfile
+  ```
+
 ### Vercel 設定メモ
 
-- Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
-- 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
+- Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **20.x** に設定してください。
+- Install Command は `corepack enable && corepack prepare pnpm@10.15.0 --activate && pnpm install --frozen-lockfile` を設定し、本番ビルドでもロックファイルを強制チェックします。
+- 本リポジトリは Node.js 20 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
 ### Sanity 予約公開と ISR 再検証の設定
 
@@ -94,6 +106,18 @@ main
 - 過去日に公開したい場合は、`公開日時` に任意の過去日時（日本時間）を入力してから **Publish** してください。サイト上の表示日と並び順はこの値で統一されます。
 - 未来日時を設定したまま Publish すると、プレビュー以外の公開サイトでは該当記事が非表示になります（日時が到来すると自動で表示されません。必要に応じて日時を手動で更新してください）。
 - 上記のバックフィルスクリプトはドラフトを除外し、公開済みクイズのみを `_createdAt` で補完します。
+
+### ロックファイルとコンフリクト検知の運用
+
+- 依存関係を追加・更新した場合は、`pnpm install` によるロックファイル更新を同一コミットで必ず含めてください。`pnpm install --frozen-lockfile` が失敗する状態での PR 作成は禁止です。
+- PR を送る前に `pnpm run ci:verify` を実行し、ロックファイルの整合性とコンフリクトマーカーの混入がないことを確認してください。
+- Git のコンフリクトマーカー（`&lt;&lt;&lt;&lt;&lt;&lt;&lt;` / `&#61;&#61;&#61;&#61;&#61;&#61;&#61;` / `&gt;&gt;&gt;&gt;&gt;&gt;&gt;`）が検出されたコミットは CI と Husky の pre-commit フックで弾かれます。解消後に再度コミットしてください。
+- CI（`CI - Lock & Conflict Check`）と Vercel の本番ビルドはいずれも `pnpm install --frozen-lockfile` を実行し、ロック不整合を即座に検知します。
+
+### Playwright テストの実行
+
+- Playwright CLI を併用する場合は `pnpm add -D @playwright/test` でローカルに依存を追加してください。未インストールの場合はフォールバックロジックが自動実行され、記事件数と並び順のスナップショットを検証します。
+- スナップショットを更新する際は `UPDATE_PLAYWRIGHT_SNAPSHOTS=1 ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 node scripts/run-playwright-tests.mjs` を実行してください。
 
 ### Google アナリティクス (GA4) 設定
 

@@ -235,7 +235,7 @@ export const POST = async (event) => {
     categories: categorySlugs
   });
 
-  const { tags, results: tagResults } = revalidateQuizTags({ slugs, categorySlugs });
+  const { tags, results: tagResults } = await revalidateQuizTags({ slugs, categorySlugs });
   const results = await revalidatePaths({ event, paths: Array.from(paths) });
 
   const failed = results.filter((result) => result.error);
