@@ -160,7 +160,7 @@
 </svelte:head>
 
 {#if ui.showHeader !== false}
-  <header class="site-header" data-review-mode={reviewMode}>
+  <header data-review-mode={reviewMode}>
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
         <img
@@ -182,7 +182,7 @@
 {/if}
 
 {#if !ui.hideGlobalNavTabs}
-  <nav class="main-nav global-nav">
+  <nav class="main-nav">
     <div class="nav-container">
       <ul class="nav-menu">
         {#if data?.categories?.length}
@@ -209,18 +209,14 @@
 
 <footer data-review-mode={reviewMode}>
   <div class="footer-content">
-    <p class="footer-copy">
-      <span class="footer-copy-line">&copy; 2025年9月 脳トレ日和</span>
-      <span class="footer-copy-line">毎日の脳トレで健康な生活を</span>
-    </p>
-    <nav class="footer-links" aria-label="法務および運営情報">
-      <ul class="footer-link-list primary-links">
+    <p>&copy; 2025年9月 脳トレ日和</p>
+    <p>毎日の脳トレで健康な生活を</p>
+    <nav aria-label="法務および運営情報">
+      <ul class="footer-links">
         <li><a href="/privacy-policy">プライバシーポリシー</a></li>
         <li><a href="/about">運営者情報</a></li>
         <li><a href="/contact">お問い合わせ</a></li>
         <li><a href="/terms">利用規約</a></li>
-      </ul>
-      <ul class="footer-link-list secondary-links">
         <li><a href="/disclaimer">免責事項</a></li>
         <li><a href="/about#author-info">著者情報</a></li>
       </ul>
@@ -229,227 +225,9 @@
 </footer>
 
 <style>
-  .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1rem;
-  }
-
-  .logo-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s ease;
-  }
-
-  .logo-section:hover {
-    transform: scale(1.02);
-  }
-
-  .logo-image {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    background: var(--white);
-    border-radius: 12px;
-    padding: 8px;
-  }
-
-  .title-section {
-    text-align: left;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .main-nav {
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(6px);
-  }
-
-  .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    overflow-x: auto;
-    scrollbar-width: thin;
-  }
-
-  .nav-menu {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    padding: 0.75rem 0;
-    margin: 0;
-    justify-content: center;
-    min-width: 100%;
-  }
-
-  .nav-link {
-    padding: 0.5rem 1rem;
-    border-radius: 999px;
-    text-decoration: none;
-    color: inherit;
-    font-weight: 600;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .nav-link:hover,
-  .nav-link:focus-visible {
-    background: rgba(250, 204, 21, 0.2);
-    outline: none;
-  }
-
-  .nav-menu::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .nav-menu::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.4);
-    border-radius: 999px;
-  }
-
   .breadcrumbs-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
-  }
-
-  footer {
-    background: #faf8f4;
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
-  }
-
-  .footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2.5rem 1rem;
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .footer-copy {
-    margin: 0;
-    text-align: center;
-    color: #4b5563;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .footer-copy-line {
-    display: block;
-  }
-
-
-  .footer-links {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .footer-link-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem;
-  }
-
-  .footer-link-list.secondary-links {
-    opacity: 0.85;
-  }
-
-  .footer-link-list a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.6rem 1.2rem;
-    border-radius: 999px;
-    border: 1px solid rgba(253, 224, 71, 0.4);
-    color: #1f2937;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.92);
-    text-decoration: none;
-    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-  }
-
-  .footer-link-list a:hover,
-  .footer-link-list a:focus-visible {
-    background: rgba(250, 204, 21, 0.24);
-    color: #1f2937;
-    border-color: rgba(253, 224, 71, 0.6);
-    outline: none;
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 768px) {
-    .nav-container {
-      padding: 0 0.5rem;
-    }
-
-    .nav-menu {
-      flex-wrap: nowrap;
-      gap: 0.5rem;
-      justify-content: flex-start;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .nav-link {
-      white-space: nowrap;
-    }
-
-    .logo-section {
-      /* スマホでも横並びを維持 */
-      flex-direction: row;
-      text-align: left;
-      gap: 1rem;
-    }
-
-    .title-section {
-      text-align: left;
-    }
-
-    .logo-image {
-      width: 60px;
-      height: 60px;
-    }
-
-    .footer-content {
-      padding: 2rem 1.5rem 2.5rem;
-    }
-
-  }
-
-  @media (max-width: 640px) {
-    .footer-link-list {
-      flex-direction: column;
-      width: 100%;
-    }
-
-    .footer-link-list a {
-      width: 100%;
-    }
   }
 </style>
