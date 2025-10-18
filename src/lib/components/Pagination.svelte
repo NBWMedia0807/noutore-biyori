@@ -20,10 +20,27 @@
   })();
 
   const createHref = (page) => {
-    const normalizedBase = basePath && typeof basePath === 'string' ? basePath : '/';
-    if (page <= 1) return normalizedBase || '/';
-    const separator = normalizedBase.includes('?') ? '&' : '?';
-    return `${normalizedBase}${separator}page=${page}`;
+    const normalizedBase =
+      typeof basePath === 'string' && basePath.trim().length > 0 ? basePath.trim() : '/';
+
+    const hashIndex = normalizedBase.indexOf('#');
+    const hasHash = hashIndex !== -1;
+    const pathAndQuery = hasHash ? normalizedBase.slice(0, hashIndex) : normalizedBase;
+    const hashFragment = hasHash ? normalizedBase.slice(hashIndex + 1) : '';
+
+    const [rawPath = '/', rawQuery = ''] = pathAndQuery.split('?');
+    const safePath = rawPath.trim() || '/';
+    const searchParams = new URLSearchParams(rawQuery);
+
+    if (page <= 1) {
+      searchParams.delete('page');
+    } else {
+      searchParams.set('page', page);
+    }
+
+    const queryString = searchParams.toString();
+    const hashString = hashFragment ? `#${hashFragment}` : '';
+    return `${safePath}${queryString ? `?${queryString}` : ''}${hashString}`;
   };
 
   const buildPaginationItems = (current, total) => {
