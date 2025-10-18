@@ -4,14 +4,21 @@
 
   export let data;
 
-  const category = data?.category ?? null;
-  const categoryTitle = category?.title ?? 'カテゴリ';
-  const slug = category?.slug ?? '';
-  const newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
-  const popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
-  const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
+  let category;
+  let categoryTitle;
+  let slug;
+  let newestQuizzes;
+  let popularQuizzes;
+  let totalCount;
+  let emptyMessage;
 
-  const emptyMessage = categoryTitle
+  $: category = data?.category ?? null;
+  $: categoryTitle = category?.title ?? 'カテゴリ';
+  $: slug = category?.slug ?? '';
+  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
+  $: popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
+  $: totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
+  $: emptyMessage = categoryTitle
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
 
