@@ -1,13 +1,14 @@
 <script>
   import { tick } from 'svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
 
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const nextQuiz = data?.nextQuiz ?? null;
-  const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+  const publishedAt = resolvePublishedDate(doc, doc?._id ?? doc?.slug ?? 'quiz-detail') ?? null;
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =

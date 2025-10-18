@@ -2,6 +2,7 @@
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
+  import { resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
 
   export let data;
 
@@ -41,9 +42,13 @@
       .filter((item) => item?.slug)
       .slice()
       .sort((a, b) => {
-        const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
-        const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
-        return bDate - aDate;
+        const aContext = a?.slug ?? a?.id ?? 'category';
+        const bContext = b?.slug ?? b?.id ?? 'category';
+        const aTime = resolvePublishedTimestamp(a, aContext);
+        const bTime = resolvePublishedTimestamp(b, bContext);
+        const safeA = Number.isFinite(aTime) ? aTime : 0;
+        const safeB = Number.isFinite(bTime) ? bTime : 0;
+        return safeB - safeA;
       });
 
   let activeTab = 'newest';

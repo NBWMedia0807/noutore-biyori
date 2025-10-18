@@ -1,5 +1,6 @@
 <script>
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
   export let quiz = {};
   export let fallbackImageUrl = '/logo.svg';
@@ -61,7 +62,8 @@
   $: href = slug ? `/quiz/${slug}` : '#';
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
-  $: publishedDate = quiz?.publishedAt ?? quiz?._createdAt ?? '';
+  $: publishedDate =
+    resolvePublishedDate(quiz, quiz?.slug ?? quiz?.id ?? 'article-card') ?? '';
   $: formattedDate = formatDate(publishedDate);
 </script>
 
