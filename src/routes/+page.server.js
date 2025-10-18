@@ -46,7 +46,7 @@ const HOME_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$rangeStart...$rangeEnd]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -228,7 +228,10 @@ export const load = async (event) => {
   const path = url.pathname;
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
-  const offset = Math.max(0, (requestedPage - 1) * pageSize);
+
+  // GROQ のスライス引数に合わせた範囲（mainブランチの仕様に合わせて end は「-1」で調整）
+  const rangeStart = Math.max(0, (requestedPage - 1) * pageSize);
+  const rangeEnd = Math.max(rangeStart, rangeStart + pageSize - 1);
 
   if (shouldSkipSanityFetch()) {
     if (isQuizStubEnabled()) {
@@ -262,20 +265,24 @@ export const load = async (event) => {
 
   try {
     const result = await client.fetch(HOME_QUERY, {
-      offset,
-      limit: pageSize
+      rangeStart,
+      rangeEnd
     });
+
     const newestSource = filterVisibleQuizzes(result?.newest);
     const newest = sortByPublishedAt(newestSource);
+
     const popularSource = rankQuizzesByPopularity({
       primary: result?.popular,
       fallback: newestSource,
       limit: 6
     });
     const popular = popularSource.map(toPreview).filter(Boolean);
+
     const categories = Array.isArray(result?.categories)
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
+
     const totalCount = typeof result?.total === 'number' ? result.total : newestSource.length;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
