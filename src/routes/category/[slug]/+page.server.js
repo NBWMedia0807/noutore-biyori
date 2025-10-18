@@ -16,6 +16,7 @@ import {
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
 import { rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
+import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
 
@@ -92,6 +93,8 @@ const toMetric = (value) => {
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
+  const context = quiz?._id ?? quiz?.slug ?? 'category';
+  const publishedAt = resolvePublishedDate(quiz, context);
   return {
     id: quiz._id ?? quiz.slug,
     title: quiz.title ?? '脳トレ問題',
@@ -102,7 +105,7 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    publishedAt: publishedAt ?? null,
     _createdAt: quiz?._createdAt ?? null,
     viewCount: toMetric(quiz?.viewCount),
     likeCount: toMetric(quiz?.likeCount),

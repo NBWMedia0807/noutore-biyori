@@ -5,6 +5,7 @@ import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { ensurePublishedAt, resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -52,7 +53,7 @@ const buildSeo = ({ doc, path }) => {
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
   const image = resolveQuizOgImage(doc);
-  const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
+  const publishedAt = resolvePublishedDate(doc, doc?._id ?? doc?.slug ?? path);
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
@@ -90,11 +91,7 @@ export async function load({ params, setHeaders }) {
     logPrefix: 'quiz/[...slug]'
   });
   if (!doc) throw error(404, `Quiz not found: ${slug}`);
-  const effectivePublishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
-  const normalizedDoc =
-    effectivePublishedAt && doc?.publishedAt !== effectivePublishedAt
-      ? { ...doc, publishedAt: effectivePublishedAt }
-      : doc;
+  const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
   if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
     throw redirect(308, `/quiz/${normalizedDoc.slug}`);
   }

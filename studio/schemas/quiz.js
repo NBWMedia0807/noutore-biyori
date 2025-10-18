@@ -3,14 +3,30 @@ export default {
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
+  groups: [
+    { name: 'publish', title: '公開設定' }
+  ],
+  orderings: [
+    {
+      name: 'publishedDesc',
+      title: '公開日時 (新しい順)',
+      by: [{ field: 'publishedAt', direction: 'desc' }]
+    },
+    {
+      name: 'publishedAsc',
+      title: '公開日時 (古い順)',
+      by: [{ field: 'publishedAt', direction: 'asc' }]
+    }
+  ],
   fields: [
     // ── 公開情報 ─────────────────────────
     {
       name: 'publishedAt',
       title: '公開日時',
       description:
-        '公開開始日時です。未来の日時を指定すると予約公開になります。スタジオでは日本時間 (Asia/Tokyo) で表示されます。',
+        'サイトに表示される公開日です。未来の日時を指定すると予約公開になります。Studio では日本時間 (Asia/Tokyo) で表示されます。',
       type: 'datetime',
+      group: 'publish',
       options: {
         dateFormat: 'YYYY/MM/DD',
         timeFormat: 'HH:mm',

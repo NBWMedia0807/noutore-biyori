@@ -13,6 +13,7 @@ import {
   isFutureScheduled,
   shouldRestrictToPublishedContent
 } from '$lib/queries/quizVisibility.js';
+import { ensurePublishedAt } from '$lib/utils/publishedDate.js';
 
 const formatPrefix = (prefix) => (prefix ? `[${prefix}]` : '[quiz]');
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
@@ -106,17 +107,18 @@ export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
     try {
       const doc = await client.fetch(query, { slug });
       if (doc) {
+        const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
         if (
           shouldRestrictToPublishedContent &&
-          doc.publishedAt &&
-          isFutureScheduled(doc.publishedAt)
+          normalizedDoc.publishedAt &&
+          isFutureScheduled(normalizedDoc.publishedAt)
         ) {
           console.info(
-            `${formatPrefix(logPrefix)} Ignoring future publish date for slug:${slug} (${doc.publishedAt})`
+            `${formatPrefix(logPrefix)} Ignoring future publish date for slug:${slug} (${normalizedDoc.publishedAt})`
           );
           return null;
         }
-        return doc;
+        return normalizedDoc;
       }
     } catch (error) {
       console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz by slug:${slug}`, error);
@@ -129,7 +131,7 @@ export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
     const stubDoc = getQuizStubDocument(slug);
     if (stubDoc) {
       console.info(`${formatPrefix(logPrefix)} Using stub quiz document for slug:${slug}`);
-      return clone(stubDoc);
+      return ensurePublishedAt(clone(stubDoc), stubDoc?._id ?? slug);
     }
   }
 

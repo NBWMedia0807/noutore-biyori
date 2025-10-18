@@ -1,4 +1,5 @@
 import { filterVisibleQuizzes } from '$lib/queries/quizVisibility.js';
+import { resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
 
 const RECENCY_WINDOW_DAYS = 120;
 
@@ -11,13 +12,6 @@ const toPositiveNumber = (value) => {
     return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
   }
   return 0;
-};
-
-const resolvePublishedTimestamp = (quiz) => {
-  const source = quiz?.publishedAt ?? quiz?._createdAt ?? null;
-  if (!source) return Number.NaN;
-  const timestamp = new Date(source).getTime();
-  return Number.isFinite(timestamp) ? timestamp : Number.NaN;
 };
 
 const computeRecencyBoost = (timestamp) => {
@@ -37,7 +31,7 @@ export const computePopularityScore = (quiz, fallbackRank = 0) => {
     quiz?.viewCount ?? quiz?.popularity?.views ?? quiz?.popularity?.pageViews
   );
   const likes = toPositiveNumber(quiz?.likeCount ?? quiz?.popularity?.likes);
-  const timestamp = resolvePublishedTimestamp(quiz);
+  const timestamp = resolvePublishedTimestamp(quiz, quiz?._id ?? quiz?.slug ?? 'popularity');
   const recencyBoost = computeRecencyBoost(timestamp);
   const rankBonus = Math.max(0, 48 - fallbackRank);
 
@@ -60,8 +54,8 @@ const sortByPopularityScore = (items) => {
     .map(({ quiz, score }) => ({ quiz, score }))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      const aTime = resolvePublishedTimestamp(a.quiz);
-      const bTime = resolvePublishedTimestamp(b.quiz);
+      const aTime = resolvePublishedTimestamp(a.quiz, a.quiz?._id ?? a.quiz?.slug ?? 'popularity');
+      const bTime = resolvePublishedTimestamp(b.quiz, b.quiz?._id ?? b.quiz?.slug ?? 'popularity');
       return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
     });
 };

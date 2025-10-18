@@ -21,6 +21,7 @@ import {
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
 import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
+import { resolvePublishedDate, resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
 const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
@@ -111,6 +112,8 @@ const toMetric = (value) => {
 const toPreview = (quiz) => {
   const slug = typeof quiz?.slug === 'string' ? quiz.slug : quiz?.slug?.current;
   if (!slug) return null;
+  const context = quiz?._id ?? slug;
+  const publishedAt = resolvePublishedDate(quiz, context);
   return {
     id: quiz._id ?? slug,
     title: quiz.title ?? '脳トレ問題',
@@ -121,7 +124,7 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    publishedAt: publishedAt ?? null,
     _createdAt: quiz?._createdAt ?? null,
     viewCount: toMetric(quiz?.viewCount),
     likeCount: toMetric(quiz?.likeCount),
@@ -134,9 +137,13 @@ const sortByPublishedAt = (list) =>
     .map(toPreview)
     .filter(Boolean)
     .sort((a, b) => {
-      const aDate = new Date(a?.publishedAt ?? a?._createdAt ?? 0).getTime();
-      const bDate = new Date(b?.publishedAt ?? b?._createdAt ?? 0).getTime();
-      return bDate - aDate;
+      const aContext = a?.slug ?? a?.id ?? 'quiz';
+      const bContext = b?.slug ?? b?.id ?? 'quiz';
+      const aTime = resolvePublishedTimestamp(a, aContext);
+      const bTime = resolvePublishedTimestamp(b, bContext);
+      const safeA = Number.isFinite(aTime) ? aTime : 0;
+      const safeB = Number.isFinite(bTime) ? bTime : 0;
+      return safeB - safeA;
     });
 
 const normalizeCategorySection = (category) => {

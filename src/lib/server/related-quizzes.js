@@ -1,5 +1,6 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
+import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 import {
   QUIZ_ORDER_BY_PUBLISHED,
   QUIZ_PUBLISHED_FILTER,
@@ -50,6 +51,8 @@ const toMetric = (value) => {
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
+  const context = quiz?._id ?? quiz.slug;
+  const publishedAt = resolvePublishedDate(quiz, context);
   return {
     id: quiz._id ?? quiz.slug,
     title: quiz.title ?? '脳トレ問題',
@@ -60,7 +63,7 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    publishedAt: publishedAt ?? null,
     _createdAt: quiz?._createdAt ?? null,
     viewCount: toMetric(quiz?.viewCount),
     likeCount: toMetric(quiz?.likeCount),
