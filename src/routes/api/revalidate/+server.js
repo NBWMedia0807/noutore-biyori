@@ -5,7 +5,7 @@ import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 const REVALIDATE_TOKEN = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET || '';
 
-const SLUG_QUERY = /* groq */ `*[_id in $ids]{ "slug": slug.current }`;
+const SLUG_QUERY = /* groq */ `*[_id in $ids]{ _id, _type, "slug": slug.current }`;
 const CATEGORY_FROM_SLUG_QUERY = /* groq */ `
   *[_type == "quiz" && slug.current in $slugs]{ "category": category->slug.current }
 `;
@@ -62,50 +62,65 @@ const collectDocumentIds = (payload) => {
   return Array.from(ids);
 };
 
-const resolveSlugs = async (payload) => {
-  const slugs = new Set();
+const resolveDocumentSlugs = async (payload) => {
+  const slugMap = new Map();
 
-  const tryAdd = (value) => {
+  const addSlug = (slug, type) => {
+    const normalized = typeof slug === 'string' ? slug.trim() : '';
+    if (!normalized) return;
+    const existing = slugMap.get(normalized);
+    if (existing) {
+      if (type) existing.types.add(type);
+      return;
+    }
+    const types = new Set();
+    if (type) types.add(type);
+    slugMap.set(normalized, { slug: normalized, types });
+  };
+
+  const addFromValue = (value, typeHint) => {
     for (const candidate of toStringArray(value)) {
-      if (candidate) slugs.add(candidate);
+      addSlug(candidate, typeHint);
     }
   };
 
-  tryAdd(payload?.slug);
-  tryAdd(payload?.slug?.current);
-  tryAdd(payload?.document?.slug);
-  tryAdd(payload?.document?.slug?.current);
-  tryAdd(payload?.current?.slug);
-  tryAdd(payload?.current?.slug?.current);
-  tryAdd(payload?.previous?.slug);
-  tryAdd(payload?.previous?.slug?.current);
-  tryAdd(payload?.after?.slug);
-  tryAdd(payload?.after?.slug?.current);
-  tryAdd(payload?.payload?.slug);
-  tryAdd(payload?.payload?.slug?.current);
-  tryAdd(payload?.slugs);
+  const inspectDocumentLike = (value) => {
+    if (!value || typeof value !== 'object') return;
+    const typeHint = typeof value._type === 'string' ? value._type.trim() : undefined;
+    if (value.slug !== undefined) {
+      addFromValue(value.slug, typeHint);
+    } else {
+      addFromValue(value, typeHint);
+    }
+  };
 
-  if (slugs.size > 0) {
-    return Array.from(slugs);
-  }
+  addFromValue(payload?.slug);
+  addFromValue(payload?.slugs);
+  inspectDocumentLike(payload?.document);
+  inspectDocumentLike(payload?.current);
+  inspectDocumentLike(payload?.previous);
+  inspectDocumentLike(payload?.after);
+  inspectDocumentLike(payload?.payload);
 
   const ids = collectDocumentIds(payload);
-  if (ids.length === 0 || shouldSkipSanityFetch()) {
-    return [];
-  }
-
-  try {
-    const result = await client.fetch(SLUG_QUERY, { ids });
-    if (Array.isArray(result)) {
-      result.forEach((entry) => {
-        tryAdd(entry?.slug);
-      });
+  if (ids.length > 0 && !shouldSkipSanityFetch()) {
+    try {
+      const result = await client.fetch(SLUG_QUERY, { ids });
+      if (Array.isArray(result)) {
+        for (const entry of result) {
+          const type = typeof entry?._type === 'string' ? entry._type.trim() : undefined;
+          addFromValue(entry?.slug, type);
+        }
+      }
+    } catch (error) {
+      console.error('[revalidate] Failed to resolve slugs from Sanity', error);
     }
-  } catch (error) {
-    console.error('[revalidate] Failed to resolve slugs from Sanity', error);
   }
 
-  return Array.from(slugs);
+  return Array.from(slugMap.values()).map((entry) => ({
+    slug: entry.slug,
+    types: Array.from(entry.types)
+  }));
 };
 
 const resolveCategorySlugs = async (slugs) => {
@@ -210,11 +225,18 @@ export const POST = async (event) => {
     return json({ ok: false, message: 'Invalid JSON' }, { status: 400 });
   }
 
-  const slugs = await resolveSlugs(payload || {});
-  const categorySlugs = await resolveCategorySlugs(slugs);
+  const documents = await resolveDocumentSlugs(payload || {});
+  const quizSlugs = documents
+    .filter((doc) => doc.types.length === 0 || doc.types.includes('quiz'))
+    .map((doc) => doc.slug);
+  const directCategorySlugs = documents
+    .filter((doc) => doc.types.includes('category'))
+    .map((doc) => doc.slug);
+  const relatedCategorySlugs = await resolveCategorySlugs(quizSlugs);
+  const categorySlugs = Array.from(new Set([...directCategorySlugs, ...relatedCategorySlugs]));
   const paths = new Set(['/', '/quiz', '/sitemap.xml']);
 
-  for (const slug of slugs) {
+  for (const slug of quizSlugs) {
     const normalized = typeof slug === 'string' ? slug.trim() : '';
     if (!normalized) continue;
     paths.add(`/quiz/${normalized}`);
@@ -243,7 +265,7 @@ export const POST = async (event) => {
     {
       ok: failed.length === 0,
       revalidated: results,
-      slugs,
+      slugs: quizSlugs,
       categories: categorySlugs
     },
     { status }
