@@ -227,16 +227,6 @@
     <RelatedQuizSection quizzes={relatedQuizzes} />
   {/if}
 
-  <section class="next-quiz-section" aria-labelledby="next-quiz-heading">
-    <div class="section-header">
-      <h2 id="next-quiz-heading">次の問題に挑戦</h2>
-    </div>
-    <p class="next-quiz-text">{nextQuiz?.title ?? '他のクイズにも挑戦して脳を鍛えましょう。'}</p>
-    <a class="action-button secondary" href={nextQuizUrl} aria-label={`次の問題: ${nextQuizLabel}`}>
-      次の問題に挑戦
-      <span aria-hidden="true">→</span>
-    </a>
-  </section>
 </main>
 
 <style>
@@ -441,23 +431,6 @@
 
   .to-answer {
     text-align: center;
-  }
-
-  .next-quiz-section {
-    background: var(--white);
-    border-radius: 24px;
-    padding: 28px 24px;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-    border: 1px solid rgba(248, 196, 113, 0.32);
-    text-align: center;
-    display: grid;
-    gap: 1rem;
-  }
-
-  .next-quiz-text {
-    margin: 0;
-    color: #92400e;
-    font-weight: 600;
   }
 
   .sr-only {
