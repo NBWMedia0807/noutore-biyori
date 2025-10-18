@@ -19,6 +19,7 @@ import {
   getQuizStubQuizzesByCategory,
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
+import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
 
 export const prerender = false;
 const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
@@ -81,6 +82,17 @@ const pickImageSource = (quiz) =>
         ? quiz.answerImage
         : null;
 
+const toMetric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 const toPreview = (quiz) => {
   const slug = typeof quiz?.slug === 'string' ? quiz.slug : quiz?.slug?.current;
   if (!slug) return null;
@@ -95,7 +107,10 @@ const toPreview = (quiz) => {
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
     publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
-    _createdAt: quiz?._createdAt ?? null
+    _createdAt: quiz?._createdAt ?? null,
+    viewCount: toMetric(quiz?.viewCount),
+    likeCount: toMetric(quiz?.likeCount),
+    popularityScore: toMetric(quiz?.popularityScore)
   };
 };
 
@@ -154,7 +169,11 @@ const buildStubHomeData = (path) => {
     .filter((section) => section && section.quizzes.length > 0);
 
   const newest = sortByPublishedAt(sections.flatMap((section) => section.quizzes)).slice(0, 12);
-  const popular = newest.slice(0, 6);
+  const popular = rankQuizzesByPopularity({
+    primary: newest,
+    fallback: sections.flatMap((section) => section.quizzes),
+    limit: 6
+  });
   const seo = createHomeSeo(path, newest.length ? newest : popular);
 
   return {
@@ -184,17 +203,22 @@ export const load = async (event) => {
 
   try {
     const result = await client.fetch(HOME_QUERY);
-    const newest = sortByPublishedAt(filterVisibleQuizzes(result?.newest));
-    const popular = sortByPublishedAt(filterVisibleQuizzes(result?.popular)).slice(0, 6);
+    const newestSource = filterVisibleQuizzes(result?.newest);
+    const newest = sortByPublishedAt(newestSource);
+    const popularSource = rankQuizzesByPopularity({
+      primary: result?.popular,
+      fallback: newestSource,
+      limit: 6
+    });
+    const popular = popularSource.map(toPreview).filter(Boolean);
     const categories = Array.isArray(result?.categories)
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
 
-    const aggregatedQuizzes = [
-      ...newest,
-      ...popular,
-      ...categories.flatMap((category) => category.quizzes)
-    ];
+    const aggregatedQuizzes = mergeWithFallback(
+      mergeWithFallback(newest, popular),
+      categories.flatMap((category) => category.quizzes)
+    );
 
     const seo = createHomeSeo(path, aggregatedQuizzes, SITE.description);
 
