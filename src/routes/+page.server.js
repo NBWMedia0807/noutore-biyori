@@ -45,7 +45,7 @@ const HOME_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$rangeStart...$rangeEnd]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$rangeStart...$rangeEndExclusive]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -228,9 +228,9 @@ export const load = async (event) => {
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
 
-  // GROQのスライスに渡す範囲（end は「含む」想定のため -1 調整）
+  // GROQのスライスはendが「含まれない」ため、pageSizeぶんだけ進める
   const rangeStart = Math.max(0, (requestedPage - 1) * pageSize);
-  const rangeEnd = Math.max(rangeStart, rangeStart + pageSize - 1);
+  const rangeEndExclusive = rangeStart + Math.max(1, pageSize);
 
   if (shouldSkipSanityFetch()) {
     if (isQuizStubEnabled()) {
@@ -265,7 +265,7 @@ export const load = async (event) => {
   try {
     const result = await client.fetch(HOME_QUERY, {
       rangeStart,
-      rangeEnd
+      rangeEndExclusive
     });
 
     const newestSource = filterVisibleQuizzes(result?.newest);
