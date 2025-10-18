@@ -6,25 +6,28 @@
 
   export let data;
 
-  let allNewestQuizzes = [];
   let newestQuizzes = [];
   let categorySections = [];
   let pagination = null;
   let pageSize = 10;
   let hasNewest = false;
 
-  $: allNewestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
   $: categorySections = Array.isArray(data?.categories)
     ? data.categories.filter((section) => Array.isArray(section?.quizzes) && section.quizzes.length > 0)
     : [];
+
   $: pagination = data?.pagination ?? null;
+
+  // サーバー側ページングを尊重。未設定時は10件を既定値に。
   $: pageSize = (() => {
     const candidate = Number(pagination?.pageSize);
     if (!Number.isFinite(candidate)) return 10;
     const normalized = Math.max(1, Math.trunc(candidate));
     return normalized;
   })();
-  $: newestQuizzes = allNewestQuizzes.slice(0, pageSize);
+
+  // data.newestは「現在ページ分」を受け取り表示（クライアント側でのsliceはしない）
+  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
   $: hasNewest = newestQuizzes.length > 0;
 </script>
 
@@ -37,6 +40,7 @@
           <ArticleCard {quiz} />
         {/each}
       </ArticleGrid>
+
       {#if pagination?.totalPages > 1}
         <Pagination
           basePath={pagination?.basePath ?? '/'}
@@ -57,6 +61,7 @@
         </h2>
         <p>得意なジャンルを選んで、レベルに合わせて問題を探しましょう。</p>
       </header>
+
       <div class="category-grid">
         {#each categorySections as section (section.slug)}
           <article class="category-card">
@@ -65,11 +70,13 @@
               <p>{section.overview}</p>
               <p class="category-card__count">公開中 {section.quizCount}問</p>
             </header>
+
             <ArticleGrid minWidth={200} gap={16}>
               {#each section.quizzes.slice(0, 3) as quiz (quiz.slug)}
                 <ArticleCard {quiz} />
               {/each}
             </ArticleGrid>
+
             <div class="category-card__footer">
               <a class="category-link" href={`/category/${section.slug}`}>カテゴリのクイズをもっと見る</a>
             </div>

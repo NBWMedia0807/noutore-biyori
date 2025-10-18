@@ -19,14 +19,19 @@
   $: categoryTitle = category?.title ?? 'カテゴリ';
   $: slug = category?.slug ?? '';
   $: pagination = data?.pagination ?? null;
+
+  // サーバー側ページングを尊重。未設定時は10件を既定値に。
   $: pageSize = (() => {
     const candidate = Number(pagination?.pageSize);
     if (!Number.isFinite(candidate)) return 10;
     return Math.max(1, Math.trunc(candidate));
   })();
-  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest.slice(0, pageSize) : [];
+
+  // newestは現在ページ分をそのまま表示（スライスしない）
+  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
   $: popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
   $: totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
+
   $: emptyMessage = categoryTitle
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
@@ -102,6 +107,7 @@
             <ArticleCard {quiz} />
           {/each}
         </ArticleGrid>
+
         {#if activeTab === 'newest' && pagination?.totalPages > 1}
           <Pagination
             basePath={pagination?.basePath ?? `/category/${slug}`}

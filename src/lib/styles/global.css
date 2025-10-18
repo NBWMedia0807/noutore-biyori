@@ -104,8 +104,17 @@ header {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+
+  /* スマホで1行横スクロール */
+  display: flex;
+  width: 100%;
+  align-items: center;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
 }
 
 .nav-container::-webkit-scrollbar {
@@ -115,9 +124,13 @@ header {
 .nav-menu {
   list-style: none;
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;         /* 1行固定 */
   gap: 0.5rem;
+  margin: 0;
+  padding: 0 0.25rem;
+  min-width: max-content;    /* アイテム合計幅に合わせてスクロール */
 }
 
 .nav-menu > li {
@@ -136,7 +149,7 @@ header {
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s ease, transform 0.2s ease;
-  white-space: nowrap;
+  white-space: nowrap;       /* 折り返し防止 */
 }
 
 .nav-link:hover {
@@ -235,8 +248,7 @@ footer {
 
   .nav-container {
     padding: 0 0.75rem;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;  /* 横スクロールの操作感UP */
   }
 
   .nav-menu {
@@ -256,5 +268,18 @@ footer {
 
   footer {
     margin-top: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .nav-container {
+    justify-content: center;
+    overflow-x: visible;  /* PCはスクロール不要 */
+    touch-action: auto;
+  }
+
+  .nav-menu {
+    justify-content: center;
+    padding: 0;
   }
 }
