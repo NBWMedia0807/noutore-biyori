@@ -218,3 +218,44 @@ export const portableTextToPlain = (value) => {
   }
   return '';
 };
+
+const sanitizeUrl = (value) => {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed;
+};
+
+export const resolveQuizOgImage = (quiz, fallback = '/logo.svg') => {
+  const candidates = [
+    quiz?.problemImage?.asset?.url ?? quiz?.problemImage?.url,
+    quiz?.mainImage?.asset?.url ?? quiz?.mainImage?.url,
+    quiz?.answerImage?.asset?.url ?? quiz?.answerImage?.url,
+    quiz?.thumbnailUrl,
+    fallback,
+    SITE.defaultOgImage
+  ];
+
+  for (const candidate of candidates) {
+    const url = sanitizeUrl(candidate);
+    if (url) return url;
+  }
+
+  return '/logo.svg';
+};
+
+export const resolveOgImageFromQuizzes = (quizzes, fallback = '/logo.svg') => {
+  if (!Array.isArray(quizzes)) {
+    return resolveQuizOgImage(null, fallback);
+  }
+
+  for (const quiz of quizzes) {
+    const url = resolveQuizOgImage(quiz, '');
+    const sanitized = sanitizeUrl(url);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+
+  return resolveQuizOgImage(null, fallback);
+};

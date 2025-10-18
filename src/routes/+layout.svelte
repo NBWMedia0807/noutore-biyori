@@ -215,13 +215,12 @@
     </p>
     <nav aria-label="固定ページリンク">
       <ul class="footer-links">
-        <li><a href="/privacy">プライバシーポリシー</a></li>
+        <li><a href="/privacy-policy">プライバシーポリシー</a></li>
+        <li><a href="/about#operator-info">運営者情報</a></li>
+        <li><a href="/contact">お問い合わせ</a></li>
+        <li><a href="/about#author-info">著者情報</a></li>
         <li><a href="/terms">利用規約</a></li>
         <li><a href="/disclaimer">免責事項</a></li>
-        <li><a href="/contact">お問い合わせ</a></li>
-        <li><a href="/about">サイトについて</a></li>
-        <li><a href="/about#author-info">著者情報</a></li>
-        <li><a href="/about#operator-info">運営者情報</a></li>
       </ul>
     </nav>
   </div>

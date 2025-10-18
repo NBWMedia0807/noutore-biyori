@@ -1,6 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import {
+  createCategoryDescription,
+  createPageSeo,
+  portableTextToPlain,
+  resolveOgImageFromQuizzes
+} from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 import { getQuizStubCategory, getQuizStubQuizzesByCategory } from '$lib/server/quiz-stub.js';
@@ -105,8 +110,7 @@ const createStubCategoryResponse = (slug, path) => {
 
   const overview = createCategoryDescription(stubCategory.title, '');
   const breadcrumbs = [{ name: stubCategory.title, url: path }];
-  const heroImage = pickImage(previews[0]);
-  const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+  const imageUrl = resolveOgImageFromQuizzes(previews, '/logo.svg');
 
   return {
     category: { ...stubCategory, description: '', overview },
@@ -150,6 +154,7 @@ const createFallbackResponse = (slug, path) => {
       title: normalizedTitle,
       description: `${normalizedTitle}のクイズ一覧ページです。`,
       path,
+      image: '/logo.svg',
       breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
     }),
     breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : [],
@@ -204,8 +209,7 @@ export const load = async (event) => {
     const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
     const overview = overviewPlain.trim() || description;
     const breadcrumbs = [{ name: category.title, url: url.pathname }];
-    const heroImage = pickImage(newest[0]);
-    const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+    const imageUrl = resolveOgImageFromQuizzes(newest, '/logo.svg');
 
     const seo = createPageSeo({
       title: category.title,
