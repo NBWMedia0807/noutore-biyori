@@ -50,6 +50,10 @@
     }
   }
 
+  $: if (slug && activeTab !== 'newest') {
+    activeTab = 'newest';
+  }
+
   $: visibleQuizzes = (tabDefinitions.find((tab) => tab.id === activeTab)?.items) ?? sortedNewest;
 
   const tabId = (value) => `tab-${value}`;

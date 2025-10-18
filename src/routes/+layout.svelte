@@ -5,7 +5,7 @@
   import { createPageSeo } from '$lib/seo.js';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { onMount } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
 
   export let data;
@@ -31,6 +31,21 @@
   $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
   $: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
   let shouldSkipNextPageView = true;
+  const isModifiedClick = (event) =>
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.button !== 0;
+
+  const handleCategoryNavigation = (event, slug) => {
+    if (typeof slug !== 'string' || !slug.trim() || isModifiedClick(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    void goto(`/category/${slug.trim()}`, { invalidateAll: true });
+  };
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
@@ -188,7 +203,17 @@
         {#if data?.categories?.length}
           {#each data.categories as c}
             <li>
-              <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data>{c.title}</a>
+              <a
+                href={`/category/${c.slug}`}
+                class="nav-link"
+                class:active={currentPage?.url?.pathname === `/category/${c.slug}`}
+                aria-current={currentPage?.url?.pathname === `/category/${c.slug}` ? 'page' : undefined}
+                data-sveltekit-preload-data
+                data-sveltekit-prefetch
+                on:click={(event) => handleCategoryNavigation(event, c.slug)}
+              >
+                {c.title}
+              </a>
             </li>
           {/each}
         {/if}
