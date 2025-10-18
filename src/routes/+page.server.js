@@ -1,25 +1,10 @@
 import { env } from '$env/dynamic/private';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
-import {
-  createCategoryDescription,
-  createPageSeo,
-  portableTextToPlain,
-  resolveOgImageFromQuizzes
-} from '$lib/seo.js';
+import { createPageSeo, resolveOgImageFromQuizzes } from '$lib/seo.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
-import {
-  CATEGORY_DRAFT_FILTER,
-  QUIZ_ORDER_BY_PUBLISHED,
-  QUIZ_PUBLISHED_FILTER,
-  filterVisibleQuizzes
-} from '$lib/queries/quizVisibility.js';
-import {
-  getQuizStubCategories,
-  getQuizStubQuizzesByCategory,
-  isQuizStubEnabled
-} from '$lib/server/quiz-stub.js';
-import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
+import { QUIZ_ORDER_BY_PUBLISHED, QUIZ_PUBLISHED_FILTER, filterVisibleQuizzes } from '$lib/queries/quizVisibility.js';
+import { getQuizStubCatalog, getQuizStubDocument, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
 
 export const prerender = false;
 const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
@@ -30,47 +15,13 @@ if (homeBypassToken) {
 
 export const config = { runtime: 'nodejs22.x', isr: homeIsrConfig };
 
-const HOME_QUERY = /* groq */ `{
-  "newest": *[
-    _type == "quiz"
-    && defined(slug.current)
-    ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "popular": *[
-    _type == "quiz"
-    && defined(slug.current)
-    ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...8]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "categories": *[
-    _type == "category"
-    && defined(slug.current)
-    ${CATEGORY_DRAFT_FILTER}
-  ] | order(title asc){
-    title,
-    "slug": slug.current,
-    description,
-    overview,
-    "quizCount": count(*[
-      _type == "quiz"
-      && defined(slug.current)
-      && defined(category._ref)
-      && category->slug.current == ^.slug
-      ${QUIZ_PUBLISHED_FILTER}
-    ]),
-    "quizzes": *[
-      _type == "quiz"
-      && defined(slug.current)
-      && defined(category._ref)
-      && category->slug.current == ^.slug
-      ${QUIZ_PUBLISHED_FILTER}
-    ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...3]{
-      ${QUIZ_PREVIEW_PROJECTION}
-    }
-  }
+const QUIZZES_QUERY = /* groq */ `
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  ${QUIZ_PUBLISHED_FILTER}
+] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
+  ${QUIZ_PREVIEW_PROJECTION}
 }`;
 
 const pickImageSource = (quiz) =>
@@ -124,23 +75,6 @@ const sortByPublishedAt = (list) =>
       return bDate - aDate;
     });
 
-const normalizeCategorySection = (category) => {
-  if (!category?.slug) return null;
-  const quizzes = sortByPublishedAt(filterVisibleQuizzes(category.quizzes));
-  const description = createCategoryDescription(category.title, category.description);
-  const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
-  const overview = overviewPlain.trim() || description;
-  const quizCount = typeof category.quizCount === 'number' ? category.quizCount : quizzes.length;
-
-  return {
-    title: category.title ?? 'カテゴリ',
-    slug: category.slug,
-    overview,
-    quizCount,
-    quizzes
-  };
-};
-
 const createHomeSeo = (path, quizzes, description = SITE.description) => {
   const ogCandidates = Array.isArray(quizzes) ? quizzes : [];
   const image = resolveOgImageFromQuizzes(ogCandidates, '/logo.svg');
@@ -153,35 +87,21 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
   });
 };
 
-const buildStubHomeData = (path) => {
-  const categories = getQuizStubCategories();
-  const sections = categories
-    .map((category) => {
-      const quizzes = getQuizStubQuizzesByCategory(category.slug).map(toPreview).filter(Boolean);
-      return {
-        title: category.title,
-        slug: category.slug,
-        overview: createCategoryDescription(category.title, ''),
-        quizCount: quizzes.length,
-        quizzes
-      };
-    })
-    .filter((section) => section && section.quizzes.length > 0);
+const buildStubQuizzes = () => {
+  if (!isQuizStubEnabled()) {
+    return [];
+  }
 
-  const newest = sortByPublishedAt(sections.flatMap((section) => section.quizzes)).slice(0, 12);
-  const popular = rankQuizzesByPopularity({
-    primary: newest,
-    fallback: sections.flatMap((section) => section.quizzes),
-    limit: 6
-  });
-  const seo = createHomeSeo(path, newest.length ? newest : popular);
-
-  return {
-    newest,
-    popular,
-    categories: sections,
-    seo
-  };
+  try {
+    const catalog = getQuizStubCatalog();
+    const docs = Array.isArray(catalog)
+      ? catalog.map((entry) => (entry?.slug ? getQuizStubDocument(entry.slug) : null)).filter(Boolean)
+      : [];
+    return sortByPublishedAt(docs);
+  } catch (error) {
+    console.error('[+page.server] Failed to resolve stub quizzes for home page:', error);
+    return [];
+  }
 };
 
 export const load = async (event) => {
@@ -192,48 +112,27 @@ export const load = async (event) => {
   }
 
   const path = url.pathname;
+  const stubQuizzes = buildStubQuizzes();
 
   if (shouldSkipSanityFetch()) {
-    if (isQuizStubEnabled()) {
-      return buildStubHomeData(path);
-    }
-    const seo = createHomeSeo(path, []);
-    return { newest: [], popular: [], categories: [], seo };
+    const quizzes = stubQuizzes;
+    return { quizzes, seo: createHomeSeo(path, quizzes) };
   }
 
   try {
-    const result = await client.fetch(HOME_QUERY);
-    const newestSource = filterVisibleQuizzes(result?.newest);
-    const newest = sortByPublishedAt(newestSource);
-    const popularSource = rankQuizzesByPopularity({
-      primary: result?.popular,
-      fallback: newestSource,
-      limit: 6
-    });
-    const popular = popularSource.map(toPreview).filter(Boolean);
-    const categories = Array.isArray(result?.categories)
-      ? result.categories.map(normalizeCategorySection).filter(Boolean)
-      : [];
+    const result = await client.fetch(QUIZZES_QUERY);
+    const quizzes = sortByPublishedAt(filterVisibleQuizzes(result));
 
-    const aggregatedQuizzes = mergeWithFallback(
-      mergeWithFallback(newest, popular),
-      categories.flatMap((category) => category.quizzes)
-    );
-
-    const seo = createHomeSeo(path, aggregatedQuizzes, SITE.description);
-
-    return {
-      newest,
-      popular,
-      categories,
-      seo
-    };
-  } catch (error) {
-    console.error('[+page.server.js] Error fetching quizzes:', error);
-    if (isQuizStubEnabled()) {
-      return buildStubHomeData(path);
+    if (quizzes.length === 0 && stubQuizzes.length > 0) {
+      const seo = createHomeSeo(path, stubQuizzes);
+      return { quizzes: stubQuizzes, seo };
     }
-    const seo = createHomeSeo(path, []);
-    return { newest: [], popular: [], categories: [], seo };
+
+    const seo = createHomeSeo(path, quizzes);
+    return { quizzes, seo };
+  } catch (error) {
+    console.error('[+page.server.js] Failed to load home page data:', error);
+    const quizzes = stubQuizzes;
+    return { quizzes, seo: createHomeSeo(path, quizzes) };
   }
 };
