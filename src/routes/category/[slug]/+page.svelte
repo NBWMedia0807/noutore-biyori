@@ -1,6 +1,7 @@
 <script>
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
 
   export let data;
 
@@ -11,6 +12,7 @@
   let popularQuizzes;
   let totalCount;
   let emptyMessage;
+  let pagination;
 
   $: category = data?.category ?? null;
   $: categoryTitle = category?.title ?? 'カテゴリ';
@@ -18,6 +20,7 @@
   $: newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
   $: popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
   $: totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
+  $: pagination = data?.pagination ?? null;
   $: emptyMessage = categoryTitle
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
@@ -93,6 +96,15 @@
             <ArticleCard {quiz} />
           {/each}
         </ArticleGrid>
+        {#if activeTab === 'newest' && pagination?.totalPages > 1}
+          <Pagination
+            basePath={pagination?.basePath ?? `/category/${slug}`}
+            currentPage={pagination?.currentPage ?? 1}
+            totalPages={pagination?.totalPages ?? 1}
+            totalCount={pagination?.totalCount ?? totalCount}
+            pageSize={pagination?.pageSize ?? newestQuizzes.length}
+          />
+        {/if}
       {/if}
     </div>
   </section>

@@ -2,6 +2,7 @@
   import SectionIcon from '$lib/components/SectionIcon.svelte';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
 
   export let data;
 
@@ -10,6 +11,8 @@
   const categorySections = Array.isArray(data?.categories)
     ? data.categories.filter((section) => Array.isArray(section?.quizzes) && section.quizzes.length > 0)
     : [];
+
+  const pagination = data?.pagination ?? null;
 
   const hasNewest = newestQuizzes.length > 0;
   const hasPopular = popularQuizzes.length > 0;
@@ -46,6 +49,15 @@
           <ArticleCard {quiz} />
         {/each}
       </ArticleGrid>
+      {#if pagination?.totalPages > 1}
+        <Pagination
+          basePath={pagination?.basePath ?? '/'}
+          currentPage={pagination?.currentPage ?? 1}
+          totalPages={pagination?.totalPages ?? 1}
+          totalCount={pagination?.totalCount ?? newestQuizzes.length}
+          pageSize={pagination?.pageSize ?? newestQuizzes.length}
+        />
+      {/if}
     </section>
   {/if}
 
