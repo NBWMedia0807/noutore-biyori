@@ -15,6 +15,7 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
+import { rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
 
 export const prerender = false;
 
@@ -68,6 +69,17 @@ const pickImage = (quiz) =>
         ? quiz.answerImage
         : null;
 
+const toMetric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
@@ -81,7 +93,11 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null
+    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    _createdAt: quiz?._createdAt ?? null,
+    viewCount: toMetric(quiz?.viewCount),
+    likeCount: toMetric(quiz?.likeCount),
+    popularityScore: toMetric(quiz?.popularityScore)
   };
 };
 
@@ -116,7 +132,7 @@ const createStubCategoryResponse = (slug, path) => {
     category: { ...stubCategory, description: '', overview },
     overview,
     newest: previews,
-    popular: previews,
+    popular: rankQuizzesByPopularity({ primary: previews, fallback: previews, limit: 12 }),
     quizzes: previews,
     totalCount: previews.length,
     breadcrumbs,
@@ -196,9 +212,12 @@ export const load = async (event) => {
 
     const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
     const newestSource = filterVisibleQuizzes(quizzesResult?.newest);
-    const popularSource = filterVisibleQuizzes(quizzesResult?.popular);
-
     const newest = newestSource.map(toPreview).filter(Boolean);
+    const popularSource = rankQuizzesByPopularity({
+      primary: quizzesResult?.popular,
+      fallback: newestSource,
+      limit: 12
+    });
     const popular = popularSource.map(toPreview).filter(Boolean);
 
     const totalCount = typeof quizzesResult?.total === 'number'
