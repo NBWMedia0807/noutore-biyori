@@ -132,6 +132,12 @@ header {
   transform: translateY(-1px);
 }
 
+.nav-link.active {
+  background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--primary-orange) 100%);
+  color: #78350f;
+  box-shadow: 0 12px 24px rgba(250, 204, 21, 0.35);
+}
+
 main {
   max-width: 1200px;
   margin: 0 auto;
