@@ -6,14 +6,26 @@
 
   export let data;
 
-  const newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
-  const categorySections = Array.isArray(data?.categories)
+  let allNewestQuizzes = [];
+  let newestQuizzes = [];
+  let categorySections = [];
+  let pagination = null;
+  let pageSize = 10;
+  let hasNewest = false;
+
+  $: allNewestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
+  $: categorySections = Array.isArray(data?.categories)
     ? data.categories.filter((section) => Array.isArray(section?.quizzes) && section.quizzes.length > 0)
     : [];
-
-  const pagination = data?.pagination ?? null;
-
-  const hasNewest = newestQuizzes.length > 0;
+  $: pagination = data?.pagination ?? null;
+  $: pageSize = (() => {
+    const candidate = Number(pagination?.pageSize);
+    if (!Number.isFinite(candidate)) return 10;
+    const normalized = Math.max(1, Math.trunc(candidate));
+    return normalized;
+  })();
+  $: newestQuizzes = allNewestQuizzes.slice(0, pageSize);
+  $: hasNewest = newestQuizzes.length > 0;
 </script>
 
 <div class="home-page">
@@ -31,7 +43,7 @@
           currentPage={pagination?.currentPage ?? 1}
           totalPages={pagination?.totalPages ?? 1}
           totalCount={pagination?.totalCount ?? newestQuizzes.length}
-          pageSize={pagination?.pageSize ?? newestQuizzes.length}
+          pageSize={pageSize}
         />
       {/if}
     </section>
