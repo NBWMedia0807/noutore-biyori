@@ -29,7 +29,6 @@ const homeIsrConfig = { expiration: false };
 if (homeBypassToken) {
   homeIsrConfig.bypassToken = homeBypassToken;
 }
-
 export const config = { runtime: 'nodejs22.x', isr: homeIsrConfig };
 
 const HOME_PAGE_SIZE = 10;
@@ -99,9 +98,7 @@ const pickImageSource = (quiz) =>
         : null;
 
 const toMetric = (value) => {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : 0;
-  }
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   if (typeof value === 'string') {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -167,7 +164,7 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
   const ogCandidates = Array.isArray(quizzes) ? quizzes : [];
   const image = resolveOgImageFromQuizzes(ogCandidates, '/logo.svg');
   return createPageSeo({
-    title: `${SITE.name}｜${SITE.tagline}`,
+    title: `${SITE.name}｜${SITE.tagライン}`,
     description,
     path,
     image,
@@ -222,14 +219,16 @@ export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
   if (!isDataRequest) {
-    setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
+    setHeaders({
+      'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400'
+    });
   }
 
   const path = url.pathname;
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
 
-  // GROQ のスライス引数に合わせた範囲（mainブランチの仕様に合わせて end は「-1」で調整）
+  // GROQのスライスに渡す範囲（end は「含む」想定のため -1 調整）
   const rangeStart = Math.max(0, (requestedPage - 1) * pageSize);
   const rangeEnd = Math.max(rangeStart, rangeStart + pageSize - 1);
 
@@ -286,6 +285,7 @@ export const load = async (event) => {
     const totalCount = typeof result?.total === 'number' ? result.total : newestSource.length;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
+    // 存在しないページは最終ページへ誘導
     if (requestedPage > totalPages) {
       const targetPage = totalPages;
       const search = targetPage > 1 ? `?page=${targetPage}` : '';
