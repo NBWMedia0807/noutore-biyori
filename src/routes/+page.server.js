@@ -45,7 +45,7 @@ const HOME_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$rangeStart...$rangeEndExclusive]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -164,7 +164,7 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
   const ogCandidates = Array.isArray(quizzes) ? quizzes : [];
   const image = resolveOgImageFromQuizzes(ogCandidates, '/logo.svg');
   return createPageSeo({
-    title: `${SITE.name}｜${SITE.tagライン}`,
+    title: `${SITE.name}｜${SITE.tagline}`,
     description,
     path,
     image,
@@ -218,7 +218,9 @@ const buildStubHomeData = (path, page, limit) => {
 export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
-  if (!isDataRequest) {
+  if (isDataRequest) {
+    setHeaders({ 'cache-control': 'no-store' });
+  } else {
     setHeaders({
       'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400'
     });
@@ -227,10 +229,7 @@ export const load = async (event) => {
   const path = url.pathname;
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
-
-  // GROQのスライスはendが「含まれない」ため、pageSizeぶんだけ進める
-  const rangeStart = Math.max(0, (requestedPage - 1) * pageSize);
-  const rangeEndExclusive = rangeStart + Math.max(1, pageSize);
+  const offset = Math.max(0, (requestedPage - 1) * pageSize);
 
   if (shouldSkipSanityFetch()) {
     if (isQuizStubEnabled()) {
@@ -264,12 +263,12 @@ export const load = async (event) => {
 
   try {
     const result = await client.fetch(HOME_QUERY, {
-      rangeStart,
-      rangeEndExclusive
+      offset,
+      limit: pageSize
     });
 
     const newestSource = filterVisibleQuizzes(result?.newest);
-    const newest = sortByPublishedAt(newestSource);
+    const newest = newestSource.map(toPreview).filter(Boolean);
 
     const popularSource = rankQuizzesByPopularity({
       primary: result?.popular,
