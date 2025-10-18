@@ -90,6 +90,104 @@ const STUB_QUIZZES = [
     publishedAt: '2024-01-10T00:00:00Z',
     _createdAt: '2024-01-10T00:00:00Z',
     _updatedAt: '2024-01-11T00:00:00Z'
+  },
+  {
+    _id: 'stub-quiz-d',
+    slug: 'crossword-sample',
+    title: 'サンプルクロスワード',
+    category: { title: 'クロスワード', slug: 'crossword' },
+    mainImage: null,
+    problemImage: null,
+    problemDescription:
+      'タテとヨコのカギをヒントにマスを埋めて、中央の赤いマスに入る文字を完成させましょう。',
+    hints: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: 'タテのカギ3番は「朝に飲む温かい飲み物」です。'
+          }
+        ]
+      }
+    ],
+    adCode1: '',
+    adCode2: '',
+    answerImage: null,
+    answerExplanation: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: '全てのマスを埋めると中央の赤いマスには「脳」という文字が入ります。'
+          }
+        ]
+      }
+    ],
+    closingMessage: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: '次回のクロスワードもお楽しみに！'
+          }
+        ]
+      }
+    ],
+    publishedAt: '2024-01-15T00:00:00Z',
+    _createdAt: '2024-01-15T00:00:00Z',
+    _updatedAt: '2024-01-16T00:00:00Z'
+  },
+  {
+    _id: 'stub-quiz-e',
+    slug: 'kanji-mistake-sample',
+    title: 'サンプル漢字間違え探し',
+    category: { title: '漢字間違え探し', slug: 'kanji-mistake' },
+    mainImage: null,
+    problemImage: null,
+    problemDescription:
+      '表示された9つの漢字の中に、1つだけ誤った漢字が紛れています。どれか探してください。',
+    hints: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: '左下の漢字に注目すると間違いが見えてきます。'
+          }
+        ]
+      }
+    ],
+    adCode1: '',
+    adCode2: '',
+    answerImage: null,
+    answerExplanation: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: '「曜」という漢字の「日」が「田」になっているものが間違いです。'
+          }
+        ]
+      }
+    ],
+    closingMessage: [
+      {
+        _type: 'block',
+        children: [
+          {
+            _type: 'span',
+            text: '他の漢字間違え探しにも挑戦してみましょう！'
+          }
+        ]
+      }
+    ],
+    publishedAt: '2024-01-20T00:00:00Z',
+    _createdAt: '2024-01-20T00:00:00Z',
+    _updatedAt: '2024-01-21T00:00:00Z'
   }
 ];
 
