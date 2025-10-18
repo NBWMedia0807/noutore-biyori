@@ -29,13 +29,57 @@ const resolveFlags = () => ({
 
 // グローバルナビでは「間違い探し」を常に先頭に配置したい。
 // Sanityから取得したカテゴリをソートする際に、特定スラッグの優先度を調整する。
-const CATEGORY_PRIORITY = new Map([
-  ['spot-the-difference', 0]
+const normalizeSlugKey = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
+const normalizeTitleKey = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, '');
+};
+
+const CATEGORY_PRIORITY_SLUGS = new Map([
+  ['spothedifference', 0],
+  ['machigaisagashi', 0],
+  ['machigaisagashiquiz', 0],
+  ['machigaisagasi', 0]
 ]);
 
-const getCategoryPriority = (slug) => {
-  if (!slug) return Number.MAX_SAFE_INTEGER;
-  return CATEGORY_PRIORITY.get(slug) ?? Number.MAX_SAFE_INTEGER;
+const CATEGORY_PRIORITY_TITLES = new Map([
+  ['間違い探し', 0],
+  ['間違いさがし', 0],
+  ['まちがい探し', 0],
+  ['まちがいさがし', 0]
+]);
+
+const resolveSlugPriority = (slug) => {
+  const normalized = normalizeSlugKey(slug);
+  if (!normalized) return null;
+  return CATEGORY_PRIORITY_SLUGS.has(normalized)
+    ? CATEGORY_PRIORITY_SLUGS.get(normalized)
+    : null;
+};
+
+const resolveTitlePriority = (title) => {
+  const normalized = normalizeTitleKey(title);
+  if (!normalized) return null;
+  return CATEGORY_PRIORITY_TITLES.has(normalized)
+    ? CATEGORY_PRIORITY_TITLES.get(normalized)
+    : null;
+};
+
+const getCategoryPriority = (category) => {
+  if (!category) return Number.MAX_SAFE_INTEGER;
+  const slugPriority = resolveSlugPriority(category.slug);
+  if (slugPriority !== null) {
+    return slugPriority;
+  }
+  const titlePriority = resolveTitlePriority(category.title);
+  if (titlePriority !== null) {
+    return titlePriority;
+  }
+  return Number.MAX_SAFE_INTEGER;
 };
 
 const sanitizeCategories = (entries) => {
@@ -52,7 +96,7 @@ const sanitizeCategories = (entries) => {
   }
 
   return sanitized.sort((a, b) => {
-    const priorityDiff = getCategoryPriority(a.slug) - getCategoryPriority(b.slug);
+    const priorityDiff = getCategoryPriority(a) - getCategoryPriority(b);
     if (priorityDiff !== 0) {
       return priorityDiff;
     }

@@ -2,25 +2,10 @@ import { env } from '$env/dynamic/private';
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
-import {
-  createCategoryDescription,
-  createPageSeo,
-  portableTextToPlain,
-  resolveOgImageFromQuizzes
-} from '$lib/seo.js';
+import { createPageSeo, resolveOgImageFromQuizzes } from '$lib/seo.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
-import {
-  CATEGORY_DRAFT_FILTER,
-  QUIZ_ORDER_BY_PUBLISHED,
-  QUIZ_PUBLISHED_FILTER,
-  filterVisibleQuizzes
-} from '$lib/queries/quizVisibility.js';
-import {
-  getQuizStubCategories,
-  getQuizStubQuizzesByCategory,
-  isQuizStubEnabled
-} from '$lib/server/quiz-stub.js';
-import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
+import { QUIZ_ORDER_BY_PUBLISHED, QUIZ_PUBLISHED_FILTER, filterVisibleQuizzes } from '$lib/queries/quizVisibility.js';
+import { getQuizStubCatalog, getQuizStubDocument, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
 
 export const prerender = false;
 const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
@@ -30,6 +15,15 @@ if (homeBypassToken) {
 }
 
 export const config = { runtime: 'nodejs22.x', isr: homeIsrConfig };
+
+codex/restore-top-page-design-and-fix-global-nav
+const QUIZZES_QUERY = /* groq */ `
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  ${QUIZ_PUBLISHED_FILTER}
+] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
+  ${QUIZ_PREVIEW_PROJECTION}
 
 const HOME_PAGE_SIZE = 10;
 
@@ -86,6 +80,7 @@ const HOME_QUERY = /* groq */ `{
       ${QUIZ_PREVIEW_PROJECTION}
     }
   }
+main
 }`;
 
 const pickImageSource = (quiz) =>
@@ -139,23 +134,6 @@ const sortByPublishedAt = (list) =>
       return bDate - aDate;
     });
 
-const normalizeCategorySection = (category) => {
-  if (!category?.slug) return null;
-  const quizzes = sortByPublishedAt(filterVisibleQuizzes(category.quizzes));
-  const description = createCategoryDescription(category.title, category.description);
-  const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
-  const overview = overviewPlain.trim() || description;
-  const quizCount = typeof category.quizCount === 'number' ? category.quizCount : quizzes.length;
-
-  return {
-    title: category.title ?? 'カテゴリ',
-    slug: category.slug,
-    overview,
-    quizCount,
-    quizzes
-  };
-};
-
 const createHomeSeo = (path, quizzes, description = SITE.description) => {
   const ogCandidates = Array.isArray(quizzes) ? quizzes : [];
   const image = resolveOgImageFromQuizzes(ogCandidates, '/logo.svg');
@@ -167,6 +145,23 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
     appendSiteName: false
   });
 };
+
+codex/restore-top-page-design-and-fix-global-nav
+const buildStubQuizzes = () => {
+  if (!isQuizStubEnabled()) {
+    return [];
+  }
+
+  try {
+    const catalog = getQuizStubCatalog();
+    const docs = Array.isArray(catalog)
+      ? catalog.map((entry) => (entry?.slug ? getQuizStubDocument(entry.slug) : null)).filter(Boolean)
+      : [];
+    return sortByPublishedAt(docs);
+  } catch (error) {
+    console.error('[+page.server] Failed to resolve stub quizzes for home page:', error);
+    return [];
+  }
 
 const buildStubHomeData = (path, page, limit) => {
   const categories = getQuizStubCategories();
@@ -209,6 +204,7 @@ const buildStubHomeData = (path, page, limit) => {
       basePath: path
     }
   };
+main
 };
 
 export const load = async (event) => {
@@ -219,6 +215,18 @@ export const load = async (event) => {
   }
 
   const path = url.pathname;
+codex/restore-top-page-design-and-fix-global-nav
+  const stubQuizzes = buildStubQuizzes();
+
+  if (shouldSkipSanityFetch()) {
+    const quizzes = stubQuizzes;
+    return { quizzes, seo: createHomeSeo(path, quizzes) };
+  }
+
+  try {
+    const result = await client.fetch(QUIZZES_QUERY);
+    const quizzes = sortByPublishedAt(filterVisibleQuizzes(result));
+
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const offset = (requestedPage - 1) * HOME_PAGE_SIZE;
 
@@ -281,9 +289,19 @@ export const load = async (event) => {
       mergeWithFallback(newest, popular),
       categories.flatMap((category) => category.quizzes)
     );
+main
 
-    const seo = createHomeSeo(path, aggregatedQuizzes, SITE.description);
+    if (quizzes.length === 0 && stubQuizzes.length > 0) {
+      const seo = createHomeSeo(path, stubQuizzes);
+      return { quizzes: stubQuizzes, seo };
+    }
 
+    const seo = createHomeSeo(path, quizzes);
+    return { quizzes, seo };
+  } catch (error) {
+    console.error('[+page.server.js] Failed to load home page data:', error);
+    const quizzes = stubQuizzes;
+    return { quizzes, seo: createHomeSeo(path, quizzes) };
     return {
       newest,
       popular,
