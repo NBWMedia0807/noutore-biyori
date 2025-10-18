@@ -6,6 +6,13 @@ export default {
   groups: [
     { name: 'publish', title: '公開設定' }
   ],
+  fieldsets: [
+    {
+      name: 'publish',
+      title: '公開設定',
+      options: { collapsible: true, collapsed: false }
+    }
+  ],
   orderings: [
     {
       name: 'publishedDesc',
@@ -27,6 +34,7 @@ export default {
         'サイトに表示される公開日です。未来の日時を指定すると予約公開になります。Studio では日本時間 (Asia/Tokyo) で表示されます。',
       type: 'datetime',
       group: 'publish',
+      fieldset: 'publish',
       options: {
         dateFormat: 'YYYY/MM/DD',
         timeFormat: 'HH:mm',
