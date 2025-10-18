@@ -12,6 +12,7 @@ export const load = (event) => {
     description:
       '脳トレ日和の目的や提供コンテンツ、運営体制についてご紹介します。高齢者の方も安心して楽しめる脳トレサイトのこだわりをご確認ください。',
     path: url.pathname,
+    image: '/logo.svg',
     breadcrumbs: [{ name: 'サイトについて', url: url.pathname }]
   });
 

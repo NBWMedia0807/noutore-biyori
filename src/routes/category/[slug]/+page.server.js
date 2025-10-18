@@ -1,6 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { createCategoryDescription, createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import {
+  createCategoryDescription,
+  createPageSeo,
+  portableTextToPlain,
+  resolveOgImageFromQuizzes
+} from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
 import { getQuizStubCategory, getQuizStubQuizzesByCategory } from '$lib/server/quiz-stub.js';
@@ -10,6 +15,7 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
+import { rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
 
 export const prerender = false;
 
@@ -63,6 +69,17 @@ const pickImage = (quiz) =>
         ? quiz.answerImage
         : null;
 
+const toMetric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
@@ -76,7 +93,11 @@ const toPreview = (quiz) => {
     mainImage: quiz.mainImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
-    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null
+    publishedAt: quiz?.publishedAt ?? quiz?._createdAt ?? null,
+    _createdAt: quiz?._createdAt ?? null,
+    viewCount: toMetric(quiz?.viewCount),
+    likeCount: toMetric(quiz?.likeCount),
+    popularityScore: toMetric(quiz?.popularityScore)
   };
 };
 
@@ -105,14 +126,13 @@ const createStubCategoryResponse = (slug, path) => {
 
   const overview = createCategoryDescription(stubCategory.title, '');
   const breadcrumbs = [{ name: stubCategory.title, url: path }];
-  const heroImage = pickImage(previews[0]);
-  const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+  const imageUrl = resolveOgImageFromQuizzes(previews, '/logo.svg');
 
   return {
     category: { ...stubCategory, description: '', overview },
     overview,
     newest: previews,
-    popular: previews,
+    popular: rankQuizzesByPopularity({ primary: previews, fallback: previews, limit: 12 }),
     quizzes: previews,
     totalCount: previews.length,
     breadcrumbs,
@@ -150,6 +170,7 @@ const createFallbackResponse = (slug, path) => {
       title: normalizedTitle,
       description: `${normalizedTitle}のクイズ一覧ページです。`,
       path,
+      image: '/logo.svg',
       breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : []
     }),
     breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : [],
@@ -191,9 +212,12 @@ export const load = async (event) => {
 
     const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
     const newestSource = filterVisibleQuizzes(quizzesResult?.newest);
-    const popularSource = filterVisibleQuizzes(quizzesResult?.popular);
-
     const newest = newestSource.map(toPreview).filter(Boolean);
+    const popularSource = rankQuizzesByPopularity({
+      primary: quizzesResult?.popular,
+      fallback: newestSource,
+      limit: 12
+    });
     const popular = popularSource.map(toPreview).filter(Boolean);
 
     const totalCount = typeof quizzesResult?.total === 'number'
@@ -204,8 +228,7 @@ export const load = async (event) => {
     const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
     const overview = overviewPlain.trim() || description;
     const breadcrumbs = [{ name: category.title, url: url.pathname }];
-    const heroImage = pickImage(newest[0]);
-    const imageUrl = heroImage?.asset?.url ?? SITE.defaultOgImage;
+    const imageUrl = resolveOgImageFromQuizzes(newest, '/logo.svg');
 
     const seo = createPageSeo({
       title: category.title,

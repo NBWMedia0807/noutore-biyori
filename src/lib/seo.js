@@ -1,5 +1,9 @@
 import { HOME_BREADCRUMB, SITE } from '$lib/config/site.js';
 
+const MIN_DESCRIPTION_LENGTH = 120;
+const MAX_DESCRIPTION_LENGTH = 160;
+const SENTENCE_END_PATTERN = /[。.!?！？]$/;
+
 const toAbsoluteUrl = (pathOrUrl) => {
   if (!pathOrUrl) return SITE.url;
   try {
@@ -12,7 +16,55 @@ const toAbsoluteUrl = (pathOrUrl) => {
 
 const sanitizeText = (value) => {
   if (typeof value !== 'string') return '';
-  return value.replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const uniqueNonEmpty = (values) => {
+  const uniques = [];
+  for (const value of values) {
+    if (!value) continue;
+    if (!uniques.includes(value)) {
+      uniques.push(value);
+    }
+  }
+  return uniques;
+};
+
+const composeDescription = (primary, extras = []) => {
+  const normalizedExtras = Array.isArray(extras) ? extras : [extras];
+  const segments = uniqueNonEmpty([primary, ...normalizedExtras].map((segment) => sanitizeText(segment ?? '')));
+  if (segments.length === 0) return '';
+
+  let description = segments.shift();
+
+  for (const segment of segments) {
+    if (description.length >= MIN_DESCRIPTION_LENGTH) break;
+    const connector = SENTENCE_END_PATTERN.test(description) ? '' : '。';
+    const appended = `${description}${connector}${segment}`.trim();
+    description = appended.length ? appended : description;
+    if (description.length >= MAX_DESCRIPTION_LENGTH) break;
+  }
+
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    const truncated = description.slice(0, MAX_DESCRIPTION_LENGTH);
+    const punctuationMarks = ['。', '！', '!', '？', '?', '、', ',', '，', '．', '.'];
+    const cutIndex = punctuationMarks.reduce((maxIndex, mark) => {
+      const index = truncated.lastIndexOf(mark);
+      return index > maxIndex ? index : maxIndex;
+    }, -1);
+
+    if (cutIndex >= MIN_DESCRIPTION_LENGTH / 2) {
+      description = truncated.slice(0, cutIndex + 1);
+    } else {
+      const withoutTrailingWord = truncated.replace(/\s+\S*$/, '').trim();
+      description = withoutTrailingWord || truncated.trim();
+    }
+  }
+
+  return description;
 };
 
 const toIsoString = (value) => {
@@ -131,10 +183,15 @@ export const createPageSeo = ({
   breadcrumbs = [],
   article,
   appendSiteName = true,
-  additionalJsonLd = []
+  additionalJsonLd = [],
+  descriptionFallbacks = []
 } = {}) => {
   const canonical = toAbsoluteUrl(path);
-  const sanitizedDescription = sanitizeText(description ?? SITE.description);
+  const sanitizedDescription = composeDescription(description, [
+    ...(Array.isArray(descriptionFallbacks) ? descriptionFallbacks : [descriptionFallbacks]),
+    SITE.tagline,
+    SITE.description
+  ]);
   const resolvedTitle = (() => {
     const baseTitle = title ? sanitizeText(title) : `${SITE.name}｜${SITE.tagline}`;
     if (!appendSiteName) return baseTitle;
@@ -217,4 +274,45 @@ export const portableTextToPlain = (value) => {
       .join('');
   }
   return '';
+};
+
+const sanitizeUrl = (value) => {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed;
+};
+
+export const resolveQuizOgImage = (quiz, fallback = '/logo.svg') => {
+  const candidates = [
+    quiz?.problemImage?.asset?.url ?? quiz?.problemImage?.url,
+    quiz?.mainImage?.asset?.url ?? quiz?.mainImage?.url,
+    quiz?.answerImage?.asset?.url ?? quiz?.answerImage?.url,
+    quiz?.thumbnailUrl,
+    fallback,
+    SITE.defaultOgImage
+  ];
+
+  for (const candidate of candidates) {
+    const url = sanitizeUrl(candidate);
+    if (url) return url;
+  }
+
+  return '/logo.svg';
+};
+
+export const resolveOgImageFromQuizzes = (quizzes, fallback = '/logo.svg') => {
+  if (!Array.isArray(quizzes)) {
+    return resolveQuizOgImage(null, fallback);
+  }
+
+  for (const quiz of quizzes) {
+    const url = resolveQuizOgImage(quiz, '');
+    const sanitized = sanitizeUrl(url);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+
+  return resolveQuizOgImage(null, fallback);
 };

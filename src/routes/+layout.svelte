@@ -238,15 +238,16 @@
       <span class="footer-copy-line">&copy; 2025年9月 脳トレ日和</span>
       <span class="footer-copy-line">毎日の脳トレで健康な生活を</span>
     </p>
-    <nav aria-label="固定ページリンク">
-      <ul class="footer-links">
-        <li><a href="/privacy">プライバシーポリシー</a></li>
-        <li><a href="/terms">利用規約</a></li>
-        <li><a href="/disclaimer">免責事項</a></li>
+    <nav class="footer-links" aria-label="法務および運営情報">
+      <ul class="footer-link-list primary-links">
+        <li><a href="/privacy-policy">プライバシーポリシー</a></li>
+        <li><a href="/about">運営者情報</a></li>
         <li><a href="/contact">お問い合わせ</a></li>
-        <li><a href="/about">サイトについて</a></li>
+        <li><a href="/terms">利用規約</a></li>
+      </ul>
+      <ul class="footer-link-list secondary-links">
+        <li><a href="/disclaimer">免責事項</a></li>
         <li><a href="/about#author-info">著者情報</a></li>
-        <li><a href="/about#operator-info">運営者情報</a></li>
       </ul>
     </nav>
   </div>
@@ -371,35 +372,49 @@
 
 
   .footer-links {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 0.75rem;
-    max-width: 280px;
-    margin-inline: auto;
   }
 
-  .footer-links a {
-    text-decoration: none;
-    color: #1f2937;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-    display: block;
-    text-align: center;
-    min-height: 44px;
+  .footer-link-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .footer-link-list.secondary-links {
+    opacity: 0.85;
+  }
+
+  .footer-link-list a {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-height: 44px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(253, 224, 71, 0.4);
+    color: #1f2937;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.92);
+    text-decoration: none;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
 
-  .footer-links a:hover,
-  .footer-links a:focus-visible {
-    background: rgba(250, 204, 21, 0.2);
+  .footer-link-list a:hover,
+  .footer-link-list a:focus-visible {
+    background: rgba(250, 204, 21, 0.24);
+    color: #1f2937;
+    border-color: rgba(253, 224, 71, 0.6);
     outline: none;
+    transform: translateY(-1px);
   }
 
   @media (max-width: 768px) {
@@ -423,5 +438,16 @@
       padding: 2rem 1.5rem 2.5rem;
     }
 
+  }
+
+  @media (max-width: 640px) {
+    .footer-link-list {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .footer-link-list a {
+      width: 100%;
+    }
   }
 </style>

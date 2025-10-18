@@ -77,7 +77,7 @@
         <ul>
           <li>取得される情報に個人を特定できるデータは含まれません。</li>
           <li>広告設定は<a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">Googleの広告設定ページ</a>から変更できます。</li>
-          <li>詳細は<a href="/privacy">プライバシーポリシー</a>をご確認ください。</li>
+          <li>詳細は<a href="/privacy-policy">プライバシーポリシー</a>をご確認ください。</li>
         </ul>
       </div>
     </div>
