@@ -13,14 +13,20 @@
   let totalCount;
   let emptyMessage;
   let pagination;
+  let pageSize = 10;
 
   $: category = data?.category ?? null;
   $: categoryTitle = category?.title ?? 'カテゴリ';
   $: slug = category?.slug ?? '';
-  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest : [];
+  $: pagination = data?.pagination ?? null;
+  $: pageSize = (() => {
+    const candidate = Number(pagination?.pageSize);
+    if (!Number.isFinite(candidate)) return 10;
+    return Math.max(1, Math.trunc(candidate));
+  })();
+  $: newestQuizzes = Array.isArray(data?.newest) ? data.newest.slice(0, pageSize) : [];
   $: popularQuizzes = Array.isArray(data?.popular) ? data.popular : [];
   $: totalCount = typeof data?.totalCount === 'number' ? data.totalCount : newestQuizzes.length;
-  $: pagination = data?.pagination ?? null;
   $: emptyMessage = categoryTitle
     ? `${categoryTitle}のクイズはまだ公開されていません。`
     : 'このカテゴリのクイズはまだありません。';
@@ -102,7 +108,7 @@
             currentPage={pagination?.currentPage ?? 1}
             totalPages={pagination?.totalPages ?? 1}
             totalCount={pagination?.totalCount ?? totalCount}
-            pageSize={pagination?.pageSize ?? newestQuizzes.length}
+            pageSize={pageSize}
           />
         {/if}
       {/if}
