@@ -1,7 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
-import { createPageSeo, portableTextToPlain } from '$lib/seo.js';
+import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
@@ -51,7 +51,7 @@ const buildSeo = ({ doc, path }) => {
   const plainBody = portableTextToPlain(doc?.body);
   const plainProblem = portableTextToPlain(doc?.problemDescription);
   const description = (plainBody || plainProblem || '').trim() || SITE.description;
-  const image = doc?.problemImage?.asset?.url || doc?.mainImage?.asset?.url;
+  const image = resolveQuizOgImage(doc);
   const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
   const modifiedAt = doc?._updatedAt ?? publishedAt;
   const breadcrumbs = [];
@@ -116,9 +116,12 @@ export async function load({ params, setHeaders }) {
     categorySlug: normalizedDoc.category?.slug ?? null
   });
 
+  const nextQuiz = related?.[0] ?? null;
+
   return {
     doc: normalizedDoc,
     related,
+    nextQuiz,
     breadcrumbs,
     ui: {
       showHeader: true,

@@ -6,6 +6,7 @@
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+  const nextQuiz = data?.nextQuiz ?? null;
   const publishedAt = doc?.publishedAt ?? doc?._createdAt ?? null;
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
@@ -30,6 +31,8 @@
   const categoryUrl = category ? `/category/${category.slug}` : null;
 
   const hasRelated = relatedQuizzes.length > 0;
+  const nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
+  const nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   const formatDate = (value) => {
     if (!value) return '';
@@ -222,6 +225,17 @@
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
   {/if}
+
+  <section class="next-quiz-section" aria-labelledby="next-quiz-heading">
+    <div class="section-header">
+      <h2 id="next-quiz-heading">次の問題に挑戦</h2>
+    </div>
+    <p class="next-quiz-text">{nextQuiz?.title ?? '他のクイズにも挑戦して脳を鍛えましょう。'}</p>
+    <a class="action-button secondary" href={nextQuizUrl} aria-label={`次の問題: ${nextQuizLabel}`}>
+      次の問題に挑戦
+      <span aria-hidden="true">→</span>
+    </a>
+  </section>
 </main>
 
 <style>
@@ -383,6 +397,12 @@
     color: #78350f;
   }
 
+  .secondary {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    box-shadow: 0 16px 30px rgba(250, 204, 21, 0.22);
+  }
+
   .hint-button {
     background: linear-gradient(135deg, #fde68a, #fcd34d);
     color: #92400e;
@@ -420,6 +440,23 @@
 
   .to-answer {
     text-align: center;
+  }
+
+  .next-quiz-section {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 28px 24px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(248, 196, 113, 0.32);
+    text-align: center;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .next-quiz-text {
+    margin: 0;
+    color: #92400e;
+    font-weight: 600;
   }
 
   .sr-only {

@@ -1,5 +1,8 @@
 import { createPageSeo } from '$lib/seo.js';
 
+export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
+
 export const load = (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
@@ -8,12 +11,12 @@ export const load = (event) => {
   }
 
   const seo = createPageSeo({
-    title: 'お問い合わせ',
+    title: 'プライバシーポリシー',
     description:
-      '脳トレ日和へのご質問やご意見はこちらのフォームからお寄せください。サービス改善のためのフィードバックもお待ちしています。',
+      '脳トレ日和における個人情報の取り扱い方針を掲載しています。データの利用目的や保護体制についてご確認いただけます。',
     path: url.pathname,
     image: '/logo.svg',
-    breadcrumbs: [{ name: 'お問い合わせ', url: url.pathname }]
+    breadcrumbs: [{ name: 'プライバシーポリシー', url: url.pathname }]
   });
 
   return { seo };
