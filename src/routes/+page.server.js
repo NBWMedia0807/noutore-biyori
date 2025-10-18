@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
 import {
@@ -30,12 +31,21 @@ if (homeBypassToken) {
 
 export const config = { runtime: 'nodejs22.x', isr: homeIsrConfig };
 
+const HOME_PAGE_SIZE = 10;
+
+const parsePageParam = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  const integer = Math.trunc(parsed);
+  return integer >= 1 ? integer : 1;
+};
+
 const HOME_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
     && defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -45,6 +55,11 @@ const HOME_QUERY = /* groq */ `{
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...8]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
+  "total": count(*[
+    _type == "quiz"
+    && defined(slug.current)
+    ${QUIZ_PUBLISHED_FILTER}
+  ]),
   "categories": *[
     _type == "category"
     && defined(slug.current)
@@ -153,7 +168,7 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
   });
 };
 
-const buildStubHomeData = (path) => {
+const buildStubHomeData = (path, page, limit) => {
   const categories = getQuizStubCategories();
   const sections = categories
     .map((category) => {
@@ -168,9 +183,14 @@ const buildStubHomeData = (path) => {
     })
     .filter((section) => section && section.quizzes.length > 0);
 
-  const newest = sortByPublishedAt(sections.flatMap((section) => section.quizzes)).slice(0, 12);
+  const allNewest = sortByPublishedAt(sections.flatMap((section) => section.quizzes));
+  const totalCount = allNewest.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const offset = (safePage - 1) * limit;
+  const newest = allNewest.slice(offset, offset + limit);
   const popular = rankQuizzesByPopularity({
-    primary: newest,
+    primary: allNewest,
     fallback: sections.flatMap((section) => section.quizzes),
     limit: 6
   });
@@ -180,7 +200,14 @@ const buildStubHomeData = (path) => {
     newest,
     popular,
     categories: sections,
-    seo
+    seo,
+    pagination: {
+      currentPage: safePage,
+      totalPages,
+      totalCount,
+      pageSize: limit,
+      basePath: path
+    }
   };
 };
 
@@ -192,17 +219,44 @@ export const load = async (event) => {
   }
 
   const path = url.pathname;
+  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const offset = (requestedPage - 1) * HOME_PAGE_SIZE;
 
   if (shouldSkipSanityFetch()) {
     if (isQuizStubEnabled()) {
-      return buildStubHomeData(path);
+      const stubData = buildStubHomeData(path, requestedPage, HOME_PAGE_SIZE);
+      const totalPages = stubData?.pagination?.totalPages ?? 1;
+      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
+      if (requestedPage !== safePage) {
+        const search = safePage > 1 ? `?page=${safePage}` : '';
+        throw redirect(303, `${path}${search}`);
+      }
+      return stubData;
     }
     const seo = createHomeSeo(path, []);
-    return { newest: [], popular: [], categories: [], seo };
+    if (requestedPage > 1) {
+      throw redirect(303, path);
+    }
+    return {
+      newest: [],
+      popular: [],
+      categories: [],
+      seo,
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        pageSize: HOME_PAGE_SIZE,
+        basePath: path
+      }
+    };
   }
 
   try {
-    const result = await client.fetch(HOME_QUERY);
+    const result = await client.fetch(HOME_QUERY, {
+      offset,
+      limit: HOME_PAGE_SIZE
+    });
     const newestSource = filterVisibleQuizzes(result?.newest);
     const newest = sortByPublishedAt(newestSource);
     const popularSource = rankQuizzesByPopularity({
@@ -214,6 +268,14 @@ export const load = async (event) => {
     const categories = Array.isArray(result?.categories)
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
+    const totalCount = typeof result?.total === 'number' ? result.total : newestSource.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / HOME_PAGE_SIZE));
+
+    if (requestedPage > totalPages) {
+      const targetPage = totalPages;
+      const search = targetPage > 1 ? `?page=${targetPage}` : '';
+      throw redirect(303, `${path}${search}`);
+    }
 
     const aggregatedQuizzes = mergeWithFallback(
       mergeWithFallback(newest, popular),
@@ -226,14 +288,43 @@ export const load = async (event) => {
       newest,
       popular,
       categories,
-      seo
+      seo,
+      pagination: {
+        currentPage: requestedPage,
+        totalPages,
+        totalCount,
+        pageSize: HOME_PAGE_SIZE,
+        basePath: path
+      }
     };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
     if (isQuizStubEnabled()) {
-      return buildStubHomeData(path);
+      const stubData = buildStubHomeData(path, requestedPage, HOME_PAGE_SIZE);
+      const totalPages = stubData?.pagination?.totalPages ?? 1;
+      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
+      if (requestedPage !== safePage) {
+        const search = safePage > 1 ? `?page=${safePage}` : '';
+        throw redirect(303, `${path}${search}`);
+      }
+      return stubData;
     }
     const seo = createHomeSeo(path, []);
-    return { newest: [], popular: [], categories: [], seo };
+    if (requestedPage > 1) {
+      throw redirect(303, path);
+    }
+    return {
+      newest: [],
+      popular: [],
+      categories: [],
+      seo,
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        pageSize: HOME_PAGE_SIZE,
+        basePath: path
+      }
+    };
   }
 };

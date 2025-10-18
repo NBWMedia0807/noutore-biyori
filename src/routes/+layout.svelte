@@ -281,6 +281,8 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
 
   .nav-menu {
@@ -291,6 +293,7 @@
     padding: 0.75rem 0;
     margin: 0;
     justify-content: center;
+    min-width: 100%;
   }
 
   .nav-link {
@@ -309,6 +312,15 @@
   .nav-link:focus-visible {
     background: rgba(250, 204, 21, 0.2);
     outline: none;
+  }
+
+  .nav-menu::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .nav-menu::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 999px;
   }
 
   .breadcrumbs-container {
@@ -393,6 +405,21 @@
   }
 
   @media (max-width: 768px) {
+    .nav-container {
+      padding: 0 0.5rem;
+    }
+
+    .nav-menu {
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-link {
+      white-space: nowrap;
+    }
+
     .logo-section {
       /* スマホでも横並びを維持 */
       flex-direction: row;

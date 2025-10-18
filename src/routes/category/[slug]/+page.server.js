@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import {
   createCategoryDescription,
@@ -32,6 +32,15 @@ const CATEGORY_QUERY = /* groq */ `
   overview
 }`;
 
+const CATEGORY_PAGE_SIZE = 10;
+
+const parsePageParam = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  const integer = Math.trunc(parsed);
+  return integer >= 1 ? integer : 1;
+};
+
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
@@ -39,7 +48,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && defined(category._ref)
     && category->slug.current == $slug
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -57,7 +66,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && defined(category._ref)
     && category->slug.current == $slug
     ${QUIZ_PUBLISHED_FILTER}
-  ])
+  ]),
 }`;
 
 const pickImage = (quiz) =>
@@ -115,7 +124,7 @@ export const entries = async () => {
   }
 };
 
-const createStubCategoryResponse = (slug, path) => {
+const createStubCategoryResponse = (slug, path, page, limit) => {
   const stubCategory = getQuizStubCategory(slug);
   const stubQuizzes = getQuizStubQuizzesByCategory(slug);
   const previews = Array.isArray(stubQuizzes) ? stubQuizzes.map(toPreview).filter(Boolean) : [];
@@ -127,14 +136,19 @@ const createStubCategoryResponse = (slug, path) => {
   const overview = createCategoryDescription(stubCategory.title, '');
   const breadcrumbs = [{ name: stubCategory.title, url: path }];
   const imageUrl = resolveOgImageFromQuizzes(previews, '/logo.svg');
+  const totalCount = previews.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const offset = (safePage - 1) * limit;
+  const newest = previews.slice(offset, offset + limit);
 
   return {
     category: { ...stubCategory, description: '', overview },
     overview,
-    newest: previews,
+    newest,
     popular: rankQuizzesByPopularity({ primary: previews, fallback: previews, limit: 12 }),
     quizzes: previews,
-    totalCount: previews.length,
+    totalCount,
     breadcrumbs,
     seo: createPageSeo({
       title: stubCategory.title,
@@ -145,6 +159,13 @@ const createStubCategoryResponse = (slug, path) => {
     }),
     ui: {
       hideBreadcrumbs: true
+    },
+    pagination: {
+      currentPage: safePage,
+      totalPages,
+      totalCount,
+      pageSize: limit,
+      basePath: path
     }
   };
 };
@@ -176,6 +197,13 @@ const createFallbackResponse = (slug, path) => {
     breadcrumbs: slug ? [{ name: normalizedTitle, url: path }] : [],
     ui: {
       hideBreadcrumbs: true
+    },
+    pagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalCount: 0,
+      pageSize: CATEGORY_PAGE_SIZE,
+      basePath: path
     }
   };
 };
@@ -183,17 +211,28 @@ const createFallbackResponse = (slug, path) => {
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
   const { slug } = params;
+  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 
   if (!isDataRequest) {
     setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
   }
 
-  const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname);
+  const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname, requestedPage, CATEGORY_PAGE_SIZE);
 
   if (shouldSkipSanityFetch()) {
     const stubData = resolveStubResponse();
     if (stubData) {
+      const totalPages = stubData?.pagination?.totalPages ?? 1;
+      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
+      if (requestedPage !== safePage) {
+        const search = safePage > 1 ? `?page=${safePage}` : '';
+        throw redirect(303, `${url.pathname}${search}`);
+      }
       return stubData;
+    }
+    if (requestedPage > 1) {
+      throw redirect(303, url.pathname);
     }
     return createFallbackResponse(slug, url.pathname);
   }
@@ -210,7 +249,11 @@ export const load = async (event) => {
       throw error(404, 'カテゴリが見つかりません');
     }
 
-    const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, { slug });
+    const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, {
+      slug,
+      offset,
+      limit: CATEGORY_PAGE_SIZE
+    });
     const newestSource = filterVisibleQuizzes(quizzesResult?.newest);
     const newest = newestSource.map(toPreview).filter(Boolean);
     const popularSource = rankQuizzesByPopularity({
@@ -223,6 +266,13 @@ export const load = async (event) => {
     const totalCount = typeof quizzesResult?.total === 'number'
       ? quizzesResult.total
       : newestSource.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / CATEGORY_PAGE_SIZE));
+
+    if (requestedPage > totalPages) {
+      const targetPage = totalPages;
+      const search = targetPage > 1 ? `?page=${targetPage}` : '';
+      throw redirect(303, `${url.pathname}${search}`);
+    }
 
     const description = createCategoryDescription(category.title, category.description);
     const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
@@ -249,6 +299,13 @@ export const load = async (event) => {
       seo,
       ui: {
         hideBreadcrumbs: true
+      },
+      pagination: {
+        currentPage: requestedPage,
+        totalPages,
+        totalCount,
+        pageSize: CATEGORY_PAGE_SIZE,
+        basePath: url.pathname
       }
     };
   } catch (err) {
@@ -258,8 +315,17 @@ export const load = async (event) => {
     console.error(`[category/${slug}] Sanity fetch failed`, err);
     const stubData = resolveStubResponse();
     if (stubData) {
+      const totalPages = stubData?.pagination?.totalPages ?? 1;
+      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
+      if (requestedPage !== safePage) {
+        const search = safePage > 1 ? `?page=${safePage}` : '';
+        throw redirect(303, `${url.pathname}${search}`);
+      }
       console.info(`[category/${slug}] Using stub data due to Sanity fetch failure`);
       return stubData;
+    }
+    if (requestedPage > 1) {
+      throw redirect(303, url.pathname);
     }
     return createFallbackResponse(slug, url.pathname);
   }
