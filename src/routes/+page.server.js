@@ -46,7 +46,7 @@ const HOME_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit - 1)]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "popular": *[
@@ -227,11 +227,12 @@ export const load = async (event) => {
 
   const path = url.pathname;
   const requestedPage = parsePageParam(url.searchParams.get('page'));
-  const offset = (requestedPage - 1) * HOME_PAGE_SIZE;
+  const pageSize = HOME_PAGE_SIZE;
+  const offset = Math.max(0, (requestedPage - 1) * pageSize);
 
   if (shouldSkipSanityFetch()) {
     if (isQuizStubEnabled()) {
-      const stubData = buildStubHomeData(path, requestedPage, HOME_PAGE_SIZE);
+      const stubData = buildStubHomeData(path, requestedPage, pageSize);
       const totalPages = stubData?.pagination?.totalPages ?? 1;
       const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
       if (requestedPage !== safePage) {
@@ -253,7 +254,7 @@ export const load = async (event) => {
         currentPage: 1,
         totalPages: 1,
         totalCount: 0,
-        pageSize: HOME_PAGE_SIZE,
+        pageSize,
         basePath: path
       }
     };
@@ -262,7 +263,7 @@ export const load = async (event) => {
   try {
     const result = await client.fetch(HOME_QUERY, {
       offset,
-      limit: HOME_PAGE_SIZE
+      limit: pageSize
     });
     const newestSource = filterVisibleQuizzes(result?.newest);
     const newest = sortByPublishedAt(newestSource);
@@ -276,7 +277,7 @@ export const load = async (event) => {
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
     const totalCount = typeof result?.total === 'number' ? result.total : newestSource.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / HOME_PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     if (requestedPage > totalPages) {
       const targetPage = totalPages;
@@ -300,14 +301,14 @@ export const load = async (event) => {
         currentPage: requestedPage,
         totalPages,
         totalCount,
-        pageSize: HOME_PAGE_SIZE,
+        pageSize,
         basePath: path
       }
     };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
     if (isQuizStubEnabled()) {
-      const stubData = buildStubHomeData(path, requestedPage, HOME_PAGE_SIZE);
+      const stubData = buildStubHomeData(path, requestedPage, pageSize);
       const totalPages = stubData?.pagination?.totalPages ?? 1;
       const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
       if (requestedPage !== safePage) {
@@ -329,7 +330,7 @@ export const load = async (event) => {
         currentPage: 1,
         totalPages: 1,
         totalCount: 0,
-        pageSize: HOME_PAGE_SIZE,
+        pageSize,
         basePath: path
       }
     };
