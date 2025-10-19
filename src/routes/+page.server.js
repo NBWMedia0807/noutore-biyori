@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/private';
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
@@ -21,15 +20,10 @@ import {
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
 import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
-import { resolvePublishedDate, resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
+import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
-const homeBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
-const homeIsrConfig = { expiration: false };
-if (homeBypassToken) {
-  homeIsrConfig.bypassToken = homeBypassToken;
-}
-export const config = { runtime: 'nodejs22.x', isr: homeIsrConfig };
+export const config = { runtime: 'nodejs22.x' };
 
 const HOME_PAGE_SIZE = 10;
 
@@ -129,23 +123,9 @@ const toPreview = (quiz) => {
   };
 };
 
-const sortByPublishedAt = (list) =>
-  (Array.isArray(list) ? list : [])
-    .map(toPreview)
-    .filter(Boolean)
-    .sort((a, b) => {
-      const aContext = a?.slug ?? a?.id ?? 'quiz';
-      const bContext = b?.slug ?? b?.id ?? 'quiz';
-      const aTime = resolvePublishedTimestamp(a, aContext);
-      const bTime = resolvePublishedTimestamp(b, bContext);
-      const safeA = Number.isFinite(aTime) ? aTime : 0;
-      const safeB = Number.isFinite(bTime) ? bTime : 0;
-      return safeB - safeA;
-    });
-
 const normalizeCategorySection = (category) => {
   if (!category?.slug) return null;
-  const quizzes = sortByPublishedAt(filterVisibleQuizzes(category.quizzes));
+  const quizzes = filterVisibleQuizzes(category.quizzes).map(toPreview).filter(Boolean);
   const description = createCategoryDescription(category.title, category.description);
   const overviewPlain = portableTextToPlain(category.overview) || category.overview || '';
   const overview = overviewPlain.trim() || description;
@@ -187,7 +167,7 @@ const buildStubHomeData = (path, page, limit) => {
     })
     .filter((section) => section && section.quizzes.length > 0);
 
-  const allNewest = sortByPublishedAt(sections.flatMap((section) => section.quizzes));
+  const allNewest = sections.flatMap((section) => section.quizzes);
   const totalCount = allNewest.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
   const safePage = Math.min(Math.max(page, 1), totalPages);
@@ -195,7 +175,7 @@ const buildStubHomeData = (path, page, limit) => {
   const newest = allNewest.slice(offset, offset + limit);
   const popular = rankQuizzesByPopularity({
     primary: allNewest,
-    fallback: sections.flatMap((section) => section.quizzes),
+    fallback: allNewest,
     limit: 6
   });
   const seo = createHomeSeo(path, newest.length ? newest : popular);
