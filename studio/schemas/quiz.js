@@ -1,21 +1,17 @@
 // studio/schemas/quiz.js
-import {defineArrayMember, defineField, defineType} from 'sanity'
+import { defineArrayMember, defineField, defineType } from 'sanity'
 
 export default defineType({
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
+
+  // グループ設定（タブ切り替え）
   groups: [
-    {
-      name: 'content',
-      title: 'コンテンツ',
-      default: true
-    },
-    {
-      name: 'publish',
-      title: '公開設定'
-    }
+    { name: 'content', title: 'コンテンツ', default: true },
+    { name: 'publish', title: '公開設定' }
   ],
+
   orderings: [
     {
       name: 'publishedDesc',
@@ -34,6 +30,7 @@ export default defineType({
       ]
     }
   ],
+
   fields: [
     // ── 公開情報 ─────────────────────────
     defineField({
@@ -47,8 +44,7 @@ export default defineType({
         dateFormat: 'YYYY/MM/DD',
         timeFormat: 'HH:mm',
         calendarTodayLabel: '今日',
-        timeStep: 1,
-        timeZone: 'Asia/Tokyo'
+        timeStep: 1
       },
       validation: (Rule) => Rule.required(),
       initialValue: () => {
@@ -57,6 +53,7 @@ export default defineType({
         return now.toISOString()
       }
     }),
+
     // ── 基本情報 ─────────────────────────
     defineField({
       name: 'title',
@@ -85,9 +82,7 @@ export default defineType({
       validation: (Rule) =>
         Rule.custom((value, context) => {
           if (value?.asset?._ref) return true
-          if (context?.parent?.mainImage?.asset?._ref) {
-            return true
-          }
+          if (context?.parent?.mainImage?.asset?._ref) return true
           return '問題画像を設定してください。'
         })
     }),
@@ -97,14 +92,15 @@ export default defineType({
       description: '既存データ互換用のフィールドです。新規では問題画像を利用してください。',
       type: 'image',
       options: { hotspot: true },
+      group: 'content',
       readOnly: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
-      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
-      group: 'content'
+      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref)
     }),
     defineField({
       name: 'problemDescription',
       title: '問題文',
       type: 'array',
+      group: 'content',
       of: [
         defineArrayMember({
           type: 'block',
@@ -118,14 +114,14 @@ export default defineType({
             annotations: []
           }
         })
-      ],
-      group: 'content'
+      ]
     }),
     defineField({
       name: 'hints',
       title: 'ヒント（複数可）',
       description: '必要に応じて複数のヒントを追加できます。',
       type: 'array',
+      group: 'content',
       of: [
         defineArrayMember({
           type: 'block',
@@ -139,8 +135,7 @@ export default defineType({
             annotations: []
           }
         })
-      ],
-      group: 'content'
+      ]
     }),
     defineField({
       name: 'adCode1',
@@ -163,6 +158,7 @@ export default defineType({
       name: 'answerExplanation',
       title: '正解への補足テキスト',
       type: 'array',
+      group: 'content',
       of: [
         defineArrayMember({
           type: 'block',
@@ -176,8 +172,7 @@ export default defineType({
             annotations: []
           }
         })
-      ],
-      group: 'content'
+      ]
     }),
     defineField({
       name: 'adCode2',
@@ -190,6 +185,7 @@ export default defineType({
       name: 'closingMessage',
       title: '締め文',
       type: 'array',
+      group: 'content',
       of: [
         defineArrayMember({
           type: 'block',
@@ -203,8 +199,7 @@ export default defineType({
             annotations: []
           }
         })
-      ],
-      group: 'content'
+      ]
     }),
 
     // ── カテゴリ ─────────────────────────
@@ -217,6 +212,7 @@ export default defineType({
       validation: (Rule) => Rule.required()
     })
   ],
+
   preview: {
     select: {
       title: 'title',
@@ -227,25 +223,23 @@ export default defineType({
     prepare({ title, slug, publishedAt, media }) {
       const safeTitle = title || '無題のクイズ'
       const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
-
       let publishLabel = '公開日未設定'
+
       if (publishedAt) {
         const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
-          const year = String(date.getFullYear())
-          const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
-          const hours = String(date.getHours()).padStart(2, '0')
-          const minutes = String(date.getMinutes()).padStart(2, '0')
-          publishLabel = `公開: ${year}/${month}/${day} ${hours}:${minutes}`
+          const y = date.getFullYear()
+          const m = String(date.getMonth() + 1).padStart(2, '0')
+          const d = String(date.getDate()).padStart(2, '0')
+          const hh = String(date.getHours()).padStart(2, '0')
+          const mm = String(date.getMinutes()).padStart(2, '0')
+          publishLabel = `公開: ${y}/${m}/${d} ${hh}:${mm}`
         }
       }
 
-      const subtitle = `${slugLabel}｜${publishLabel}`
-
       return {
         title: safeTitle,
-        subtitle,
+        subtitle: `${slugLabel}｜${publishLabel}`,
         media
       }
     }
