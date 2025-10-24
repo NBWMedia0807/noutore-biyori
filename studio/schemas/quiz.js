@@ -4,6 +4,7 @@ export default {
   title: 'クイズ',
   type: 'document',
   groups: [
+    { name: 'content', title: 'コンテンツ', default: true },
     { name: 'publish', title: '公開設定' }
   ],
   fieldsets: [
@@ -50,12 +51,14 @@ export default {
       name: 'title',
       title: 'タイトル',
       type: 'string',
+      group: 'content',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',
+      group: 'content',
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required()
     },
@@ -66,6 +69,7 @@ export default {
       title: '問題画像',
       description: '一覧や詳細ページに表示される問題画像です。',
       type: 'image',
+      group: 'content',
       options: { hotspot: true },
       validation: (Rule) =>
         Rule.custom((value, context) => {
@@ -81,6 +85,7 @@ export default {
       title: '旧：問題画像',
       description: '既存データ互換用のフィールドです。新規では問題画像を利用してください。',
       type: 'image',
+      group: 'content',
       options: { hotspot: true },
       readOnly: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
       hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref)
@@ -89,6 +94,7 @@ export default {
       name: 'problemDescription',
       title: '問題文',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'block',
@@ -109,6 +115,7 @@ export default {
       title: 'ヒント（複数可）',
       description: '必要に応じて複数のヒントを追加できます。',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'block',
@@ -128,7 +135,8 @@ export default {
       name: 'adCode1',
       title: 'レクタングル広告コード1',
       description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
-      type: 'text'
+      type: 'text',
+      group: 'content'
     },
 
     // ── 解答 ─────────────────────────────
@@ -136,6 +144,7 @@ export default {
       name: 'answerImage',
       title: '正解画像',
       type: 'image',
+      group: 'content',
       options: { hotspot: true },
       validation: (Rule) => Rule.required()
     },
@@ -143,6 +152,7 @@ export default {
       name: 'answerExplanation',
       title: '正解への補足テキスト',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'block',
@@ -162,12 +172,14 @@ export default {
       name: 'adCode2',
       title: 'レクタングル広告コード2',
       description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
-      type: 'text'
+      type: 'text',
+      group: 'content'
     },
     {
       name: 'closingMessage',
       title: '締め文',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'block',
@@ -190,6 +202,7 @@ export default {
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
+      group: 'content',
       validation: (Rule) => Rule.required()
     }
   ]
