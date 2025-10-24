@@ -1,6 +1,6 @@
 <script>
   import { createSanityImageSet } from '$lib/utils/images.js';
-  import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
+  import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
 
   export let quiz = {};
   export let fallbackImageUrl = '/logo.svg';
@@ -46,25 +46,15 @@
     return source?.asset?.metadata?.dimensions ?? { width: 600, height: 360 };
   };
 
-  const formatDate = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
-  };
-
   $: imageSet = buildImageSet(quiz);
   $: dimensions = pickDimensions(quiz);
   $: slug = typeof quiz?.slug === 'string' ? quiz.slug : '';
   $: href = slug ? `/quiz/${slug}` : '#';
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
-  $: publishedDate =
-    resolvePublishedDate(quiz, quiz?.slug ?? quiz?.id ?? 'article-card') ?? '';
-  $: formattedDate = formatDate(publishedDate);
+  $: publishContext = quiz?.slug ?? quiz?.id ?? 'article-card';
+  $: publishedDate = resolvePublishedDate(quiz, publishContext) ?? '';
+  $: formattedDate = formatPublishedDateLabel(publishedDate, { context: publishContext });
 </script>
 
 <article class="article-card">
