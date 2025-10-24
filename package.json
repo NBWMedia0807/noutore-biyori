@@ -5,6 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.15.0",
   "scripts": {
+    "preinstall": "corepack enable && corepack prepare pnpm@10.15.0 --activate && (pnpm store prune || true)",
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
@@ -41,6 +42,6 @@
     ]
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }

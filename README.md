@@ -71,6 +71,12 @@ Sanity Studio のスキーマを更新した際は、以下の手順で反映・
 Vercel 版と Hosted 版の Studio はどちらも `src/lib/sanityDefaults.js` に定義した `projectId` / `dataset` を参照します。環境変数で上書きしない限り、双方が同一の Sanity プロジェクト（`quljge22` / `production`）を指すため、データの参照先がズレない構成になっています。
 
 codex/add-publishedat-field-to-quiz-document-6zd8p9
+#### quiz スキーマ「公開設定」タブの確認手順
+
+1. `cd studio && npm run dev` で Sanity Studio を再起動します。
+2. Studio で新しい `quiz` ドキュメントを作成し、「公開設定」タブが表示されることを確認します。
+3. `publishedAt` フィールドが必須かつ初期値が入った状態で表示され、保存できることを確認します。
+
 ### Vision での確認用クエリ
 
 Sanity Studio の Vision で公開日時が正しく保存されているか確認する際は、以下のクエリを実行してください。
