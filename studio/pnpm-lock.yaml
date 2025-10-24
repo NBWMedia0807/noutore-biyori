@@ -1572,7 +1572,7 @@ packages:
     resolution: {integrity: sha512-vzdhqOrX7JGbMyK40KuIwwyXHm7GMLOGuYgn3xlC09e4ZVNofUO5mgezQqnRv0JAMthIRhofqs9f6ufUjMKOvw==}
 
   '@sanity/vision@3.4.0':
-    resolution: {integrity: sha512-lyfkTWB1T5Vwgn2xU3No0Eys1Qmy43u25s10NcJ7jwCqf/F29zeldvP4IG9pBY47cbB8ydCAEJmCb+AQWflccw==}
+    resolution: {integrity: sha512-3oWTJ61S5sXuyrftoG8nbRqdiJgQZE0ILy74YxMTjx0YYneElUFi1Hae277/gmLweaJZbhIZIjOyOD60tZh0Pw==}
     peerDependencies:
       react: ^18 || ^19.0.0
       styled-components: ^6.1.15
