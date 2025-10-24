@@ -18,12 +18,18 @@ export default {
     {
       name: 'publishedDesc',
       title: '公開日時 (新しい順)',
-      by: [{ field: 'publishedAt', direction: 'desc' }]
+      by: [
+        { field: 'publishedAt', direction: 'desc' },
+        { field: '_createdAt', direction: 'desc' }
+      ]
     },
     {
       name: 'publishedAsc',
       title: '公開日時 (古い順)',
-      by: [{ field: 'publishedAt', direction: 'asc' }]
+      by: [
+        { field: 'publishedAt', direction: 'asc' },
+        { field: '_createdAt', direction: 'asc' }
+      ]
     }
   ],
   fields: [
@@ -44,7 +50,11 @@ export default {
         timeZone: 'Asia/Tokyo'
       },
       validation: (Rule) => Rule.required(),
-      initialValue: () => new Date().toISOString()
+      initialValue: () => {
+        const now = new Date();
+        now.setSeconds(0, 0);
+        return now.toISOString();
+      }
     },
     // ── 基本情報 ─────────────────────────
     {
@@ -205,5 +215,38 @@ export default {
       group: 'content',
       validation: (Rule) => Rule.required()
     }
-  ]
+  ],
+  preview: {
+    select: {
+      title: 'title',
+      slug: 'slug.current',
+      publishedAt: 'publishedAt',
+      media: 'problemImage'
+    },
+    prepare({ title, slug, publishedAt, media }) {
+      const safeTitle = title || '無題のクイズ';
+      const slugLabel = slug ? `/${slug}` : 'スラッグ未設定';
+
+      let publishLabel = '公開日未設定';
+      if (publishedAt) {
+        const date = new Date(publishedAt);
+        if (!Number.isNaN(date.getTime())) {
+          const year = String(date.getFullYear());
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          publishLabel = `公開: ${year}/${month}/${day} ${hours}:${minutes}`;
+        }
+      }
+
+      const subtitle = `${slugLabel}｜${publishLabel}`;
+
+      return {
+        title: safeTitle,
+        subtitle,
+        media
+      };
+    }
+  }
 }

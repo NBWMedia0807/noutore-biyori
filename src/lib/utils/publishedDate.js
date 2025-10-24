@@ -82,6 +82,45 @@ export const ensurePublishedAt = (doc, context) => {
   return { ...doc, publishedAt: iso };
 };
 
+export const formatPublishedDateLabel = (
+  value,
+  { locale = 'ja-JP', timeZone = 'Asia/Tokyo', includeTime = false, context } = {}
+) => {
+  const source =
+    value && typeof value === 'object' && !(value instanceof Date)
+      ? value
+      : { publishedAt: value };
+
+  const { iso } = resolvePublishInfo(source, context);
+  if (!iso) return '';
+
+  try {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      logInvalidDate('publishedAt', value, context);
+      return '';
+    }
+
+    const formatter = new Intl.DateTimeFormat(locale, {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      ...(includeTime
+        ? {
+            hour: '2-digit',
+            minute: '2-digit'
+          }
+        : {})
+    });
+
+    return formatter.format(date);
+  } catch (error) {
+    logInvalidDate('publishedAt', value, context);
+    return '';
+  }
+};
+
 export const isFutureScheduled = (value, context) => {
   const info =
     value && typeof value === 'object' && !(value instanceof Date)

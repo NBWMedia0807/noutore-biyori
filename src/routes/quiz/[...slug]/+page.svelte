@@ -1,14 +1,19 @@
 <script>
   import { tick } from 'svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
-  import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
+  import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
 
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const nextQuiz = data?.nextQuiz ?? null;
-  const publishedAt = resolvePublishedDate(doc, doc?._id ?? doc?.slug ?? 'quiz-detail') ?? null;
+  const publishContext = doc?._id ?? doc?.slug ?? 'quiz-detail';
+  const publishedAt = resolvePublishedDate(doc, publishContext) ?? null;
+  const publishedLabel = formatPublishedDateLabel(publishedAt, {
+    context: publishContext,
+    includeTime: true
+  });
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
@@ -34,16 +39,6 @@
   const hasRelated = relatedQuizzes.length > 0;
   const nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
   const nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
-
-  const formatDate = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
-  };
 
   let hintOpen = false;
   let firstHintItem;
@@ -147,8 +142,8 @@
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
-    {#if publishedAt}
-      <p class="quiz-date">公開日: {formatDate(publishedAt)}</p>
+    {#if publishedLabel}
+      <p class="quiz-date">公開日: {publishedLabel}</p>
     {/if}
   </header>
 
