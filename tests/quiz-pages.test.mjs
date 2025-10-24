@@ -104,41 +104,68 @@ before(async () => {
 });
 
 after(async () => {
-  if (devServer && devServer.exitCode === null) {
+  if (!devServer || devServer.exitCode !== null) {
+    return;
+  }
+
+  const waitForExit = () =>
+    devServer.exitCode !== null ? Promise.resolve() : once(devServer, 'exit');
+
+  const sendSignal = (signal) => {
     if (devServerGroupPid !== null) {
       try {
-        process.kill(-devServerGroupPid, 'SIGTERM');
+        process.kill(-devServerGroupPid, signal);
       } catch (err) {
-        serverLogs.push(`[dev] failed to send group SIGTERM: ${err.message}`);
+        serverLogs.push(`[dev] failed to send group ${signal}: ${err.message}`);
       }
     }
 
-    devServer.kill('SIGTERM');
     try {
-      const waitForExit = () =>
-        devServer.exitCode !== null ? Promise.resolve() : once(devServer, 'exit');
-
-      await Promise.race([
-        waitForExit(),
-        (async () => {
-          await delay(5000);
-          if (devServer.exitCode === null) {
-            serverLogs.push('[dev] forcing SIGKILL after timeout');
-            if (devServerGroupPid !== null) {
-              try {
-                process.kill(-devServerGroupPid, 'SIGKILL');
-              } catch (err) {
-                serverLogs.push(`[dev] failed to send group SIGKILL: ${err.message}`);
-              }
-            }
-            devServer.kill('SIGKILL');
-            await waitForExit();
-          }
-        })()
-      ]);
+      devServer.kill(signal);
     } catch (err) {
-      serverLogs.push(`[dev] failed to exit cleanly: ${err.message}`);
+      if (err?.code !== 'ESRCH') {
+        serverLogs.push(`[dev] failed to send ${signal}: ${err.message}`);
+      }
     }
+  };
+
+  const requestStop = async (signal, timeoutMs) => {
+    if (devServer.exitCode !== null) {
+      return true;
+    }
+
+    sendSignal(signal);
+
+    if (devServer.exitCode !== null) {
+      return true;
+    }
+
+    const result = await Promise.race([
+      waitForExit().then(() => 'exited'),
+      delay(timeoutMs).then(() => 'timeout')
+    ]);
+
+    return result === 'exited';
+  };
+
+  try {
+    for (const { signal, timeout } of [
+      { signal: 'SIGINT', timeout: 3000 },
+      { signal: 'SIGTERM', timeout: 2000 }
+    ]) {
+      const exited = await requestStop(signal, timeout);
+      if (exited) {
+        return;
+      }
+    }
+
+    if (devServer.exitCode === null) {
+      serverLogs.push('[dev] forcing SIGKILL after timeout');
+      sendSignal('SIGKILL');
+      await waitForExit();
+    }
+  } catch (err) {
+    serverLogs.push(`[dev] failed to exit cleanly: ${err.message}`);
   }
 });
 
