@@ -1,26 +1,28 @@
 // studio/schemas/category.js
-export default {
+import {defineField, defineType} from 'sanity'
+
+export default defineType({
   name: 'category',
   title: 'カテゴリ',
   type: 'document',
   fields: [
-    {
+    defineField({
       name: 'title',
       title: 'タイトル',
       type: 'string',
-      validation: R => R.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',
       options: { source: 'title', maxLength: 96 },
-      validation: R => R.required()
-    },
-    {
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: 'description',
       title: '説明',
       type: 'text'
-    }
+    })
   ]
-}
+})
