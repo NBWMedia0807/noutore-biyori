@@ -1,13 +1,19 @@
 // studio/schemas/quiz.js
-export default {
+import {defineArrayMember, defineField, defineType} from 'sanity'
+
+export default defineType({
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
-  fieldsets: [
+  groups: [
+    {
+      name: 'content',
+      title: 'コンテンツ',
+      default: true
+    },
     {
       name: 'publish',
-      title: '公開設定',
-      options: { collapsible: false }
+      title: '公開設定'
     }
   ],
   orderings: [
@@ -30,13 +36,13 @@ export default {
   ],
   fields: [
     // ── 公開情報 ─────────────────────────
-    {
+    defineField({
       name: 'publishedAt',
       title: '公開日時',
       description:
         'サイトに表示される公開日です。未来の日時を指定すると予約公開になります。Studio では日本時間 (Asia/Tokyo) で表示されます。',
       type: 'datetime',
-      fieldset: 'publish',
+      group: 'publish',
       options: {
         dateFormat: 'YYYY/MM/DD',
         timeFormat: 'HH:mm',
@@ -46,57 +52,61 @@ export default {
       },
       validation: (Rule) => Rule.required(),
       initialValue: () => {
-        const now = new Date();
-        now.setSeconds(0, 0);
-        return now.toISOString();
+        const now = new Date()
+        now.setSeconds(0, 0)
+        return now.toISOString()
       }
-    },
+    }),
     // ── 基本情報 ─────────────────────────
-    {
+    defineField({
       name: 'title',
       title: 'タイトル',
       type: 'string',
+      group: 'content',
       validation: (Rule) => Rule.required()
-    },
-    {
+    }),
+    defineField({
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',
       options: { source: 'title', maxLength: 96 },
+      group: 'content',
       validation: (Rule) => Rule.required()
-    },
+    }),
 
     // ── 問題 ─────────────────────────────
-    {
+    defineField({
       name: 'problemImage',
       title: '問題画像',
       description: '一覧や詳細ページに表示される問題画像です。',
       type: 'image',
       options: { hotspot: true },
+      group: 'content',
       validation: (Rule) =>
         Rule.custom((value, context) => {
-          if (value?.asset?._ref) return true;
+          if (value?.asset?._ref) return true
           if (context?.parent?.mainImage?.asset?._ref) {
-            return true;
+            return true
           }
-          return '問題画像を設定してください。';
+          return '問題画像を設定してください。'
         })
-    },
-    {
+    }),
+    defineField({
       name: 'mainImage',
       title: '旧：問題画像',
       description: '既存データ互換用のフィールドです。新規では問題画像を利用してください。',
       type: 'image',
       options: { hotspot: true },
       readOnly: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
-      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref)
-    },
-    {
+      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
+      group: 'content'
+    }),
+    defineField({
       name: 'problemDescription',
       title: '問題文',
       type: 'array',
       of: [
-        {
+        defineArrayMember({
           type: 'block',
           styles: [{ title: '標準', value: 'normal' }],
           lists: [],
@@ -107,16 +117,17 @@ export default {
             ],
             annotations: []
           }
-        }
-      ]
-    },
-    {
+        })
+      ],
+      group: 'content'
+    }),
+    defineField({
       name: 'hints',
       title: 'ヒント（複数可）',
       description: '必要に応じて複数のヒントを追加できます。',
       type: 'array',
       of: [
-        {
+        defineArrayMember({
           type: 'block',
           styles: [{ title: '標準', value: 'normal' }],
           lists: [],
@@ -127,30 +138,33 @@ export default {
             ],
             annotations: []
           }
-        }
-      ]
-    },
-    {
+        })
+      ],
+      group: 'content'
+    }),
+    defineField({
       name: 'adCode1',
       title: 'レクタングル広告コード1',
       description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
       type: 'text',
-    },
+      group: 'content'
+    }),
 
     // ── 解答 ─────────────────────────────
-    {
+    defineField({
       name: 'answerImage',
       title: '正解画像',
       type: 'image',
       options: { hotspot: true },
+      group: 'content',
       validation: (Rule) => Rule.required()
-    },
-    {
+    }),
+    defineField({
       name: 'answerExplanation',
       title: '正解への補足テキスト',
       type: 'array',
       of: [
-        {
+        defineArrayMember({
           type: 'block',
           styles: [{ title: '標準', value: 'normal' }],
           lists: [],
@@ -161,21 +175,23 @@ export default {
             ],
             annotations: []
           }
-        }
-      ]
-    },
-    {
+        })
+      ],
+      group: 'content'
+    }),
+    defineField({
       name: 'adCode2',
       title: 'レクタングル広告コード2',
       description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
       type: 'text',
-    },
-    {
+      group: 'content'
+    }),
+    defineField({
       name: 'closingMessage',
       title: '締め文',
       type: 'array',
       of: [
-        {
+        defineArrayMember({
           type: 'block',
           styles: [{ title: '標準', value: 'normal' }],
           lists: [],
@@ -186,18 +202,20 @@ export default {
             ],
             annotations: []
           }
-        }
-      ]
-    },
+        })
+      ],
+      group: 'content'
+    }),
 
     // ── カテゴリ ─────────────────────────
-    {
+    defineField({
       name: 'category',
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
+      group: 'content',
       validation: (Rule) => Rule.required()
-    }
+    })
   ],
   preview: {
     select: {
@@ -207,29 +225,29 @@ export default {
       media: 'problemImage'
     },
     prepare({ title, slug, publishedAt, media }) {
-      const safeTitle = title || '無題のクイズ';
-      const slugLabel = slug ? `/${slug}` : 'スラッグ未設定';
+      const safeTitle = title || '無題のクイズ'
+      const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
 
-      let publishLabel = '公開日未設定';
+      let publishLabel = '公開日未設定'
       if (publishedAt) {
-        const date = new Date(publishedAt);
+        const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
-          const year = String(date.getFullYear());
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          publishLabel = `公開: ${year}/${month}/${day} ${hours}:${minutes}`;
+          const year = String(date.getFullYear())
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          publishLabel = `公開: ${year}/${month}/${day} ${hours}:${minutes}`
         }
       }
 
-      const subtitle = `${slugLabel}｜${publishLabel}`;
+      const subtitle = `${slugLabel}｜${publishLabel}`
 
       return {
         title: safeTitle,
         subtitle,
         media
-      };
+      }
     }
   }
-}
+})
