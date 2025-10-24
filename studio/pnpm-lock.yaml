@@ -3701,7 +3701,7 @@ packages:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
   sanity@3.57.0:
-    resolution: {integrity: sha512-yp+sYeONUuCsTEeadpyidEOSK6SVuQ16RlfJK+wV9TZSdxwuJpYhTbmz2HOTsx9aW/wO/w2Nkrk/HyaxC6npBg==}
+    resolution: {integrity: sha512-VxnuWHf+Ny34wQAao8It8nBemHUucTHqvo4r1p/PpMlGRYiVI7TbBe60YDzh5Kolue+0ebxIY5fo6sTWc67NZw==}
     engines: {node: '>=20.19 <22 || >=22.12'}
     hasBin: true
     peerDependencies:
