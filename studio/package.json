@@ -1,7 +1,6 @@
 {
   "name": "noutore-biyori-studio",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "sanity dev",
     "build": "sanity build",

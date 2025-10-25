@@ -1,11 +1,11 @@
 // studio/sanity.config.js
-import {defineConfig, ScheduleAction, ScheduledBadge} from 'sanity'
-import {deskTool} from 'sanity/desk'
-import {visionTool} from '@sanity/vision'
-import schemaTypes from './schemas'
-import { SANITY_DEFAULTS } from '../src/lib/sanityDefaults.js'
+const {defineConfig, ScheduleAction, ScheduledBadge} = require('sanity')
+const {deskTool} = require('sanity/desk')
+const {visionTool} = require('@sanity/vision')
+const schemaTypes = require('./schemas')
+const { SANITY_DEFAULTS } = require('../src/lib/sanityDefaults.js')
 
-export default defineConfig({
+module.exports = defineConfig({
   name: 'noutore-biyori-studio',
   title: 'noutore-biyori',
   // Hardcode to avoid env dependency during hosted deploys

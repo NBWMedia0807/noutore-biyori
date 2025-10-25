@@ -1,8 +1,8 @@
 // studio/schemas/index.js
-import quiz from './quiz.js'
-import category from './category.js'
+const quiz = require('./quiz.js')
+const category = require('./category.js')
 
 const schemaTypes = [quiz, category]
 
-// Sanity Studio で使うスキーマをまとめて default export
-export default schemaTypes
+// Sanity Studio で使うスキーマをまとめて CommonJS で export
+module.exports = schemaTypes
