@@ -31,3 +31,8 @@ export const warnMissingSanityEnv = ({
     logger.warn(`[sanity:${source}] apiVersion が未設定のため、デフォルト値 (${SANITY_DEFAULTS.apiVersion}) を使用します。`);
   }
 };
+
+// CommonJS からも参照できるようにフォールバックを用意
+if (typeof module !== 'undefined') {
+  module.exports = { SANITY_DEFAULTS, warnMissingSanityEnv };
+}
