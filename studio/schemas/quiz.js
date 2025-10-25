@@ -223,8 +223,8 @@ export default defineType({
     prepare({ title, slug, publishedAt, media }) {
       const safeTitle = title || '無題のクイズ'
       const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
-      let publishLabel = '公開日未設定'
 
+      let publishLabel = '公開日未設定'
       if (publishedAt) {
         const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
