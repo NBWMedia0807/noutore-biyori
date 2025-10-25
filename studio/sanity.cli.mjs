@@ -1,4 +1,4 @@
-// studio/sanity.cli.js
+// studio/sanity.cli.mjs
 import { defineCliConfig } from 'sanity/cli'
 import { SANITY_DEFAULTS } from '../src/lib/sanityDefaults.js'
 
