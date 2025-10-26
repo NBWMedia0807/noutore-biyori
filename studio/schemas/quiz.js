@@ -1,6 +1,5 @@
 // studio/schemas/quiz.js
 import { defineArrayMember, defineField, defineType } from 'sanity'
-import CategoryReferenceInput from '../components/CategoryReferenceInput.jsx'
 
 export default defineType({
   name: 'quiz',
@@ -195,10 +194,7 @@ export default defineType({
       type: 'reference',
       to: [{ type: 'category' }],
       group: 'content',
-      validation: (Rule) => Rule.required(),
-      components: {
-        input: CategoryReferenceInput
-      }
+      validation: (Rule) => Rule.required()
     })
   ],
 
