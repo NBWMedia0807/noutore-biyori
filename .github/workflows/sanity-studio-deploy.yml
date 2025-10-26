@@ -1,58 +1,58 @@
-name: Deploy Sanity Hosted Studio
+# .github/workflows/sanity-studio-deploy.yml
+name: Deploy Hosted Studio
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
-      - 'studio/**'
-      - 'sanity.cli.*'
-      - '.github/workflows/sanity-studio-deploy.yml'
+      - "studio/**"
+      - "sanity.cli.*"
+      - ".github/workflows/sanity-studio-deploy.yml"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: sanity-studio-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy Hosted Studio
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio
     env:
       SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
       SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
-      SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+      SANITY_DATASET:    ${{ secrets.SANITY_DATASET }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # 先に pnpm を入れる（Node の cache: pnpm は使わない）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: |
-            studio/pnpm-lock.yaml
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          run_install: false
 
       - name: Install dependencies
-        working-directory: studio
         run: pnpm install --no-frozen-lockfile
 
-      - name: Deploy Hosted Studio
-        working-directory: studio
-        env:
-          SANITY_AUTH_TOKEN: ${{ env.SANITY_AUTH_TOKEN }}
-          SANITY_PROJECT_ID: ${{ env.SANITY_PROJECT_ID }}
-          SANITY_DATASET: ${{ env.SANITY_DATASET }}
-        run: >-
-          pnpm exec sanity deploy
-          --yes
-          --project "$SANITY_PROJECT_ID"
-          --dataset "$SANITY_DATASET"
-          --host noutore-biyori-studio-main
+      - name: Build Studio
+        run: pnpm build
+
+      - name: Deploy to Hosted Studio
+        run: |
+          pnpm exec sanity deploy \
+            --yes \
+            --project "$SANITY_PROJECT_ID" \
+            --dataset "$SANITY_DATASET" \
+            --host noutore-biyori-studio-main
