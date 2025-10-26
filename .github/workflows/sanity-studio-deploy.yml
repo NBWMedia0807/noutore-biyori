@@ -1,0 +1,54 @@
+name: Deploy Hosted Studio
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "studio/**"
+      - ".github/workflows/sanity-studio-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sanity-studio-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio
+    env:
+      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+      SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+      SANITY_DATASET:    ${{ secrets.SANITY_DATASET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build Studio
+        run: pnpm build
+
+      - name: Deploy to Hosted Studio
+        run: |
+          npx sanity deploy \
+            --yes \
+            --project "$SANITY_PROJECT_ID" \
+            --dataset "$SANITY_DATASET"
