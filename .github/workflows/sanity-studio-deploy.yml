@@ -1,0 +1,61 @@
+name: Deploy Sanity Studio (Hosted)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "studio/**"
+      - ".github/workflows/sanity-studio-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sanity-studio-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio
+    env:
+      # ← 既に登録済みの Secrets を使います
+      SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+      SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+      SANITY_DATASET:    ${{ secrets.SANITY_DATASET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Install deps
+        run: pnpm install --no-frozen-lockfile
+
+      # （任意）typegen / lint / test など入れたい場合はここに追加
+
+      - name: Build Studio
+        run: pnpm build
+
+      - name: Deploy to Hosted Studio
+        # --yes: 非対話
+        # --project/--dataset は明示（読み取り失敗の保険）
+        # --studio-host は sanity.cli.ts/js で指定済みなら省略可（明示してもOK）
+        run: |
+          npx sanity deploy \
+            --yes \
+            --project "$SANITY_PROJECT_ID" \
+            --dataset "$SANITY_DATASET"
