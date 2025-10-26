@@ -1,5 +1,6 @@
 // studio/schemas/quiz.js
 import { defineArrayMember, defineField, defineType } from 'sanity'
+import CategoryReferenceInput from '../components/CategoryReferenceInput.jsx'
 
 export default defineType({
   name: 'quiz',
@@ -79,22 +80,7 @@ export default defineType({
       type: 'image',
       options: { hotspot: true },
       group: 'content',
-      validation: (Rule) =>
-        Rule.custom((value, context) => {
-          if (value?.asset?._ref) return true
-          if (context?.parent?.mainImage?.asset?._ref) return true
-          return '問題画像を設定してください。'
-        })
-    }),
-    defineField({
-      name: 'mainImage',
-      title: '旧：問題画像',
-      description: '既存データ互換用のフィールドです。新規では問題画像を利用してください。',
-      type: 'image',
-      options: { hotspot: true },
-      group: 'content',
-      readOnly: ({ document }) => Boolean(document?.problemImage?.asset?._ref),
-      hidden: ({ document }) => Boolean(document?.problemImage?.asset?._ref)
+      validation: (Rule) => Rule.required()
     }),
     defineField({
       name: 'problemDescription',
@@ -209,7 +195,10 @@ export default defineType({
       type: 'reference',
       to: [{ type: 'category' }],
       group: 'content',
-      validation: (Rule) => Rule.required()
+      validation: (Rule) => Rule.required(),
+      components: {
+        input: CategoryReferenceInput
+      }
     })
   ],
 
