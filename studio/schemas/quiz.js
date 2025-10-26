@@ -1,6 +1,12 @@
 // studio/schemas/quiz.js
 import { defineArrayMember, defineField, defineType } from 'sanity'
 
+const toPlainText = (value) => {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return ''
+}
+
 export default defineType({
   name: 'quiz',
   title: 'クイズ',
@@ -205,13 +211,16 @@ export default defineType({
       slug: 'slug.current',
       publishedAt: 'publishedAt',
       media: 'problemImage',
-      // 参照は必ず -> でデリファレンス
       categoryTitle: 'category->title',
       categorySlug: 'category->slug.current'
     },
     prepare({ title, slug, publishedAt, media, categoryTitle, categorySlug }) {
-      const safeTitle = title || '無題のクイズ'
-      const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
+      const safeTitle = toPlainText(title) || '無題のクイズ'
+      const safeSlug = toPlainText(slug)
+      const safeCategoryTitle = toPlainText(categoryTitle)
+      const safeCategorySlug = toPlainText(categorySlug)
+
+      const slugLabel = safeSlug ? `/${safeSlug}` : 'スラッグ未設定'
 
       let publishLabel = '公開日未設定'
       if (publishedAt) {
@@ -226,14 +235,15 @@ export default defineType({
         }
       }
 
-      const categoryLabel = categoryTitle ? `カテゴリ: ${categoryTitle}` : ''
-      const base = [slugLabel, publishLabel, categoryLabel].filter(Boolean).join('｜')
-      const subtitle = categorySlug ? `${base}｜category/${categorySlug}` : base
+      const categoryLabel = safeCategoryTitle ? `カテゴリ: ${safeCategoryTitle}` : ''
+      const parts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
+      const base = parts.join('｜')
+      const subtitle = safeCategorySlug ? `${base}｜category/${safeCategorySlug}` : base
 
       return {
-        title: safeTitle,        // 文字列
-        subtitle,               // 文字列
-        media                   // 画像 or undefined（Sanity想定の型）
+        title: safeTitle, // 文字列のみ
+        subtitle,         // 文字列のみ
+        media             // 画像 or undefined
       }
     }
   }
