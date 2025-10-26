@@ -1,6 +1,5 @@
 // studio/schemas/quiz.js
 import { defineArrayMember, defineField, defineType } from 'sanity'
-import CategoryReferenceInput from '../components/CategoryReferenceInput.jsx'
 
 export default defineType({
   name: 'quiz',
@@ -195,10 +194,7 @@ export default defineType({
       type: 'reference',
       to: [{ type: 'category' }],
       group: 'content',
-      validation: (Rule) => Rule.required(),
-      components: {
-        input: CategoryReferenceInput
-      }
+      validation: (Rule) => Rule.required()
     })
   ],
 
@@ -207,9 +203,10 @@ export default defineType({
       title: 'title',
       slug: 'slug.current',
       publishedAt: 'publishedAt',
-      media: 'problemImage'
+      media: 'problemImage',
+      category: 'category.title'
     },
-    prepare({ title, slug, publishedAt, media }) {
+    prepare({ title, slug, publishedAt, media, category }) {
       const safeTitle = title || '無題のクイズ'
       const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
       let publishLabel = '公開日未設定'
@@ -226,9 +223,14 @@ export default defineType({
         }
       }
 
+      const categoryLabel = category ? `カテゴリ: ${category}` : ''
+      const subtitle = [slugLabel, publishLabel, categoryLabel]
+        .filter(Boolean)
+        .join('｜')
+
       return {
         title: safeTitle,
-        subtitle: `${slugLabel}｜${publishLabel}`,
+        subtitle,
         media
       }
     }
