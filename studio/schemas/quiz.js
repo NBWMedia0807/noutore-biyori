@@ -193,6 +193,7 @@ export default defineType({
       title: 'カテゴリ',
       type: 'reference',
       to: [{ type: 'category' }],
+      weak: false,
       group: 'content',
       validation: (Rule) => Rule.required()
     })
@@ -204,13 +205,15 @@ export default defineType({
       slug: 'slug.current',
       publishedAt: 'publishedAt',
       media: 'problemImage',
-      category: 'category.title'
+      // 参照は必ず -> でデリファレンス
+      categoryTitle: 'category->title',
+      categorySlug: 'category->slug.current'
     },
-    prepare({ title, slug, publishedAt, media, category }) {
+    prepare({ title, slug, publishedAt, media, categoryTitle, categorySlug }) {
       const safeTitle = title || '無題のクイズ'
       const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
-      let publishLabel = '公開日未設定'
 
+      let publishLabel = '公開日未設定'
       if (publishedAt) {
         const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
@@ -223,15 +226,14 @@ export default defineType({
         }
       }
 
-      const categoryLabel = category ? `カテゴリ: ${category}` : ''
-      const subtitle = [slugLabel, publishLabel, categoryLabel]
-        .filter(Boolean)
-        .join('｜')
+      const categoryLabel = categoryTitle ? `カテゴリ: ${categoryTitle}` : ''
+      const base = [slugLabel, publishLabel, categoryLabel].filter(Boolean).join('｜')
+      const subtitle = categorySlug ? `${base}｜category/${categorySlug}` : base
 
       return {
-        title: safeTitle,
-        subtitle,
-        media
+        title: safeTitle,        // 文字列
+        subtitle,               // 文字列
+        media                   // 画像 or undefined（Sanity想定の型）
       }
     }
   }
