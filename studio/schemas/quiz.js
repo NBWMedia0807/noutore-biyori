@@ -2,14 +2,8 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
 
 const toPlainText = (value) => {
-  if (typeof value === 'string') {
-    return value.trim()
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value)
-  }
-
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
   return ''
 }
 
@@ -204,7 +198,7 @@ export default defineType({
       name: 'category',
       title: 'カテゴリ',
       type: 'reference',
-      to: [{type: 'category'}],
+      to: [{ type: 'category' }],
       weak: false,
       group: 'content',
       validation: (Rule) => Rule.required()
@@ -227,8 +221,8 @@ export default defineType({
       const safeCategorySlug = toPlainText(categorySlug)
 
       const slugLabel = safeSlug ? `/${safeSlug}` : 'スラッグ未設定'
-      let publishLabel = '公開日未設定'
 
+      let publishLabel = '公開日未設定'
       if (publishedAt) {
         const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
@@ -242,16 +236,14 @@ export default defineType({
       }
 
       const categoryLabel = safeCategoryTitle ? `カテゴリ: ${safeCategoryTitle}` : ''
-      const categorySlugLabel = safeCategorySlug ? `category/${safeCategorySlug}` : ''
-      const subtitleParts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
-      const subtitle = subtitleParts.join('｜')
+      const parts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
+      const base = parts.join('｜')
+      const subtitle = safeCategorySlug ? `${base}｜category/${safeCategorySlug}` : base
 
       return {
-        title: safeTitle,
-        subtitle: categorySlugLabel
-          ? [...subtitleParts, categorySlugLabel].filter(Boolean).join('｜')
-          : subtitle,
-        media
+        title: safeTitle, // 文字列のみ
+        subtitle,         // 文字列のみ
+        media             // 画像 or undefined
       }
     }
   }

@@ -1,28 +1,17 @@
 // studio/schemas/category.js
 import React from 'react'
-import {defineField, defineType} from 'sanity'
+import { defineField, defineType } from 'sanity'
 
 const CategoryIcon = () =>
   React.createElement(
     'span',
-    {
-      role: 'img',
-      'aria-label': 'カテゴリ',
-      style: {fontSize: '1.2em', lineHeight: 1}
-    },
+    { role: 'img', 'aria-label': 'カテゴリ', style: { fontSize: '1.2em', lineHeight: 1 } },
     '🏷️'
   )
 
 const toPlainText = (value) => {
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    return trimmed
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value)
-  }
-
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
   return ''
 }
 
@@ -56,13 +45,12 @@ export default defineType({
       title: 'title',
       slug: 'slug.current'
     },
-    prepare({title, slug}) {
+    prepare({ title, slug }) {
       const safeTitle = toPlainText(title)
       const safeSlug = toPlainText(slug)
-
       return {
-        title: safeTitle || '（無題）',
-        subtitle: safeSlug ? `/${safeSlug}` : ''
+        title: safeTitle || '（無題）',     // ← 文字列のみ
+        subtitle: safeSlug ? `/${safeSlug}` : '' // ← 文字列のみ
       }
     }
   }
