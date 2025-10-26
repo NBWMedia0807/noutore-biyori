@@ -1,6 +1,5 @@
 // studio/schemas/quiz.js
 import { defineArrayMember, defineField, defineType } from 'sanity'
-import CategoryReferenceInput from '../components/CategoryReferenceInput.jsx'
 
 export default defineType({
   name: 'quiz',
@@ -193,12 +192,10 @@ export default defineType({
       name: 'category',
       title: 'カテゴリ',
       type: 'reference',
-      to: [{ type: 'category' }],
+      to: [{type: 'category'}],
+      weak: false,
       group: 'content',
-      validation: (Rule) => Rule.required(),
-      components: {
-        input: CategoryReferenceInput
-      }
+      validation: (Rule) => Rule.required()
     })
   ],
 
@@ -207,9 +204,11 @@ export default defineType({
       title: 'title',
       slug: 'slug.current',
       publishedAt: 'publishedAt',
-      media: 'problemImage'
+      media: 'problemImage',
+      categoryTitle: 'category->title',
+      categorySlug: 'category->slug.current'
     },
-    prepare({ title, slug, publishedAt, media }) {
+    prepare({ title, slug, publishedAt, media, categoryTitle, categorySlug }) {
       const safeTitle = title || '無題のクイズ'
       const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
       let publishLabel = '公開日未設定'
@@ -226,9 +225,15 @@ export default defineType({
         }
       }
 
+      const categoryLabel = categoryTitle ? `カテゴリ: ${categoryTitle}` : ''
+      const categorySlugLabel = categorySlug ? `category/${categorySlug}` : ''
+      const subtitle = [slugLabel, publishLabel, categoryLabel]
+        .filter(Boolean)
+        .join('｜')
+
       return {
         title: safeTitle,
-        subtitle: `${slugLabel}｜${publishLabel}`,
+        subtitle: categorySlugLabel ? `${subtitle}｜${categorySlugLabel}` : subtitle,
         media
       }
     }
