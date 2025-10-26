@@ -7,7 +7,7 @@ Sanity Studio のスキーマを GitHub 上のコードから確実に反映さ�
 本番の SvelteKit アプリが Sanity の記事を正しく取得できない場合は、以下の 4 点を確認してください。
 
 1. **環境変数**: `.env.local` と Vercel の環境変数で `SANITY_PROJECT_ID` / `SANITY_DATASET` / `SANITY_API_VERSION` が設定されているか。ブラウザ向けの `VITE_SANITY_*` も同じ値に揃えます。
-2. **コード側の設定**: `studio/sanity.config.js` / `studio/sanity.cli.js` / `src/lib/sanity*.js` がすべて同じ projectId (`quljge22`) と dataset (`production`) を参照しているか。`src/lib/sanityDefaults.js` が単一の真実のソースです。
+2. **コード側の設定**: `studio/sanity.config.js` / `studio/sanity.cli.mjs` / `src/lib/sanity*.js` がすべて同じ projectId (`quljge22`) と dataset (`production`) を参照しているか。`src/lib/sanityDefaults.js` が単一の真実のソースです。
 3. **Sanity CORS**: [Sanity Manage project](https://www.sanity.io/manage) で `https://noutorebiyori.com` とプレビュー用ドメインが CORS Origins に登録されており、`Allow credentials` は無効化されているか。
 4. **API Token**: プレビューやドラフト表示が必要な場合は `SANITY_READ_TOKEN` と `SANITY_PREVIEW_DRAFTS=true`（もしくは `SANITY_PREVIEW=true`）を設定します。
 
@@ -77,7 +77,7 @@ SANITY_AUTH_TOKEN="<Deploy Studio token>" node scripts/deploy-sanity-studio.mjs
 | ---- | ---------------- | -------- |
 | Actions が 401/403 で失敗 | トークンの権限不足・失効 | Sanity でトークンを再発行し、`SANITY_AUTH_TOKEN` か `SANITY_DEPLOY_TOKEN` を Secrets に再登録する |
 | ログでホスト URL が確認できない | Sanity CLI v4 以降は URL を再掲しない仕様 | スクリプトが出力する `Sanity Studio を ...` の行でホストを確認する |
-| Studio 側でスキーマが古い | 別ホストへ誤ってデプロイ | `sanity.config.js` と `sanity.cli.js` の `studioHost` が `noutore-biyori-studio-main` になっているか確認する |
+| Studio 側でスキーマが古い | 別ホストへ誤ってデプロイ | `sanity.config.js` と `sanity.cli.mjs` の `studioHost` が `noutore-biyori-studio-main` になっているか確認する |
 | スキーマ差分が反映されない | ブラウザキャッシュ | ハードリロードまたは別ブラウザでアクセスする |
 | ローカルから `pnpm exec sanity` が失敗 | `pnpm`/依存関係が未インストール | `pnpm install` と `pnpm --dir studio install` を実行してから再試行する |
 

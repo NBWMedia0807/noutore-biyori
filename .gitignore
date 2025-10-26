@@ -144,3 +144,4 @@ vite.config.ts.timestamp-*
 
 # Sanity Studio
 studio/schemas/sanity.config.ts
+studio/sanity.cli.mjs

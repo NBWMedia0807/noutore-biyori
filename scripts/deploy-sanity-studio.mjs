@@ -32,7 +32,7 @@ async function loadStudioConfig() {
 }
 
 async function loadCliConfig() {
-  return loadModule('sanity.cli.js')
+  return loadModule('sanity.cli.mjs')
 }
 
 function ensureValue(label, actual, expected) {
@@ -98,7 +98,7 @@ async function main() {
   const cliHost = ensureValue('CLI studioHost', cliConfig?.studioHost, REQUIRED_HOST)
 
   if (projectId !== cliProjectId || dataset !== cliDataset || studioHost !== cliHost) {
-    throw new Error('sanity.config.js と sanity.cli.js の設定が一致しません。両ファイルを確認してください。')
+    throw new Error('sanity.config.js と sanity.cli.mjs の設定が一致しません。両ファイルを確認してください。')
   }
 
   console.log('--- Sanity Studio deploy configuration ---')

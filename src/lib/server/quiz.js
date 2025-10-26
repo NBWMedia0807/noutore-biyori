@@ -6,6 +6,14 @@ import {
   getQuizStubDocument,
   resolveQuizStubSlug
 } from '$lib/server/quiz-stub.js';
+import {
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes,
+  isFutureScheduled,
+  shouldRestrictToPublishedContent
+} from '$lib/queries/quizVisibility.js';
+import { ensurePublishedAt } from '$lib/utils/publishedDate.js';
 
 const formatPrefix = (prefix) => (prefix ? `[${prefix}]` : '[quiz]');
 const hasStructuredClone = typeof globalThis.structuredClone === 'function';
@@ -25,58 +33,14 @@ const uniqueStrings = (values) => {
 };
 
 export const QUIZ_SLUGS_QUERY = /* groq */ `
-*[_type == "quiz" && defined(slug.current) && !(_id in path("drafts.**"))]{
+*[
+  _type == "quiz"
+  && defined(slug.current)
+  ${QUIZ_PUBLISHED_FILTER}
+] | order(${QUIZ_ORDER_BY_PUBLISHED}){
   _id,
   "slug": slug.current,
-  _updatedAt
-}`;
-
-export const QUIZ_DETAIL_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  _createdAt,
-  _updatedAt,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemImage{
-    ...,
-    asset->{ url, metadata }
-  },
-  problemDescription,
-  "hints": select(
-    defined(hints) => hints,
-    defined(hint) => [hint],
-    []
-  ),
-  adCode1,
-  adCode2
-}`;
-
-export const QUIZ_ANSWER_BY_ID_QUERY = /* groq */ `
-*[_type == "quiz" && _id == $id && !(_id in path("drafts.**"))][0]{
-  _id,
-  title,
-  "slug": slug.current,
-  category->{ title, "slug": slug.current },
-  answerImage{ asset->{ url, metadata } },
-  answerExplanation,
-  closingMessage,
-  adCode1,
-  adCode2,
-  _createdAt,
-  _updatedAt
-}`;
-
-export const QUIZ_DIAGNOSTIC_QUERY = /* groq */ `
-*[_type == "quiz" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
-  _id,
-  title,
-  "slug": slug.current,
+  publishedAt,
   _createdAt,
   _updatedAt
 }`;
@@ -114,7 +78,7 @@ export const fetchQuizCatalog = async (logPrefix = 'quiz catalog') => {
     try {
       const result = await client.fetch(QUIZ_SLUGS_QUERY);
       if (Array.isArray(result)) {
-        catalog = result.filter((entry) => typeof entry?.slug === 'string' && entry.slug.length > 0);
+        catalog = filterVisibleQuizzes(result);
       }
     } catch (error) {
       console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz catalog`, error);
@@ -143,7 +107,18 @@ export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
     try {
       const doc = await client.fetch(query, { slug });
       if (doc) {
-        return doc;
+        const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
+        if (
+          shouldRestrictToPublishedContent &&
+          normalizedDoc.publishedAt &&
+          isFutureScheduled(normalizedDoc.publishedAt)
+        ) {
+          console.info(
+            `${formatPrefix(logPrefix)} Ignoring future publish date for slug:${slug} (${normalizedDoc.publishedAt})`
+          );
+          return null;
+        }
+        return normalizedDoc;
       }
     } catch (error) {
       console.error(`${formatPrefix(logPrefix)} Failed to fetch quiz by slug:${slug}`, error);
@@ -156,7 +131,7 @@ export const fetchQuizDocument = async ({ query, slug, logPrefix }) => {
     const stubDoc = getQuizStubDocument(slug);
     if (stubDoc) {
       console.info(`${formatPrefix(logPrefix)} Using stub quiz document for slug:${slug}`);
-      return clone(stubDoc);
+      return ensurePublishedAt(clone(stubDoc), stubDoc?._id ?? slug);
     }
   }
 

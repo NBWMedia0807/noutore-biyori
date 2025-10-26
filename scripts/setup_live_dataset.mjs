@@ -46,6 +46,8 @@ async function seed() {
 
   const matchId = await ensureCategory('マッチ棒クイズ','matchstick')
   const diffId  = await ensureCategory('間違い探し','spot-the-difference')
+  await ensureCategory('クロスワード','crossword')
+  await ensureCategory('漢字間違え探し','kanji-mistake')
 
   // Assets from current production dataset
   const imgs = {
@@ -69,6 +71,7 @@ async function seed() {
       title: '【マッチ棒クイズ】1本だけ動かして正しい式に：8＋2＝6？',
       slug: { _type: 'slug', current: 'matchstick-quiz-8-plus-2-equals-6' },
       category: { _type: 'reference', _ref: matchId },
+      publishedAt: '2024-01-12T00:00:00.000Z',
       mainImage: q2Main,
       answerImage: q2Ans,
       problemDescription: pt('マッチ棒1本だけを別の場所へ移動して、式「8＋2＝6」を正しい等式に直してください。画像の中で“どの1本を動かすか”がポイントです。'),
@@ -84,6 +87,7 @@ async function seed() {
       title: '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋1＝8？',
       slug: { _type: 'slug', current: 'matchstick-quiz-9-plus-1-equals-8' },
       category: { _type: 'reference', _ref: matchId },
+      publishedAt: '2023-12-25T00:00:00.000Z',
       mainImage: q1Main,
       answerImage: q1Ans,
       problemDescription: pt('マッチ棒1本だけを別の場所へ移動して、式「9＋1＝8」を正しい等式に直してください。画像の中で“どの1本を動かすか”がポイントです。'),

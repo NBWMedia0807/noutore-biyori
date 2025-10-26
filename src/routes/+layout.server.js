@@ -1,6 +1,7 @@
 import { env as privateEnv } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { isQuizStubEnabled, getQuizStubCategories } from '$lib/server/quiz-stub.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
@@ -18,44 +19,101 @@ const toBoolean = (value) => {
   return normalized === '1' || normalized === 'true' || normalized === 'yes';
 };
 
+const resolveFlags = () => ({
+  adsenseReviewMode: toBoolean(
+    publicEnv.PUBLIC_ADSENSE_REVIEW_MODE ??
+      publicEnv.ADSENSE_REVIEW_MODE ??
+      privateEnv.ADSENSE_REVIEW_MODE
+  )
+});
+
+// グローバルナビでは「間違い探し」を常に先頭に配置したい。
+// Sanityから取得したカテゴリをソートする際に、特定スラッグの優先度を調整する。
+const CATEGORY_PRIORITY = new Map([
+  ['spot-the-difference', 0]
+]);
+
+const getCategoryPriority = (slug) => {
+  if (!slug) return Number.MAX_SAFE_INTEGER;
+  return CATEGORY_PRIORITY.get(slug) ?? Number.MAX_SAFE_INTEGER;
+};
+
+const sanitizeCategories = (entries) => {
+  if (!Array.isArray(entries)) return [];
+  const seen = new Set();
+  const sanitized = [];
+
+  for (const entry of entries) {
+    const slug = typeof entry?.slug === 'string' ? entry.slug.trim() : '';
+    const title = typeof entry?.title === 'string' ? entry.title.trim() : '';
+    if (!slug || !title || seen.has(slug)) continue;
+    seen.add(slug);
+    sanitized.push({ slug, title });
+  }
+
+  return sanitized.sort((a, b) => {
+    const priorityDiff = getCategoryPriority(a.slug) - getCategoryPriority(b.slug);
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+    return a.title.localeCompare(b.title, 'ja');
+  });
+};
+
+const getFallbackCategories = () => {
+  const skipSanity = shouldSkipSanityFetch();
+  if (!isQuizStubEnabled() && !skipSanity) return [];
+  try {
+    return sanitizeCategories(getQuizStubCategories());
+  } catch (error) {
+    console.error('[+layout.server] Failed to resolve stub categories:', error);
+    return [];
+  }
+};
+
 export const load = async () => {
+  const fallbackCategories = getFallbackCategories();
+
   if (shouldSkipSanityFetch()) {
+    const categories = fallbackCategories;
     return {
-      categories: [],
-      flags: {
-        adsenseReviewMode: toBoolean(
-          publicEnv.PUBLIC_ADSENSE_REVIEW_MODE ??
-            publicEnv.ADSENSE_REVIEW_MODE ??
-            privateEnv.ADSENSE_REVIEW_MODE
-        )
-      }
+      categories,
+      flags: resolveFlags()
     };
   }
 
   try {
     const result = await client.fetch(CATEGORY_QUERY);
-    const categories = Array.isArray(result) ? result.filter(Boolean) : [];
-    return {
-      categories,
-      flags: {
-        adsenseReviewMode: toBoolean(
-          publicEnv.PUBLIC_ADSENSE_REVIEW_MODE ??
-            publicEnv.ADSENSE_REVIEW_MODE ??
-            privateEnv.ADSENSE_REVIEW_MODE
-        )
+    const categories = sanitizeCategories(result);
+
+    let resolvedCategories = categories;
+    if (fallbackCategories.length > 0) {
+      const existingSlugs = new Set(categories.map((category) => category.slug));
+      const additionalCategories = fallbackCategories.filter(
+        (category) => !existingSlugs.has(category.slug)
+      );
+      if (additionalCategories.length > 0) {
+        resolvedCategories = sanitizeCategories([...categories, ...additionalCategories]);
       }
+    }
+
+    if (resolvedCategories.length === 0) {
+      resolvedCategories = fallbackCategories;
+    }
+
+    if (categories.length === 0 && fallbackCategories.length > 0) {
+      console.info('[+layout.server] Falling back to stub categories for global navigation');
+    }
+
+    return {
+      categories: resolvedCategories,
+      flags: resolveFlags()
     };
   } catch (error) {
     console.error('[+layout.server] Error fetching categories:', error);
     return {
-      categories: [],
-      flags: {
-        adsenseReviewMode: toBoolean(
-          publicEnv.PUBLIC_ADSENSE_REVIEW_MODE ??
-            publicEnv.ADSENSE_REVIEW_MODE ??
-            privateEnv.ADSENSE_REVIEW_MODE
-        )
-      }
+      categories: fallbackCategories,
+      flags: resolveFlags()
     };
   }
 };

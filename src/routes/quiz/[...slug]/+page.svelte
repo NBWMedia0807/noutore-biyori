@@ -1,11 +1,19 @@
 <script>
   import { tick } from 'svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
 
   export let data;
   const { doc } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+  const nextQuiz = data?.nextQuiz ?? null;
+  const publishContext = doc?._id ?? doc?.slug ?? 'quiz-detail';
+  const publishedAt = resolvePublishedDate(doc, publishContext) ?? null;
+  const publishedLabel = formatPublishedDateLabel(publishedAt, {
+    context: publishContext,
+    includeTime: true
+  });
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
   const fallbackImageUrl =
@@ -29,16 +37,8 @@
   const categoryUrl = category ? `/category/${category.slug}` : null;
 
   const hasRelated = relatedQuizzes.length > 0;
-
-  const formatDate = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
-  };
+  const nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
+  const nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
   let firstHintItem;
@@ -136,16 +136,14 @@
 
 <main class="quiz-detail hide-chrome">
   <header class="quiz-header">
-    <div class="quiz-meta-row">
-      <p class="quiz-meta" aria-hidden="true">今日の脳トレ</p>
-      {#if category}
+    {#if category}
+      <div class="quiz-meta-row">
         <a class="category-chip" href={categoryUrl}>#{category.title}</a>
-      {/if}
-    </div>
+      </div>
+    {/if}
     <h1 class="quiz-title">{doc.title}</h1>
-    <p class="quiz-subtitle">ひらめきスイッチを入れて、ゆったり挑戦しましょう。</p>
-    {#if doc?.publishedAt || doc?._createdAt}
-      <p class="quiz-date">公開日: {formatDate(doc.publishedAt ?? doc._createdAt)}</p>
+    {#if publishedLabel}
+      <p class="quiz-date">公開日: {publishedLabel}</p>
     {/if}
   </header>
 
@@ -221,14 +219,15 @@
   </nav>
 
   {#if hasRelated}
-    <RelatedQuizSection quizzes={relatedQuizzes} fallbackImageUrl={fallbackImageUrl} />
+    <RelatedQuizSection quizzes={relatedQuizzes} />
   {/if}
+
 </main>
 
 <style>
   .quiz-detail {
     max-width: 820px;
-    margin: 24px auto 56px;
+    margin: 0 auto 48px;
     padding: 0 16px 32px;
     display: flex;
     flex-direction: column;
@@ -250,18 +249,9 @@
 
   .quiz-meta-row {
     display: flex;
-    gap: 12px;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-  }
-
-  .quiz-meta {
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    color: #b45309;
-    font-weight: 700;
-    margin: 0;
   }
 
   .category-chip {
@@ -289,13 +279,6 @@
     margin: 0;
     color: #78350f;
     font-weight: 800;
-  }
-
-  .quiz-subtitle {
-    font-size: 1rem;
-    color: #92400e;
-    opacity: 0.9;
-    margin: 0;
   }
 
   .quiz-date {
@@ -398,6 +381,12 @@
   .primary {
     background: linear-gradient(135deg, #facc15, #f97316);
     color: #78350f;
+  }
+
+  .secondary {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    box-shadow: 0 16px 30px rgba(250, 204, 21, 0.22);
   }
 
   .hint-button {

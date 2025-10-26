@@ -1,10 +1,17 @@
 // src/lib/sanity.server.js
 import { createClient } from '@sanity/client';
-import imageUrlBuilder from '@sanity/image-url';
 import { env } from '$env/dynamic/private';
 import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
 
-const nodeEnv = env.NODE_ENV || 'production';
+const resolveNodeEnv = () => {
+  const rawNodeEnv = env.NODE_ENV;
+  if (typeof rawNodeEnv === 'string' && rawNodeEnv.trim().length > 0) {
+    return rawNodeEnv.trim().toLowerCase();
+  }
+  return 'production';
+};
+
+const nodeEnv = resolveNodeEnv();
 const previewFlag = (env.SANITY_PREVIEW_DRAFTS || env.SANITY_PREVIEW || '').toLowerCase() === 'true';
 
 const tokenCandidates = [
@@ -47,14 +54,26 @@ if (publicDataset && publicDataset !== dataset) {
   );
 }
 
-export const sanityEnv = {
-  projectId,
-  dataset,
-  apiVersion
+const toBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (value === null || value === undefined) return false;
+  const normalized = value.toString().trim().toLowerCase();
+  if (!normalized) return false;
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalized)) return false;
+  return false;
 };
 
-const skipSanityFlag = (env.SKIP_SANITY || '').toString().toLowerCase();
-const shouldBypassSanity = skipSanityFlag === '1' || skipSanityFlag === 'true';
+const skipSanityFlag = toBoolean(env.SKIP_SANITY);
+if (skipSanityFlag) {
+  console.info('[sanity.server] SKIP_SANITY enabled via environment variable.');
+}
+const hasExplicitProjectId = typeof env.SANITY_PROJECT_ID === 'string' && env.SANITY_PROJECT_ID.trim().length > 0;
+const shouldAutoBypass = nodeEnv !== 'production' && !hasExplicitProjectId && !hasToken;
+if (shouldAutoBypass) {
+  console.info('[sanity.server] SKIP_SANITY inferred because SANITY_PROJECT_ID is not configured.');
+}
+const shouldBypassSanity = skipSanityFlag || shouldAutoBypass;
 
 if (!env.SANITY_PROJECT_ID) {
   console.warn('[sanity.server] SANITY_PROJECT_ID is missing; falling back to default projectId.');
@@ -69,8 +88,5 @@ export const client = createClient({
   perspective: enablePreviewDrafts ? 'previewDrafts' : 'published'
 });
 
-const builder = imageUrlBuilder(client);
-export const urlFor = (source) => builder.image(source);
-
 export const shouldSkipSanityFetch = () => shouldBypassSanity;
-export const isSanityPreviewEnabled = () => enablePreviewDrafts;
+export const previewDraftsEnabled = enablePreviewDrafts;

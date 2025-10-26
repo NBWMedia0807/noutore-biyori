@@ -1,28 +1,30 @@
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { QUIZ_PREVIEW_PROJECTION } from '$lib/queries/quizPreview.js';
+import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
+import {
+  QUIZ_ORDER_BY_PUBLISHED,
+  QUIZ_PUBLISHED_FILTER,
+  filterVisibleQuizzes
+} from '$lib/queries/quizVisibility.js';
 
 const RELATED_QUERY = /* groq */ `{
-  "popular": *[
+  "sameCategory": *[
     _type == "quiz"
     && defined(slug.current)
-    && !(_id in path("drafts.**"))
-    && (!defined(publishedAt) || publishedAt <= now())
-  ] | order(
-    coalesce(popularityScore, recentViewCount, viewCount, totalViews, impressions, 0) desc,
-    coalesce(publishedAt, _createdAt) desc
-  )[0...18]{
-    _id,
-    title,
-    "slug": slug.current,
-    category->{ title, "slug": slug.current },
-    mainImage{ asset->{ url, metadata } },
-    problemImage{ asset->{ url, metadata } },
-    publishedAt,
-    _createdAt,
-    popularityScore,
-    viewCount,
-    recentViewCount,
-    totalViews,
-    impressions
+    && slug.current != $slug
+    ${QUIZ_PUBLISHED_FILTER}
+    && defined(category._ref)
+    && category->slug.current == $categorySlug
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
+    ${QUIZ_PREVIEW_PROJECTION}
+  },
+  "latest": *[
+    _type == "quiz"
+    && defined(slug.current)
+    && slug.current != $slug
+    ${QUIZ_PUBLISHED_FILTER}
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
+    ${QUIZ_PREVIEW_PROJECTION}
   }
 }`;
 
@@ -31,33 +33,41 @@ const pickImage = (quiz) =>
     ? quiz.problemImage
     : quiz?.mainImage?.asset?.url
       ? quiz.mainImage
-      : null;
+      : quiz?.answerImage?.asset?.url
+        ? quiz.answerImage
+        : null;
+
+const toMetric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
 
 const toPreview = (quiz) => {
   if (!quiz?.slug) return null;
   const image = pickImage(quiz);
-  const publishedAt = quiz?.publishedAt ?? quiz?._createdAt;
-  const popularity =
-    typeof quiz?.popularityScore === 'number'
-      ? quiz.popularityScore
-      : typeof quiz?.recentViewCount === 'number'
-        ? quiz.recentViewCount
-        : typeof quiz?.viewCount === 'number'
-          ? quiz.viewCount
-          : typeof quiz?.totalViews === 'number'
-            ? quiz.totalViews
-            : typeof quiz?.impressions === 'number'
-              ? quiz.impressions
-              : 0;
+  const context = quiz?._id ?? quiz.slug;
+  const publishedAt = resolvePublishedDate(quiz, context);
   return {
     id: quiz._id ?? quiz.slug,
     title: quiz.title ?? '脳トレ問題',
     slug: quiz.slug,
     category: quiz.category ?? null,
     image,
-    publishedAt,
-    createdAt: quiz?._createdAt,
-    popularity
+    problemImage: quiz.problemImage ?? null,
+    mainImage: quiz.mainImage ?? null,
+    answerImage: quiz.answerImage ?? null,
+    thumbnailUrl: quiz.thumbnailUrl ?? null,
+    publishedAt: publishedAt ?? null,
+    _createdAt: quiz?._createdAt ?? null,
+    viewCount: toMetric(quiz?.viewCount),
+    likeCount: toMetric(quiz?.likeCount),
+    popularityScore: toMetric(quiz?.popularityScore)
   };
 };
 
@@ -69,57 +79,27 @@ export async function fetchRelatedQuizzes({ slug, categorySlug }) {
       slug,
       categorySlug: categorySlug ?? null
     });
-    const popular = Array.isArray(payload?.popular)
-      ? payload.popular.map(toPreview).filter(Boolean)
-      : [];
 
-    const filteredPopular = popular.filter((item) => item.slug !== slug);
-
-    if (filteredPopular.length === 0) {
-      return [];
-    }
-
-    const recentThreshold = (() => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - 3);
-      return date;
-    })();
-
-    const isRecent = (item) => {
-      const published = item?.publishedAt ?? item?.createdAt;
-      if (!published) return false;
-      const value = new Date(published);
-      if (Number.isNaN(value.getTime())) return false;
-      return value >= recentThreshold;
-    };
-
-    const selectItems = (source, seen, limit) => {
-      const results = [];
-      for (const item of source) {
-        if (results.length >= limit) break;
-        if (!item?.slug || seen.has(item.slug)) continue;
-        results.push(item);
-        seen.add(item.slug);
-      }
-      return results;
-    };
-
-    const sameCategoryPopular = filteredPopular.filter(
-      (item) => categorySlug && item?.category?.slug === categorySlug
-    );
-    const recentPopular = filteredPopular.filter(isRecent);
-    const recentSameCategory = sameCategoryPopular.filter(isRecent);
+    const sameCategory = filterVisibleQuizzes(payload?.sameCategory).map(toPreview).filter(Boolean);
+    const latest = filterVisibleQuizzes(payload?.latest).map(toPreview).filter(Boolean);
 
     const seen = new Set();
     const limit = 6;
-    const merged = [];
+    const result = [];
 
-    merged.push(...selectItems(recentSameCategory, seen, limit - merged.length));
-    merged.push(...selectItems(recentPopular, seen, limit - merged.length));
-    merged.push(...selectItems(sameCategoryPopular, seen, limit - merged.length));
-    merged.push(...selectItems(filteredPopular, seen, limit - merged.length));
+    const appendItems = (source) => {
+      for (const item of source) {
+        if (!item?.slug || seen.has(item.slug) || result.length >= limit) continue;
+        seen.add(item.slug);
+        result.push(item);
+        if (result.length >= limit) break;
+      }
+    };
 
-    return merged.slice(0, limit);
+    appendItems(sameCategory);
+    appendItems(latest);
+
+    return result;
   } catch (error) {
     console.error('[related-quizzes] failed to fetch related quizzes', error);
     return [];
