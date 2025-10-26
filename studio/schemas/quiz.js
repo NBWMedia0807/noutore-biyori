@@ -1,7 +1,7 @@
 // studio/schemas/quiz.js
-const { defineArrayMember, defineField, defineType } = require('sanity')
+import { defineArrayMember, defineField, defineType } from 'sanity'
 
-module.exports = defineType({
+export default defineType({
   name: 'quiz',
   title: 'クイズ',
   type: 'document',

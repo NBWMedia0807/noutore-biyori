@@ -1,7 +1,7 @@
 // studio/schemas/category.js
-const {defineField, defineType} = require('sanity')
+import {defineField, defineType} from 'sanity'
 
-module.exports = defineType({
+export default defineType({
   name: 'category',
   title: 'カテゴリ',
   type: 'document',
