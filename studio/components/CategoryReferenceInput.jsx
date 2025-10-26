@@ -1,5 +1,4 @@
 import {useEffect, useMemo, useState} from 'react'
-import {Card, Stack, Text} from '@sanity/ui'
 import {unset} from 'sanity'
 
 const describeLegacyValue = (value) => {
@@ -44,15 +43,23 @@ export default function CategoryReferenceInput(props) {
   }, [hasReference, legacyLabel])
 
   return (
-    <Stack space={3}>
+    <div style={{display: 'grid', gap: '0.75rem'}}>
       {legacyLabel && (
-        <Card tone="caution" padding={3} radius={2} shadow={1}>
-          <Text size={1}>
+        <div
+          style={{
+            borderRadius: '0.5rem',
+            border: '1px solid #f9aa33',
+            backgroundColor: '#fff7e6',
+            padding: '0.75rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
+          }}
+        >
+          <p style={{margin: 0, fontSize: '0.875rem', lineHeight: 1.5}}>
             旧フィールドの値「{legacyLabel}」が見つかりました。新しいカテゴリを選択してください。
-          </Text>
-        </Card>
+          </p>
+        </div>
       )}
       {renderDefault(props)}
-    </Stack>
+    </div>
   )
 }
