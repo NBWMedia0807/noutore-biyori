@@ -1,12 +1,23 @@
 // studio/schemas/category.js
-import {TagIcon} from '@sanity/icons'
+import React from 'react'
 import {defineField, defineType} from 'sanity'
+
+const CategoryIcon = () =>
+  React.createElement(
+    'span',
+    {
+      role: 'img',
+      'aria-label': 'カテゴリ',
+      style: {fontSize: '1.2em', lineHeight: 1}
+    },
+    '🏷️'
+  )
 
 export default defineType({
   name: 'category',
   title: 'カテゴリ',
   type: 'document',
-  icon: TagIcon,
+  icon: CategoryIcon,
   fields: [
     defineField({
       name: 'title',
