@@ -7,20 +7,12 @@ const withIcon = (listItem, Icon) => listItem.icon(Icon)
 
 export const deskStructure = (S) => {
   const quizList = withIcon(
-    S.listItem()
-      .id('quizList')
-      .title('クイズ')
-      .schemaType('quiz')
-      .child(S.documentTypeList('quiz').title('クイズ')),
+    S.documentTypeListItem('quiz').id('quizList').title('クイズ'),
     QuizIcon
   )
 
   const categoryList = withIcon(
-    S.listItem()
-      .id('categoryList')
-      .title('カテゴリ')
-      .schemaType('category')
-      .child(S.documentTypeList('category').title('カテゴリ')),
+    S.documentTypeListItem('category').id('categoryList').title('カテゴリ'),
     CategoryIcon
   )
 
