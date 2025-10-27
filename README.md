@@ -24,6 +24,23 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 - Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
 - 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
+### Sanity Studio 運用メモ
+
+- 本番運用の Studio は Sanity Hosted Studio (`https://noutore-biyori-studio-main.sanity.studio`) のみを使用します。
+- Vercel でのデプロイ対象から `studio/` ディレクトリを除外しているため、Vercel 側ではフロントエンドのみがビルドされます。
+- Sanity 管理画面 (Manage) の CORS Origin には以下を残してください。
+  - `https://noutore-biyori-studio-main.sanity.studio`
+  - `https://noutore-biyori-main.vercel.app`（フロントから API を叩く場合）
+  - その他、固定で利用する開発用 Origin のみ（`https://*.vercel.app` は使用不可）
+- PR プレビュー用 URL を自動登録/削除する GitHub Actions（`.github/workflows/sanity-cors.yml`）を追加しています。以下のリポジトリ Secrets を設定してください。
+
+  | Secret 名             | 用途                                                                 |
+  | --------------------- | -------------------------------------------------------------------- |
+  | `SANITY_PROJECT_ID`   | `quljge22` を設定                                                     |
+  | `SANITY_TOKEN`        | Manage CORS Origins 権限を持つトークン                               |
+
+  `pull_request` の `opened` / `reopened` では `https://noutore-biyori-<branch>.vercel.app` を Allow credentials=ON で登録し、`closed` で削除します。
+
 ### Sanity 予約公開と ISR 再検証の設定
 
 1. Vercel の Environment Variables に以下を追加します（Production / Preview 両方）。値は十分な長さのランダム文字列を推奨します。
@@ -61,14 +78,13 @@ Sanity Studio のスキーマを更新した際は、以下の手順で反映・
 1. **ローカル開発環境**
    - Studio を再起動します。`pnpm --dir studio dev` を一度停止し、再度起動してください。
    - 既存のビルド結果が必要な場合は `pnpm --dir studio build` で再ビルドします。
-2. **ホスティング環境**
-   - **Vercel**: 対象の Studio デプロイを再実行し、新しいスキーマを含んだビルドを作成します。
-   - **Sanity Hosted Studio**: `pnpm --dir studio dlx sanity@latest deploy` もしくは `npx sanity@latest deploy` で再デプロイします。
+2. **ホスティング環境（Sanity Hosted Studio）**
+   - `pnpm --dir studio dlx sanity@latest deploy` もしくは `npx sanity@latest deploy` で再デプロイします。
 3. **ブラウザキャッシュのクリア**
    - Studio にアクセスする際は `https://<studio-host>/?force=1` のように `?force=1` クエリを付与してキャッシュを強制リロードするか、シークレットモードで開き直してください。もしくは **Cmd+Shift+R** / **Ctrl+Shift+R** でスーパーリロードします。
    - それでも更新が反映されない場合は、ブラウザのストレージ（localStorage / IndexedDB）をクリアしてから再読込します。
 
-Vercel 版と Hosted 版の Studio はどちらも `src/lib/sanityDefaults.js` に定義した `projectId` / `dataset` を参照します。環境変数で上書きしない限り、双方が同一の Sanity プロジェクト（`quljge22` / `production`）を指すため、データの参照先がズレない構成になっています。
+Studio は `src/lib/sanityDefaults.js` に定義した `projectId` / `dataset` を参照します。環境変数で上書きしない限り、Sanity プロジェクト（`quljge22` / `production`）を常に指す構成です。
 
 codex/add-publishedat-field-to-quiz-document-6zd8p9
 ### Vision での確認用クエリ

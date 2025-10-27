@@ -1,0 +1,52 @@
+name: Sanity CORS Auto-Manage
+
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.ref != ''
+    steps:
+      - name: Compute branch slug
+        id: compute
+        run: |
+          set -euo pipefail
+          RAW_BRANCH="${{ github.event.pull_request.head.ref }}"
+          if [ -z "$RAW_BRANCH" ]; then
+            echo "BRANCH_SLUG=preview" >> "$GITHUB_ENV"
+            echo "ORIGIN=https://noutore-biyori-preview.vercel.app" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          SLUG=$(echo "$RAW_BRANCH" | tr '[:upper:]' '[:lower:]')
+          SLUG=$(echo "$SLUG" | sed 's/[^a-z0-9-]/-/g')
+          SLUG=$(echo "$SLUG" | sed 's/-\{2,\}/-/g')
+          SLUG=$(echo "$SLUG" | sed 's/^-//' | sed 's/-$//')
+          if [ -z "$SLUG" ]; then
+            SLUG=preview
+          fi
+          echo "BRANCH_SLUG=$SLUG" >> "$GITHUB_ENV"
+          echo "ORIGIN=https://noutore-biyori-${SLUG}.vercel.app" >> "$GITHUB_ENV"
+      - name: Add or remove CORS origin
+        env:
+          API_URL: https://api.sanity.io/v2021-06-07/projects/${{ secrets.SANITY_PROJECT_ID }}/cors
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.SANITY_PROJECT_ID }}" ] || [ -z "${{ secrets.SANITY_TOKEN }}" ]; then
+            echo "SANITY_PROJECT_ID または SANITY_TOKEN が未設定のため処理をスキップします。"
+            exit 0
+          fi
+          ACTION="${{ github.event.action }}"
+          if [ "$ACTION" = "closed" ]; then
+            echo "Sanity CORS から ${ORIGIN} を削除します。"
+            curl -s -H "Authorization: Bearer ${{ secrets.SANITY_TOKEN }}" "$API_URL" \
+            | jq -r '.[] | select(.origin=="'"${ORIGIN}"'") | .id' \
+            | xargs -r -I{} curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.SANITY_TOKEN }}" "$API_URL/{}"
+          else
+            echo "Sanity CORS に ${ORIGIN} を追加します。"
+            curl -s -X POST "$API_URL" \
+              -H "Authorization: Bearer ${{ secrets.SANITY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"origin\":\"${ORIGIN}\",\"allowCredentials\":true}"
+          fi
