@@ -13,6 +13,7 @@
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
     "check:conflicts": "node scripts/check-conflict-markers.mjs",
+    "sanity": "pnpm --dir=studio sanity",
     "sanity:fix-categories": "node scripts/fix-categories.mjs"
   },
   "repository": {
