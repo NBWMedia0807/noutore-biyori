@@ -239,9 +239,9 @@ export default defineType({
       const subtitle = categorySlug ? `${subtitleBase}｜category/${categorySlug}` : subtitleBase
 
       return {
-        title: safeTitle,
-        subtitle,
-        media
+        title: String(safeTitle),
+        subtitle: String(subtitle || ''),
+        media: media || undefined
       }
     }
   }

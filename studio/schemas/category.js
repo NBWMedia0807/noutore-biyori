@@ -37,9 +37,12 @@ export default defineType({
     prepare({ title, slug }) {
       const safeTitle = toPlainText(title)
       const safeSlug = toPlainText(slug)
+      const normalizedTitle = safeTitle || '（無題）'
+      const normalizedSubtitle = safeSlug ? `/${safeSlug}` : ''
+
       return {
-        title: safeTitle || '（無題）',
-        subtitle: safeSlug ? `/${safeSlug}` : ''
+        title: String(normalizedTitle),
+        subtitle: String(normalizedSubtitle)
       }
     }
   }
