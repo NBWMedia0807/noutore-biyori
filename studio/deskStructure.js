@@ -1,7 +1,5 @@
 // studio/deskStructure.js
-import S from 'sanity/desk'
-
-const deskStructure = () =>
+const deskStructure = (S) =>
   S.list()
     .id('root')
     .title('コンテンツ')
