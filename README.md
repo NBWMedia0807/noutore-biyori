@@ -27,7 +27,8 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 ### Sanity Studio 運用メモ
 
 - 本番運用の Studio は Sanity Hosted Studio (`https://noutore-biyori-studio-main.sanity.studio`) のみを使用します。
-- Vercel でのデプロイ対象から `studio/` ディレクトリを除外しているため、Vercel 側ではフロントエンドのみがビルドされます。
+- ルートの `vercel.json` でビルドコマンドを `pnpm run build` に固定し、Vercel ではフロントエンド（SvelteKit）のみをビルドします。
+- `.vercelignore` で `studio/` ディレクトリを除外しているため、Vercel 側では Studio に関連するファイルはアップロードされません。
 - Sanity 管理画面 (Manage) の CORS Origin には以下を残してください。
   - `https://noutore-biyori-studio-main.sanity.studio`
   - `https://noutore-biyori-main.vercel.app`（フロントから API を叩く場合）
