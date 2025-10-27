@@ -1,16 +1,14 @@
 // studio/schemas/quiz.js
-import { defineArrayMember, defineField, defineType } from 'sanity'
+import {defineArrayMember, defineField, defineType} from 'sanity'
 
-const toPlainText = (value) => {
-  if (typeof value === 'string') return value.trim()
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
-  return ''
-}
+import {QuizIcon} from '../icons.js'
+import {toPlainText} from '../utils/toPlainText.js'
 
 export default defineType({
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
+  icon: QuizIcon,
 
   // グループ設定（タブ切り替え）
   groups: [
@@ -241,9 +239,9 @@ export default defineType({
       const subtitle = safeCategorySlug ? `${base}｜category/${safeCategorySlug}` : base
 
       return {
-        title: safeTitle, // 文字列のみ
-        subtitle,         // 文字列のみ
-        media             // 画像 or undefined
+        title: safeTitle,
+        subtitle,
+        media
       }
     }
   }
