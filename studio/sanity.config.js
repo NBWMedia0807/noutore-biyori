@@ -1,6 +1,8 @@
-import {defineConfig} from 'sanity'
 import {visionTool} from '@sanity/vision'
+import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
+
+import deskStructure, {defaultDocumentNode} from './deskStructure.js'
 import {schemaTypes} from './schemas'
 
 export default defineConfig({
@@ -8,7 +10,13 @@ export default defineConfig({
   title: '脳トレ日和 Studio',
   projectId: 'quljge22',
   dataset: 'production',
-  plugins: [structureTool(), visionTool()],
+  plugins: [
+    structureTool({
+      structure: deskStructure,
+      defaultDocumentNode
+    }),
+    visionTool()
+  ],
   schema: {
     types: schemaTypes
   }
