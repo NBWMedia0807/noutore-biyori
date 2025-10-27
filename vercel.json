@@ -3,5 +3,6 @@
   "framework": "sveltekit",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm run build",
-  "devCommand": "pnpm run dev"
+  "devCommand": "pnpm run dev",
+  "outputDirectory": ".vercel/output"
 }
