@@ -209,14 +209,14 @@ export default defineType({
       slug: 'slug.current',
       publishedAt: 'publishedAt',
       media: 'problemImage',
-      categoryTitle: 'category->title',
-      categorySlug: 'category->slug.current'
+      category: 'category->'
     },
-    prepare({ title, slug, publishedAt, media, categoryTitle, categorySlug }) {
-      const safeTitle = toPlainText(title) || '無題のクイズ'
+    prepare({ title, slug, publishedAt, media, category }) {
+      const safeTitle = toPlainText(title) || '（無題のクイズ）'
       const safeSlug = toPlainText(slug)
-      const safeCategoryTitle = toPlainText(categoryTitle)
-      const safeCategorySlug = toPlainText(categorySlug)
+
+      const categoryTitle = toPlainText(category?.title)
+      const categorySlug = toPlainText(category?.slug?.current)
 
       const slugLabel = safeSlug ? `/${safeSlug}` : 'スラッグ未設定'
 
@@ -233,10 +233,10 @@ export default defineType({
         }
       }
 
-      const categoryLabel = safeCategoryTitle ? `カテゴリ: ${safeCategoryTitle}` : ''
-      const parts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
-      const base = parts.join('｜')
-      const subtitle = safeCategorySlug ? `${base}｜category/${safeCategorySlug}` : base
+      const categoryLabel = categoryTitle ? `カテゴリ: ${categoryTitle}` : ''
+      const subtitleParts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
+      const subtitleBase = subtitleParts.join('｜')
+      const subtitle = categorySlug ? `${subtitleBase}｜category/${categorySlug}` : subtitleBase
 
       return {
         title: safeTitle,
