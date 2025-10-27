@@ -2,6 +2,18 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
 import CategoryReferenceInput from '../components/CategoryReferenceInput.jsx'
 
+const toPlainText = (value) => {
+  if (typeof value === 'string') {
+    return value.trim()
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+
+  return ''
+}
+
 export default defineType({
   name: 'quiz',
   title: 'クイズ',
@@ -193,7 +205,8 @@ export default defineType({
       name: 'category',
       title: 'カテゴリ',
       type: 'reference',
-      to: [{ type: 'category' }],
+      to: [{type: 'category'}],
+      weak: false,
       group: 'content',
       validation: (Rule) => Rule.required(),
       components: {
@@ -207,11 +220,17 @@ export default defineType({
       title: 'title',
       slug: 'slug.current',
       publishedAt: 'publishedAt',
-      media: 'problemImage'
+      media: 'problemImage',
+      categoryTitle: 'category->title',
+      categorySlug: 'category->slug.current'
     },
-    prepare({ title, slug, publishedAt, media }) {
-      const safeTitle = title || '無題のクイズ'
-      const slugLabel = slug ? `/${slug}` : 'スラッグ未設定'
+    prepare({ title, slug, publishedAt, media, categoryTitle, categorySlug }) {
+      const safeTitle = toPlainText(title) || '無題のクイズ'
+      const safeSlug = toPlainText(slug)
+      const safeCategoryTitle = toPlainText(categoryTitle)
+      const safeCategorySlug = toPlainText(categorySlug)
+
+      const slugLabel = safeSlug ? `/${safeSlug}` : 'スラッグ未設定'
       let publishLabel = '公開日未設定'
 
       if (publishedAt) {
@@ -226,9 +245,16 @@ export default defineType({
         }
       }
 
+      const categoryLabel = safeCategoryTitle ? `カテゴリ: ${safeCategoryTitle}` : ''
+      const categorySlugLabel = safeCategorySlug ? `category/${safeCategorySlug}` : ''
+      const subtitleParts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
+      const subtitle = subtitleParts.join('｜')
+
       return {
         title: safeTitle,
-        subtitle: `${slugLabel}｜${publishLabel}`,
+        subtitle: categorySlugLabel
+          ? [...subtitleParts, categorySlugLabel].filter(Boolean).join('｜')
+          : subtitle,
         media
       }
     }
