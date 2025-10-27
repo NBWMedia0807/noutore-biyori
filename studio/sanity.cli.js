@@ -1,9 +1,7 @@
-// studio/sanity.cli.js
-// CommonJS fallback version for Sanity v3.99 CLI
-module.exports = {
+export default {
   api: {
-    projectId: 'quljge22',       // ← Sanity Project ID
-    dataset: 'production'        // ← Default dataset
+    projectId: 'quljge22',
+    dataset: 'production'
   },
   studioHost: 'noutore-biyori-studio-main'
 }
