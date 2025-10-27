@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/config/static/v3",
+  "framework": "sveltekit",
+  "installCommand": "pnpm install",
+  "buildCommand": "SKIP_SANITY=1 pnpm run build",
+  "devCommand": "pnpm run dev",
+  "outputDirectory": ".vercel/output"
+}

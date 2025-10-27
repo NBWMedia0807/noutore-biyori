@@ -7,7 +7,7 @@ import {schemaTypes} from './schemas'
 export default defineConfig({
   name: 'default',
   title: '脳トレ日和 Studio',
-  projectId: 'x315zmqm',
+  projectId: 'quljge22',
   dataset: 'production',
   apiVersion: '2024-08-01',
   useCdn: false,
