@@ -1,3 +1,4 @@
+// src/routes/+page.server.js
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SITE } from '$lib/config/site.js';
@@ -34,53 +35,58 @@ const parsePageParam = (value) => {
   return integer >= 1 ? integer : 1;
 };
 
-const HOME_QUERY = /* groq */ `{
+const HOME_QUERY = /* groq */ `
+{
   "newest": *[
-    _type == "quiz"
-    && defined(slug.current)
+    _type == "quiz" &&
+    defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
+
   "popular": *[
-    _type == "quiz"
-    && defined(slug.current)
+    _type == "quiz" &&
+    defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...8]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
+
   "total": count(*[
-    _type == "quiz"
-    && defined(slug.current)
+    _type == "quiz" &&
+    defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
   ]),
+
   "categories": *[
-    _type == "category"
-    && defined(slug.current)
+    _type == "category" &&
+    defined(slug.current)
     ${CATEGORY_DRAFT_FILTER}
   ] | order(title asc){
     title,
     "slug": slug.current,
-    description,
-    overview,
+    "description": coalesce(description, ""),
+    "overview": coalesce(overview, description, ""),
     "quizCount": count(*[
-      _type == "quiz"
-      && defined(slug.current)
-      && defined(category._ref)
-      && category->slug.current == ^.slug
+      _type == "quiz" &&
+      defined(slug.current) &&
+      defined(category._ref) &&
+      category->slug.current == ^.slug
       ${QUIZ_PUBLISHED_FILTER}
     ]),
     "quizzes": *[
-      _type == "quiz"
-      && defined(slug.current)
-      && defined(category._ref)
-      && category->slug.current == ^.slug
+      _type == "quiz" &&
+      defined(slug.current) &&
+      defined(category._ref) &&
+      category->slug.current == ^.slug
       ${QUIZ_PUBLISHED_FILTER}
     ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...3]{
       ${QUIZ_PREVIEW_PROJECTION}
     }
   }
-}`;
+}
+`;
 
 const pickImageSource = (quiz) =>
   quiz?.problemImage?.asset?.url
@@ -152,49 +158,6 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
   });
 };
 
-const buildStubHomeData = (path, page, limit) => {
-  const categories = getQuizStubCategories();
-  const sections = categories
-    .map((category) => {
-      const quizzes = getQuizStubQuizzesByCategory(category.slug).map(toPreview).filter(Boolean);
-      return {
-        title: category.title,
-        slug: category.slug,
-        overview: createCategoryDescription(category.title, ''),
-        quizCount: quizzes.length,
-        quizzes
-      };
-    })
-    .filter((section) => section && section.quizzes.length > 0);
-
-  const allNewest = sections.flatMap((section) => section.quizzes);
-  const totalCount = allNewest.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const offset = (safePage - 1) * limit;
-  const newest = allNewest.slice(offset, offset + limit);
-  const popular = rankQuizzesByPopularity({
-    primary: allNewest,
-    fallback: allNewest,
-    limit: 6
-  });
-  const seo = createHomeSeo(path, newest.length ? newest : popular);
-
-  return {
-    newest,
-    popular,
-    categories: sections,
-    seo,
-    pagination: {
-      currentPage: safePage,
-      totalPages,
-      totalCount,
-      pageSize: limit,
-      basePath: path
-    }
-  };
-};
-
 export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
@@ -211,60 +174,29 @@ export const load = async (event) => {
   const pageSize = HOME_PAGE_SIZE;
   const offset = Math.max(0, (requestedPage - 1) * pageSize);
 
-  if (shouldSkipSanityFetch()) {
-    if (isQuizStubEnabled()) {
-      const stubData = buildStubHomeData(path, requestedPage, pageSize);
-      const totalPages = stubData?.pagination?.totalPages ?? 1;
-      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
-      if (requestedPage !== safePage) {
-        const search = safePage > 1 ? `?page=${safePage}` : '';
-        throw redirect(303, `${path}${search}`);
-      }
-      return stubData;
-    }
-    const seo = createHomeSeo(path, []);
-    if (requestedPage > 1) {
-      throw redirect(303, path);
-    }
-    return {
-      newest: [],
-      popular: [],
-      categories: [],
-      seo,
-      pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        totalCount: 0,
-        pageSize,
-        basePath: path
-      }
-    };
-  }
-
   try {
-    const result = await client.fetch(HOME_QUERY, {
-      offset,
-      limit: pageSize
-    });
+    const result = await client.fetch(HOME_QUERY, { offset, limit: pageSize });
+    if (!result || typeof result !== 'object') {
+      throw new Error('Sanity returned empty or invalid result');
+    }
 
-    const newestSource = filterVisibleQuizzes(result?.newest);
+    const newestSource = filterVisibleQuizzes(result.newest ?? []);
     const newest = newestSource.map(toPreview).filter(Boolean);
 
     const popularSource = rankQuizzesByPopularity({
-      primary: result?.popular,
+      primary: result.popular ?? [],
       fallback: newestSource,
       limit: 6
     });
     const popular = popularSource.map(toPreview).filter(Boolean);
 
-    const categories = Array.isArray(result?.categories)
+    const categories = Array.isArray(result.categories)
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
 
-    const totalCount = typeof result?.total === 'number' ? result.total : newestSource.length;
+    const totalCount = typeof result.total === 'number' ? result.total : newestSource.length;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-    // 存在しないページは最終ページへ誘導
     if (requestedPage > totalPages) {
       const targetPage = totalPages;
       const search = targetPage > 1 ? `?page=${targetPage}` : '';
@@ -293,20 +225,7 @@ export const load = async (event) => {
     };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
-    if (isQuizStubEnabled()) {
-      const stubData = buildStubHomeData(path, requestedPage, pageSize);
-      const totalPages = stubData?.pagination?.totalPages ?? 1;
-      const safePage = Math.min(requestedPage, Math.max(totalPages, 1));
-      if (requestedPage !== safePage) {
-        const search = safePage > 1 ? `?page=${safePage}` : '';
-        throw redirect(303, `${path}${search}`);
-      }
-      return stubData;
-    }
     const seo = createHomeSeo(path, []);
-    if (requestedPage > 1) {
-      throw redirect(303, path);
-    }
     return {
       newest: [],
       popular: [],
