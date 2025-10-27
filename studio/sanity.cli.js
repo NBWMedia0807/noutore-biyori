@@ -1,9 +1,12 @@
 // studio/sanity.cli.js
 // CommonJS fallback version for Sanity v3.99 CLI
+const projectId = process.env.SANITY_STUDIO_PROJECT_ID ?? 'quljge22'
+const dataset = process.env.SANITY_STUDIO_DATASET ?? 'production'
+
 module.exports = {
   api: {
-    projectId: 'quljge22',       // ← Sanity Project ID
-    dataset: 'production'        // ← Default dataset
+    projectId,       // ← Sanity Project ID
+    dataset          // ← Default dataset
   },
   studioHost: 'noutore-biyori-studio-main'
 }
