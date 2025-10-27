@@ -1,3 +1,4 @@
+// src/lib/queries/quizPreview.js
 export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
   _id,
   title,
