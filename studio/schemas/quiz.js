@@ -247,10 +247,12 @@ export default defineType({
         ? `${subtitleBase}｜category/${safeCategorySlug}`
         : subtitleBase
 
+      const safeMedia = media?.asset?._ref ? media : undefined
+
       return {
         title: String(safeTitle || '（無題のクイズ）'),
         subtitle: String(subtitle || ''),
-        media: media || undefined
+        media: safeMedia
       }
     }
   }
