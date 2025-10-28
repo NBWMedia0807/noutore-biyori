@@ -1,5 +1,4 @@
 // studio/structure/index.js
-import {QuizIcon} from '../icons.js'
 
 const quizDefaultOrdering = [
   {field: 'publishedAt', direction: 'desc'},
@@ -14,7 +13,6 @@ export const deskStructure = (S) =>
       S.listItem()
         .id('quiz-section')
         .title('クイズ')
-        .icon(QuizIcon)
         .child(
           S.documentList()
             .id('quiz-document-list')
