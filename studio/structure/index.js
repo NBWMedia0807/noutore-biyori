@@ -8,19 +8,25 @@ const quizDefaultOrdering = [
 
 export const deskStructure = (S) =>
   S.list()
+    .id('desk-root')
     .title('コンテンツ')
     .items([
       S.listItem()
-        .id('quiz')
+        .id('quiz-section')
         .title('クイズ')
         .icon(QuizIcon)
-        .schemaType('quiz')
         .child(
-          S.documentTypeList('quiz')
+          S.documentList()
+            .id('quiz-document-list')
             .title('クイズ')
+            .schemaType('quiz')
+            .filter('_type == $type')
+            .params({type: 'quiz'})
             .defaultOrdering(quizDefaultOrdering)
         ),
-      S.documentTypeListItem('category').title('カテゴリ')
+      S.documentTypeListItem('category')
+        .id('category-document-list')
+        .title('カテゴリ')
     ])
 
 export default deskStructure
