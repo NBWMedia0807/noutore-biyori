@@ -32,10 +32,12 @@ const Q = /* groq */ `*[
     defined(mainImage) => mainImage,
     null
   ){ asset->{ url, metadata } },
-  mainImage{
-    ...,
-    asset->{ url, metadata }
-  },
+  "mainImage": select(
+    defined(mainImage) => mainImage,
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    null
+  ){ asset->{ url, metadata } },
   hint,
   hints,
   body,

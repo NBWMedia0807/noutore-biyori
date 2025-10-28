@@ -35,22 +35,22 @@ export default defineType({
     // ── 公開情報 ─────────────────────────
     defineField({
       name: 'publishedAt',
-      title: '公開日時',
+      title: '公開日',
       description:
-        'サイトに表示される公開日です。未来の日時を指定すると予約公開になります。Studio では日本時間 (Asia/Tokyo) で表示されます。',
-      type: 'datetime',
+        'サイトに表示される公開日です。日付だけを入力してください。Studio では日本時間 (Asia/Tokyo) で表示されます。',
+      type: 'date',
       group: 'publish',
       options: {
         dateFormat: 'YYYY/MM/DD',
-        timeFormat: 'HH:mm',
-        calendarTodayLabel: '今日',
-        timeStep: 1
+        calendarTodayLabel: '今日'
       },
       validation: (Rule) => Rule.required(),
       initialValue: () => {
         const now = new Date()
-        now.setSeconds(0, 0)
-        return now.toISOString()
+        const year = now.getFullYear()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+        const day = String(now.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
       }
     }),
 
@@ -70,6 +70,16 @@ export default defineType({
       group: 'content',
       validation: (Rule) => Rule.required()
     }),
+    defineField({
+      name: 'mainImage',
+      title: 'メイン画像',
+      description: '記事全体で利用する代表画像です。問題画像が自動的に使用されます。',
+      type: 'image',
+      options: { hotspot: true },
+      group: 'content',
+      readOnly: true,
+      hidden: true
+    }),
 
     // ── 問題 ─────────────────────────────
     defineField({
@@ -80,6 +90,20 @@ export default defineType({
       options: { hotspot: true },
       group: 'content',
       validation: (Rule) => Rule.required()
+    }),
+    defineField({
+      name: 'questionImage',
+      title: '旧: 問題画像 (参照用)',
+      description:
+        '旧バージョンで登録された問題画像です。問題画像が未設定の場合はこちらを参照できます。再設定後は空欄のままで問題ありません。',
+      type: 'image',
+      options: { hotspot: true },
+      group: 'content',
+      readOnly: true,
+      hidden: ({ document }) => {
+        const ref = document?.questionImage?.asset?._ref
+        return !(typeof ref === 'string' && ref.length > 0)
+      }
     }),
     defineField({
       name: 'problemDescription',
@@ -203,17 +227,19 @@ export default defineType({
     select: {
       title: 'title',
       media: 'problemImage',
+      fallbackMedia: 'questionImage',
       publishedAt: 'publishedAt',
       slug: 'slug.current'
     },
-    prepare({title, media, publishedAt, slug}) {
+    prepare({title, media, fallbackMedia, publishedAt, slug}) {
       const safeTitle =
         typeof title === 'string' && title.trim().length > 0
           ? title
           : '（無題のクイズ）'
 
-      const hasValidMedia = media?.asset?._ref
-      const safeMedia = hasValidMedia ? media : undefined
+      const primaryMedia = media?.asset?._ref ? media : undefined
+      const legacyMedia = fallbackMedia?.asset?._ref ? fallbackMedia : undefined
+      const safeMedia = primaryMedia ?? legacyMedia
 
       let dateLabel = '公開日未設定'
       if (publishedAt) {
@@ -222,9 +248,7 @@ export default defineType({
           const y = date.getFullYear()
           const m = String(date.getMonth() + 1).padStart(2, '0')
           const d = String(date.getDate()).padStart(2, '0')
-          const hh = String(date.getHours()).padStart(2, '0')
-          const mm = String(date.getMinutes()).padStart(2, '0')
-          dateLabel = `${y}/${m}/${d} ${hh}:${mm}`
+          dateLabel = `${y}/${m}/${d}`
         }
       }
 

@@ -118,7 +118,7 @@ const toPreview = (quiz) => {
     category: quiz.category ?? null,
     image: pickImageSource(quiz),
     problemImage: quiz.problemImage ?? null,
-    mainImage: quiz.mainImage ?? null,
+    mainImage: quiz.mainImage ?? quiz.problemImage ?? null,
     answerImage: quiz.answerImage ?? null,
     thumbnailUrl: quiz.thumbnailUrl ?? null,
     publishedAt: publishedAt ?? null,

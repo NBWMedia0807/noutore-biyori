@@ -8,11 +8,21 @@ export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
     title,
     "slug": slug.current
   },
-  problemImage{
+  "problemImage": select(
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    defined(mainImage) => mainImage,
+    null
+  ){
     ...,
     asset->{ url, metadata }
   },
-  mainImage{
+  "mainImage": select(
+    defined(mainImage) => mainImage,
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    null
+  ){
     ...,
     asset->{ url, metadata }
   },

@@ -11,8 +11,7 @@
   const publishContext = doc?._id ?? doc?.slug ?? 'quiz-detail';
   const publishedAt = resolvePublishedDate(doc, publishContext) ?? null;
   const publishedLabel = formatPublishedDateLabel(publishedAt, {
-    context: publishContext,
-    includeTime: true
+    context: publishContext
   });
 
   const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
