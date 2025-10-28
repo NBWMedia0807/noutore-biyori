@@ -1,13 +1,10 @@
 // studio/schemas/quiz.js
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {QuizIcon} from '../icons.js'
-
 export default defineType({
   name: 'quiz',
   title: 'クイズ',
   type: 'document',
-  icon: QuizIcon,
 
   // グループ設定（タブ切り替え）
   groups: [

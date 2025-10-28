@@ -1,14 +1,11 @@
 // studio/schemas/category.js
 import {defineField, defineType} from 'sanity'
-
-import {CategoryIcon} from '../icons.js'
 import {toPlainText} from '../utils/toPlainText.js'
 
 export default defineType({
   name: 'category',
   title: 'カテゴリ',
   type: 'document',
-  icon: CategoryIcon,
   fields: [
     defineField({
       name: 'title',
