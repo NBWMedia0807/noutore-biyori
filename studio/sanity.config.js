@@ -16,7 +16,7 @@ export default defineConfig({
   useCdn: false,
   plugins: [
     deskTool({
-      structure: deskStructure
+      structure: (S) => deskStructure(S)
     })
   ],
   schema: {
