@@ -2,7 +2,6 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 import {QuizIcon} from '../icons.js'
-import {toPlainText} from '../utils/toPlainText.js'
 
 export default defineType({
   name: 'quiz',
@@ -206,28 +205,20 @@ export default defineType({
   preview: {
     select: {
       title: 'title',
-      slug: 'slug.current',
-      publishedAt: 'publishedAt',
       media: 'problemImage',
-      categoryTitle: 'category->title',
-      categorySlug: 'category->slug.current'
+      publishedAt: 'publishedAt',
+      slug: 'slug.current'
     },
-    prepare({
-      title,
-      slug,
-      publishedAt,
-      media,
-      categoryTitle,
-      categorySlug
-    }) {
-      const safeTitle = toPlainText(title) || '（無題のクイズ）'
-      const safeSlug = toPlainText(slug)
-      const safeCategoryTitle = toPlainText(categoryTitle)
-      const safeCategorySlug = toPlainText(categorySlug)
+    prepare({title, media, publishedAt, slug}) {
+      const safeTitle =
+        typeof title === 'string' && title.trim().length > 0
+          ? title
+          : '（無題のクイズ）'
 
-      const slugLabel = safeSlug ? `/${safeSlug}` : 'スラッグ未設定'
+      const hasValidMedia = media?.asset?._ref
+      const safeMedia = hasValidMedia ? media : undefined
 
-      let publishLabel = '公開日未設定'
+      let dateLabel = '公開日未設定'
       if (publishedAt) {
         const date = new Date(publishedAt)
         if (!Number.isNaN(date.getTime())) {
@@ -236,22 +227,16 @@ export default defineType({
           const d = String(date.getDate()).padStart(2, '0')
           const hh = String(date.getHours()).padStart(2, '0')
           const mm = String(date.getMinutes()).padStart(2, '0')
-          publishLabel = `公開: ${y}/${m}/${d} ${hh}:${mm}`
+          dateLabel = `${y}/${m}/${d} ${hh}:${mm}`
         }
       }
 
-      const categoryLabel = safeCategoryTitle ? `カテゴリ: ${safeCategoryTitle}` : ''
-      const subtitleParts = [slugLabel, publishLabel, categoryLabel].filter(Boolean)
-      const subtitleBase = subtitleParts.join('｜')
-      const subtitle = safeCategorySlug
-        ? `${subtitleBase}｜category/${safeCategorySlug}`
-        : subtitleBase
-
-      const safeMedia = media?.asset?._ref ? media : undefined
+      const slugLabel = typeof slug === 'string' && slug ? `/${slug}` : 'スラッグ未設定'
+      const subtitle = `${dateLabel}｜${slugLabel}`
 
       return {
-        title: String(safeTitle || '（無題のクイズ）'),
-        subtitle: String(subtitle || ''),
+        title: safeTitle,
+        subtitle,
         media: safeMedia
       }
     }

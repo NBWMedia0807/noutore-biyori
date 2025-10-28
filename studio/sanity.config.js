@@ -1,7 +1,7 @@
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
 
-import {safeStructure} from './structure/index.js'
+import {deskStructure} from './structure/index.js'
 import {schemaTypes} from './schemas'
 
 const projectId = process.env.SANITY_STUDIO_PROJECT_ID ?? 'quljge22'
@@ -16,7 +16,7 @@ export default defineConfig({
   useCdn: false,
   plugins: [
     deskTool({
-      structure: safeStructure
+      structure: deskStructure
     })
   ],
   schema: {
