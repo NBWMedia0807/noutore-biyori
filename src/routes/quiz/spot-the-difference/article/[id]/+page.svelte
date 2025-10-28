@@ -48,8 +48,14 @@
     renderPortableText(quiz?.hints) ||
     (typeof quiz?.hints === 'string' ? quiz.hints : '');
 
-  $: mainFallback = quiz?.mainImage?.asset?.url || '';
-  $: mainSource = quiz?.mainImage?.asset?._ref ? quiz.mainImage : mainFallback;
+  $: mainFallback =
+    quiz?.problemImage?.asset?.url || quiz?.mainImage?.asset?.url || quiz?.answerImage?.asset?.url || '';
+  $: mainSource =
+    quiz?.problemImage?.asset?._ref
+      ? quiz.problemImage
+      : quiz?.mainImage?.asset?._ref
+        ? quiz.mainImage
+        : mainFallback;
   $: mainImageSet = mainSource
     ? createSanityImageSet(mainSource, {
         width: 900,
