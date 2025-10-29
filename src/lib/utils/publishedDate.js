@@ -31,6 +31,78 @@ const logInvalidDate = (field, value, context) => {
   console.warn(`[publishedDate] Invalid ${field} value detected${contextInfo}`, value);
 };
 
+const pad2 = (value) => String(value).padStart(2, '0');
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+const manualJstFormat = (date, includeTime) => {
+  const adjusted = new Date(date.getTime() + JST_OFFSET_MS);
+  const year = adjusted.getUTCFullYear();
+  const month = pad2(adjusted.getUTCMonth() + 1);
+  const day = pad2(adjusted.getUTCDate());
+
+  if (!includeTime) {
+    return `${year}/${month}/${day}`;
+  }
+
+  const hour = pad2(adjusted.getUTCHours());
+  const minute = pad2(adjusted.getUTCMinutes());
+  return `${year}/${month}/${day} ${hour}:${minute}`;
+};
+
+const createBaseFormatOptions = (includeTime) => ({
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  ...(includeTime
+    ? {
+        hour: '2-digit',
+        minute: '2-digit'
+      }
+    : {})
+});
+
+const formatDateWithLocale = (date, { locale, timeZone, includeTime }) => {
+  const baseOptions = createBaseFormatOptions(includeTime);
+  if (timeZone) {
+    baseOptions.timeZone = timeZone;
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat(locale, baseOptions);
+    const resolvedTimeZone = formatter.resolvedOptions().timeZone;
+    if (
+      !timeZone ||
+      !resolvedTimeZone ||
+      resolvedTimeZone.toLowerCase() === timeZone.toLowerCase()
+    ) {
+      return formatter.format(date);
+    }
+  } catch (error) {
+    // サポートされないロケール／タイムゾーンの場合はフォールバック処理へ進む
+  }
+
+  if (timeZone === 'Asia/Tokyo') {
+    return manualJstFormat(date, includeTime);
+  }
+
+  try {
+    const fallbackFormatter = new Intl.DateTimeFormat(locale, createBaseFormatOptions(includeTime));
+    return fallbackFormatter.format(date);
+  } catch (error) {
+    // Intl が完全に利用できない環境向けの最終フォールバック
+    const year = date.getUTCFullYear();
+    const month = pad2(date.getUTCMonth() + 1);
+    const day = pad2(date.getUTCDate());
+    if (!includeTime) {
+      return `${year}/${month}/${day}`;
+    }
+    const hour = pad2(date.getUTCHours());
+    const minute = pad2(date.getUTCMinutes());
+    return `${year}/${month}/${day} ${hour}:${minute}`;
+  }
+};
+
 const appendCandidate = (candidates, field, value) => {
   if (value === null || value === undefined) return;
   candidates.push({ field, value });
@@ -101,20 +173,7 @@ export const formatPublishedDateLabel = (
       return '';
     }
 
-    const formatter = new Intl.DateTimeFormat(locale, {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      ...(includeTime
-        ? {
-            hour: '2-digit',
-            minute: '2-digit'
-          }
-        : {})
-    });
-
-    return formatter.format(date);
+    return formatDateWithLocale(date, { locale, timeZone, includeTime });
   } catch (error) {
     logInvalidDate('publishedAt', value, context);
     return '';
