@@ -1,7 +1,6 @@
 // src/routes/rss/merkystyle.xml/+server.ts
 import type { RequestHandler } from './$types';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
 import { resolveImage } from '$lib/rss/images';
@@ -10,6 +9,20 @@ import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
+
+const GROQ = `
+*[
+  _type == "quiz" &&
+  !(_id in path("drafts.**")) &&
+  coalesce(publishedAt, _createdAt) <= now()
+]
+| order(coalesce(publishedAt, _createdAt) desc)[0..100]{
+  _id,
+  title,
+  "slug": slug.current,
+  publishedAt,
+  _createdAt
+}`;
 
 const CHANNEL = {
   title: '脳トレ日和',
@@ -218,15 +231,15 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
   }
 
   try {
-    const docs = await client.fetch(RSS_MERKYSTYLE_QUERY);
-    console.log('[rss] fetched docs:', Array.isArray(docs) ? docs.length : 0);
+    console.log('[rss] groq >>\n', GROQ);
+    const docs: any[] = await client.fetch(GROQ);
+    console.log('[rss] fetched docs:', docs.length);
     const items = Array.isArray(docs) ? docs.map(toItem).filter(Boolean).slice(0, 30) : [];
     console.info('[rss] converted items:', items?.length ?? 0);
     const feed = buildFeed(items);
     return new Response(feed, { status: 200 });
-  } catch (error) {
-    console.error('[rss] fetch error:', error);
-    const emptyFeed = buildFeed([]);
-    return new Response(emptyFeed, { status: 200 });
+  } catch (err: any) {
+    console.error('[rss] fetch error:', err?.message, err?.response?.body);
+    throw err;
   }
 };
