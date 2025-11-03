@@ -1,24 +1,28 @@
 // src/lib/queries/rssMerkystyle.groq.js
-import {
-  QUIZ_PUBLISHED_FIELD,
-  shouldRestrictToPublishedContent
-} from '$lib/queries/quizVisibility.js';
+import { shouldRestrictToPublishedContent } from '$lib/queries/quizVisibility.js';
 
-const ORDER = `order(${QUIZ_PUBLISHED_FIELD} desc, _updatedAt desc)`;
+const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
 
-const PUBLISHED_FILTER = shouldRestrictToPublishedContent
+const ORDER = `order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)`;
+
+const MAIN_PUBLISHED_FILTER = shouldRestrictToPublishedContent
   ? `
   && !(_id in path("drafts.**"))
-  && defined(${QUIZ_PUBLISHED_FIELD})
-  && ${QUIZ_PUBLISHED_FIELD} <= now()`
+  && ${PUBLISHED_DATETIME_FIELD} <= now()`
+  : '';
+
+const RELATED_PUBLISHED_FILTER = shouldRestrictToPublishedContent
+  ? `
+    && !(_id in path("drafts.**"))
+    && ${PUBLISHED_DATETIME_FIELD} <= now()`
   : '';
 
 export const RSS_MERKYSTYLE_QUERY = /* groq */ `
 *[
   _type == "quiz" &&
   defined(slug.current)
-  ${PUBLISHED_FILTER}
-] | ${ORDER}[0...30]{
+  ${MAIN_PUBLISHED_FILTER}
+] | ${ORDER}[0...100]{
   _id,
   title,
   "slug": slug.current,
@@ -73,8 +77,8 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
     defined(slug.current) &&
     references(^.category._id) &&
     slug.current != ^.slug
-    ${PUBLISHED_FILTER}
-  ] | order(${QUIZ_PUBLISHED_FIELD} desc)[0...3]{
+    ${RELATED_PUBLISHED_FILTER}
+  ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
     title,
     "slug": slug.current,
     "mainImage": select(

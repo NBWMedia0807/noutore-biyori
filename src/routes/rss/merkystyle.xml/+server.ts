@@ -219,7 +219,7 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 
   try {
     const docs = await client.fetch(RSS_MERKYSTYLE_QUERY);
-    console.info('[rss] fetched docs:', docs?.length ?? 0);
+    console.log('[rss] fetched docs:', Array.isArray(docs) ? docs.length : 0);
     const items = Array.isArray(docs) ? docs.map(toItem).filter(Boolean).slice(0, 30) : [];
     console.info('[rss] converted items:', items?.length ?? 0);
     const feed = buildFeed(items);
