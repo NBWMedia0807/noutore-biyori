@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
     "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
+    "lint": "pnpm run format:check && pnpm run check:conflicts",
     "format": "pnpm dlx prettier --write .",
     "format:check": "pnpm dlx prettier --check .",
     "check:conflicts": "node scripts/check-conflict-markers.mjs",
