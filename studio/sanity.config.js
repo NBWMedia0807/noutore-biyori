@@ -1,5 +1,6 @@
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
+import {visionTool} from '@sanity/vision'
 
 import {deskStructure} from './structure/index.js'
 import {schemaTypes} from './schemas'
@@ -15,6 +16,7 @@ export default defineConfig({
   apiVersion: '2024-08-01',
   useCdn: false,
   plugins: [
+    visionTool(),
     deskTool({
       structure: (S) => deskStructure(S)
     })
