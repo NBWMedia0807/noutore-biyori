@@ -107,3 +107,45 @@ main
 4. サイト内で複数ページを遷移し、イベントが連続して計測されていることを DebugView で再度確認します。
 5. イベントが表示されない場合はブラウザのトラッキング防止機能や広告ブロッカーを一時的に無効化し、再読み込みしてください。
 
+## Merkystyle 向け RSS フィード
+
+### 目的と仕様の要点
+
+- `GET /rss/merkystyle.xml` で Merkystyle 用の RSS 2.0 フィードを配信します。
+- `<channel>` には以下を固定で出力します：
+  - title: 脳トレ日和
+  - link: https://noutorebiyori.com
+  - description: 脳トレ日和は、年齢や性別を問わず誰でも楽しめる脳トレサイトです。脳を活性化させるクイズを毎日更新で配信。スマホでサクッと遊べて、楽しく脳を鍛えられます。
+  - language: ja
+  - copyright: © 2025 脳トレ日和
+- フィードの各 `<item>` には title / link / guid / category / description / content:encoded / pubDate / modifiedDate / delete を含め、category は `quiz`、delete は常に `0` を出力します。
+- 本文は Sanity の Portable Text を HTML（許可タグ：p, br, h2〜h4, a[href], img[src], iframe[src]）へ変換し、description とは内容が重複しない短い要約を生成します。
+- 画像は Sanity Image URL Builder でリサイズし、`<enclosure>` は横 640px 以上、`<thumbnail>` は 300px 以上の絶対 URL（https）を出力します。
+- 可能な場合は同カテゴリ（quiz）から最大 3 件の `<relatedlink>` を出力します。
+
+### 使用する環境変数
+
+- `PUBLIC_SITE_URL` — 絶対 URL を生成する基点として利用します（例: `https://noutorebiyori.com`）。
+
+### 動作確認手順
+
+1. `pnpm build`
+2. ローカル開発サーバーを起動する場合は `pnpm dev` を実行し、ブラウザで `http://localhost:5173/rss/merkystyle.xml` を開いて内容を確認します。
+3. 本番／プレビュー環境では `https://<host>/rss/merkystyle.xml` にアクセスしてブラウザで表示を確認します。
+4. ヘッダーの確認: `curl -I https://<host>/rss/merkystyle.xml` を実行し、`Content-Type: application/xml; charset=utf-8` と `Cache-Control: public, max-age=300` が返ることを確認します。
+
+### 仕様チェックリスト
+
+- [ ] `GET /rss/merkystyle.xml` が 200 OK で有効な RSS 2.0 を返す
+- [ ] `<channel>` に title / link / description / language / copyright が含まれる
+- [ ] フィード件数は最大 30 件
+- [ ] 各 `<item>` に title / link / guid / category / description / encoded / pubDate / modifiedDate / delete が含まれる
+- [ ] `<item>` の category は `quiz` 固定
+- [ ] `<item>` の delete は `0` 固定
+- [ ] description と encoded の内容が重複しない
+- [ ] link / guid / 画像などがすべて https の絶対 URL になっている
+- [ ] pubDate / modifiedDate が JST の RFC822 形式になっている
+- [ ] `<enclosure>` 画像は横 640px 以上、`<thumbnail>` は 300px 以上（利用時）
+- [ ] `pnpm lint` / `pnpm build` が成功する
+- [ ] README の手順に従い、ブラウザと `curl -I` で内容を目視確認できる
+
