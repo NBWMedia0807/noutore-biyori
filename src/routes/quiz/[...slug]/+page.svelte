@@ -339,8 +339,15 @@
     margin-bottom: 0;
   }
 
-  .hints-toggle {
-    text-align: center;
+  .hints-toggle,
+  .to-answer {
+    display: flex;
+    justify-content: center;
+  }
+
+  .hints-toggle .action-button,
+  .to-answer .action-button {
+    width: min(100%, 320px);
   }
 
   .action-button {
@@ -423,10 +430,6 @@
     font-size: 1.2em;
   }
 
-  .to-answer {
-    text-align: center;
-  }
-
   .sr-only {
     position: absolute;
     width: 1px;
@@ -456,6 +459,11 @@
     .action-button {
       width: 100%;
       padding-inline: 1.8rem;
+    }
+
+    .hints-toggle .action-button,
+    .to-answer .action-button {
+      width: 100%;
     }
 
     .section-header {
