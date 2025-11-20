@@ -226,7 +226,7 @@
 <style>
   .quiz-detail {
     max-width: 820px;
-    margin: 0 auto 48px;
+    margin: 24px auto 48px;
     padding: 0 16px 32px;
     display: flex;
     flex-direction: column;
