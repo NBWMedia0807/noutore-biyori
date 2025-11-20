@@ -162,7 +162,8 @@
   }
 
   .answer-image img {
-    max-width: 100%;
+    display: block;
+    width: 100%;
     height: auto;
     border-radius: 18px;
     box-shadow: 0 10px 25px rgba(248, 113, 113, 0.16);
