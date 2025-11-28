@@ -62,7 +62,7 @@
     {#if !sortedNewest.length}
       <p class="empty-message">{emptyMessage}</p>
     {:else}
-      <ArticleGrid>
+      <ArticleGrid minWidth={240} gap={20}>
         {#each sortedNewest as quiz (quiz.slug)}
           <ArticleCard {quiz} />
         {/each}
