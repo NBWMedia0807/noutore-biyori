@@ -9,7 +9,7 @@
   let newestQuizzes = [];
   let categorySections = [];
   let pagination = null;
-  let pageSize = 10;
+  let pageSize = 12;
   let hasNewest = false;
 
   $: categorySections = Array.isArray(data?.categories)
@@ -18,10 +18,10 @@
 
   $: pagination = data?.pagination ?? null;
 
-  // サーバー側ページングを尊重。未設定時は10件を既定値に。
+  // サーバー側ページングを尊重。未設定時は12件を既定値に。
   $: pageSize = (() => {
     const candidate = Number(pagination?.pageSize);
-    if (!Number.isFinite(candidate)) return 10;
+    if (!Number.isFinite(candidate)) return 12;
     const normalized = Math.max(1, Math.trunc(candidate));
     return normalized;
   })();

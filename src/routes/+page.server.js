@@ -26,7 +26,7 @@ import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
 
-const HOME_PAGE_SIZE = 10;
+const HOME_PAGE_SIZE = 12;
 
 const parsePageParam = (value) => {
   const parsed = Number(value);
