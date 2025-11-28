@@ -22,7 +22,6 @@
   const problemImageSet = problemImageSource
     ? createSanityImageSet(problemImageSource, {
         width: 960,
-        height: 540,
         quality: 80,
         fallbackUrl: fallbackImageUrl
       })
@@ -301,13 +300,13 @@
   .problem-image img {
     display: block;
     width: 100%;
+    height: auto;
     border-radius: 18px;
     box-shadow: 0 10px 25px rgba(249, 115, 22, 0.16);
   }
 
   .problem-image picture {
     overflow: hidden;
-    aspect-ratio: calc(16 / 9);
   }
 
   .content-card {
