@@ -46,9 +46,15 @@
     return source?.asset?.metadata?.dimensions ?? { width: 600, height: 360 };
   };
 
+  const normalizeSlug = (value) => {
+    if (typeof value === 'string') return value.trim();
+    if (value && typeof value.current === 'string') return value.current.trim();
+    return '';
+  };
+
   $: imageSet = buildImageSet(quiz);
   $: dimensions = pickDimensions(quiz);
-  $: slug = typeof quiz?.slug === 'string' ? quiz.slug : '';
+  $: slug = normalizeSlug(quiz?.slug);
   $: href = slug ? `/quiz/${slug}` : '#';
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
