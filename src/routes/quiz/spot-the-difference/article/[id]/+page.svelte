@@ -101,8 +101,6 @@
                 alt="問題画像"
                 loading="lazy"
                 decoding="async"
-                width="900"
-                height="506"
               />
             </picture>
           </div>
