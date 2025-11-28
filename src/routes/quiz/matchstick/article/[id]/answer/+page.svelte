@@ -55,6 +55,7 @@
 <style>
   main {
     max-width: 820px;
+    width: 100%;
     margin: 40px auto;
     padding: 0 16px;
   }
@@ -121,5 +122,26 @@
 
   .back-nav a:hover {
     opacity: 0.9;
+  }
+
+  @media (max-width: 640px) {
+    main {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .quiz-article {
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .breadcrumbs-wrapper,
+    .quiz-header,
+    .answer-image,
+    .answer-explanation,
+    .back-nav {
+      padding-inline: 16px;
+    }
   }
 </style>
