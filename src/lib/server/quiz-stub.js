@@ -23,8 +23,6 @@ const STUB_QUIZZES = [
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: 左右の並びに注目しましょう。' }] },
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 数字と図形の対応関係を確認してください。' }] }
     ],
-    adCode1: '',
-    adCode2: '',
     answerImage: null,
     answerExplanation: [
       { _type: 'block', children: [{ _type: 'span', text: '図形の位置を数字に置き換えると答えが導けます。' }] }
@@ -47,8 +45,6 @@ const STUB_QUIZZES = [
     hints: [
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: 記号を変化させると解決できるかも。' }] }
     ],
-    adCode1: '',
-    adCode2: '',
     answerImage: null,
     answerExplanation: [
       { _type: 'block', children: [{ _type: 'span', text: 'マッチ棒を+から-に変えて正しい式を作ります。' }] }
@@ -72,8 +68,6 @@ const STUB_QUIZZES = [
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: キャラクターの持ち物に注目。' }] },
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 背景の小物も確認しましょう。' }] }
     ],
-    adCode1: '',
-    adCode2: '',
     answerImage: null,
     answerExplanation: [
       {
@@ -111,8 +105,6 @@ const STUB_QUIZZES = [
         ]
       }
     ],
-    adCode1: '',
-    adCode2: '',
     answerImage: null,
     answerExplanation: [
       {
@@ -160,8 +152,6 @@ const STUB_QUIZZES = [
         ]
       }
     ],
-    adCode1: '',
-    adCode2: '',
     answerImage: null,
     answerExplanation: [
       {

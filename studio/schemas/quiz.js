@@ -146,14 +146,6 @@ export default defineType({
         })
       ]
     }),
-    defineField({
-      name: 'adCode1',
-      title: 'レクタングル広告コード1',
-      description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
-      type: 'text',
-      group: 'content'
-    }),
-
     // ── 解答 ─────────────────────────────
     defineField({
       name: 'answerImage',
@@ -182,13 +174,6 @@ export default defineType({
           }
         })
       ]
-    }),
-    defineField({
-      name: 'adCode2',
-      title: 'レクタングル広告コード2',
-      description: '広告コード等を貼り付ける欄です。空の場合は表示しません。',
-      type: 'text',
-      group: 'content'
     }),
     defineField({
       name: 'closingMessage',

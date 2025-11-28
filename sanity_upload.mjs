@@ -113,7 +113,6 @@ async function uploadQuizData() {
           style: 'normal'
         }
       ],
-      adCode1: '',
       answerImage: {
         _type: 'image',
         asset: {
@@ -151,7 +150,6 @@ async function uploadQuizData() {
           style: 'normal'
         }
       ],
-      adCode2: '',
       closingMessage: [
         {
           _type: 'block',
