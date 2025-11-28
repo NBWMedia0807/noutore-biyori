@@ -42,7 +42,8 @@ export async function load({ params, setHeaders }) {
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
-      hideBreadcrumbs: true
+      hideBreadcrumbs: true,
+      mainClass: 'main--flush'
     },
     seo: {
       canonical: `/quiz/${quiz.slug}/answer`
