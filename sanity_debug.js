@@ -36,10 +36,8 @@ async function debugSanityData() {
         defined(hint) => [hint],
         []
       ),
-      adCode1,
       answerImage,
       answerExplanation,
-      adCode2,
       closingMessage
     }`);
     console.log(`クイズ数: ${quizzes.length}`);
@@ -83,10 +81,8 @@ async function debugSanityData() {
         defined(hint) => [hint],
         []
       ),
-      adCode1,
       answerImage,
       answerExplanation,
-      adCode2,
       closingMessage
     }`);
     console.log(JSON.stringify(sampleQuiz, null, 2));

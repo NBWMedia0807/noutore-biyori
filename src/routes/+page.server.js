@@ -17,6 +17,7 @@ import {
 } from '$lib/queries/quizVisibility.js';
 import {
   getQuizStubCategories,
+  getQuizStubCatalog,
   getQuizStubQuizzesByCategory,
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
@@ -129,6 +130,61 @@ const toPreview = (quiz) => {
   };
 };
 
+const compareByPublishedAtDesc = (a, b) => {
+  const tsA = new Date(resolvePublishedDate(a, a?._id ?? a?.slug ?? 'quiz') ?? 0).getTime();
+  const tsB = new Date(resolvePublishedDate(b, b?._id ?? b?.slug ?? 'quiz') ?? 0).getTime();
+  return tsB - tsA;
+};
+
+const createStubCategories = () =>
+  getQuizStubCategories().map((category) => {
+    const quizzes = getQuizStubQuizzesByCategory(category.slug).map(toPreview).filter(Boolean);
+    const description = createCategoryDescription(category.title, category.description);
+    const overviewRaw = category.overview ?? description ?? '';
+    const overview = typeof overviewRaw === 'string' ? overviewRaw.trim() || description : description;
+
+    return {
+      title: category.title ?? 'カテゴリ',
+      slug: category.slug,
+      overview,
+      quizCount: quizzes.length,
+      quizzes
+    };
+  });
+
+const createStubHomePayload = ({ path, requestedPage, pageSize, offset }) => {
+  const stubEnabled = isQuizStubEnabled();
+  const stubCatalog = stubEnabled ? getQuizStubCatalog() : [];
+  const sorted = [...stubCatalog].sort(compareByPublishedAtDesc);
+  const totalCount = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  if (requestedPage > totalPages) {
+    const targetPage = totalPages;
+    const search = targetPage > 1 ? `?page=${targetPage}` : '';
+    throw redirect(303, `${path}${search}`);
+  }
+
+  const newest = sorted.slice(offset, offset + pageSize).map(toPreview).filter(Boolean);
+  const popular = sorted.slice(0, 6).map(toPreview).filter(Boolean);
+  const categories = stubEnabled ? createStubCategories() : [];
+  const seo = createHomeSeo(path, newest, SITE.description);
+
+  return {
+    newest,
+    popular,
+    categories,
+    seo,
+    pagination: {
+      currentPage: Math.min(requestedPage, totalPages),
+      totalPages,
+      totalCount,
+      pageSize,
+      basePath: path
+    }
+  };
+};
+
 const normalizeCategorySection = (category) => {
   if (!category?.slug) return null;
   const quizzes = filterVisibleQuizzes(category.quizzes).map(toPreview).filter(Boolean);
@@ -173,6 +229,10 @@ export const load = async (event) => {
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
   const offset = Math.max(0, (requestedPage - 1) * pageSize);
+
+  if (shouldSkipSanityFetch()) {
+    return createStubHomePayload({ path, requestedPage, pageSize, offset });
+  }
 
   try {
     const result = await client.fetch(HOME_QUERY, { offset, limit: pageSize });
