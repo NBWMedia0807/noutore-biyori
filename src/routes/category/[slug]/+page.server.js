@@ -33,7 +33,7 @@ const CATEGORY_QUERY = /* groq */ `
   overview
 }`;
 
-const CATEGORY_PAGE_SIZE = 10;
+const CATEGORY_PAGE_SIZE = 12;
 
 const parsePageParam = (value) => {
   const parsed = Number(value);

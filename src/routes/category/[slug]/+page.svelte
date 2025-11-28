@@ -13,17 +13,17 @@
   let totalCount;
   let emptyMessage;
   let pagination;
-  let pageSize = 10;
+  let pageSize = 12;
 
   $: category = data?.category ?? null;
   $: categoryTitle = category?.title ?? 'カテゴリ';
   $: slug = category?.slug ?? '';
   $: pagination = data?.pagination ?? null;
 
-  // サーバー側ページングを尊重。未設定時は10件を既定値に。
+  // サーバー側ページングを尊重。未設定時は12件を既定値に。
   $: pageSize = (() => {
     const candidate = Number(pagination?.pageSize);
-    if (!Number.isFinite(candidate)) return 10;
+    if (!Number.isFinite(candidate)) return 12;
     return Math.max(1, Math.trunc(candidate));
   })();
 
