@@ -1,5 +1,6 @@
 <script>
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   let { quiz, breadcrumbs = [] } = data;
@@ -18,6 +19,13 @@
   }
 
   $: explanationText = renderPortableText(quiz?.answerExplanation)?.trim();
+  $: answerImageSet = quiz?.answerImage
+    ? createSanityImageSet(quiz.answerImage, {
+        width: 900,
+        quality: 80
+      })
+    : null;
+  $: answerImageSrc = answerImageSet?.src ?? answerImageSet?.fallback;
 </script>
 
 <main>
@@ -30,9 +38,24 @@
         <h1 class="quiz-title">{quiz.title}｜正解</h1>
       </header>
 
-      {#if quiz.answerImage?.asset?.url}
+      {#if answerImageSrc}
         <div class="answer-image">
-          <img src={quiz.answerImage.asset.url} alt="正解画像" loading="lazy" decoding="async" />
+          <picture>
+            {#if answerImageSet?.avifSrcset}
+              <source srcset={answerImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+            {/if}
+            {#if answerImageSet?.webpSrcset}
+              <source srcset={answerImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+            {/if}
+            <img
+              src={answerImageSrc}
+              srcset={answerImageSet?.srcset}
+              sizes="(min-width: 768px) 720px, 100vw"
+              alt="正解画像"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
         </div>
       {/if}
 

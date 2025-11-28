@@ -59,7 +59,6 @@
   $: mainImageSet = mainSource
     ? createSanityImageSet(mainSource, {
         width: 900,
-        height: 506,
         quality: 80,
         fallbackUrl: mainFallback
       })
