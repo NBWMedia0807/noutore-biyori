@@ -112,9 +112,8 @@
   }
 
   .quiz-list-section {
-    max-width: 1200px;
-    margin: 0 auto 3rem;
-    padding: 0 1.5rem;
+    width: 100%;
+    margin: 0 0 3rem;
     display: grid;
     gap: 1.5rem;
   }
@@ -131,10 +130,6 @@
   @media (max-width: 768px) {
     .category-header {
       padding: 1.4rem 1.15rem;
-    }
-
-    .quiz-list-section {
-      padding-inline: 1rem;
     }
 
   }
