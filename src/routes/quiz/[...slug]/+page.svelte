@@ -5,38 +5,54 @@
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
 
   export let data;
-  const { doc } = data;
-  const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
-  const nextQuiz = data?.nextQuiz ?? null;
-  const publishContext = doc?._id ?? doc?.slug ?? 'quiz-detail';
-  const publishedAt = resolvePublishedDate(doc, publishContext) ?? null;
-  const publishedLabel = formatPublishedDateLabel(publishedAt, {
-    context: publishContext
-  });
 
-  const fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
-  const fallbackImageUrl =
+  let doc;
+  let relatedQuizzes = [];
+  let nextQuiz;
+  let publishContext;
+  let publishedAt;
+  let publishedLabel;
+  let fallbackQuizImage;
+  let fallbackImageUrl;
+  let problemImageSource;
+  let problemImageSet;
+  let problemImageDimensions;
+  let category;
+  let categoryUrl;
+  let hasRelated;
+  let nextQuizUrl;
+  let nextQuizLabel;
+
+  $: doc = data?.doc;
+  $: relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
+  $: nextQuiz = data?.nextQuiz ?? null;
+  $: publishContext = doc?._id ?? doc?.slug ?? 'quiz-detail';
+  $: publishedAt = resolvePublishedDate(doc, publishContext) ?? null;
+  $: publishedLabel = formatPublishedDateLabel(publishedAt, { context: publishContext });
+
+  $: fallbackQuizImage = doc?.problemImage ?? doc?.mainImage;
+  $: fallbackImageUrl =
     fallbackQuizImage?.asset?.url ?? doc?.answerImage?.asset?.url ?? '/logo.svg';
 
-  const problemImageSource = doc?.problemImage ?? doc?.mainImage ?? null;
-  const problemImageSet = problemImageSource
+  $: problemImageSource = doc?.problemImage ?? doc?.mainImage ?? null;
+  $: problemImageSet = problemImageSource
     ? createSanityImageSet(problemImageSource, {
         width: 960,
         quality: 80,
         fallbackUrl: fallbackImageUrl
       })
     : null;
-  const problemImageDimensions = problemImageSource?.asset?.metadata?.dimensions ?? {
+  $: problemImageDimensions = problemImageSource?.asset?.metadata?.dimensions ?? {
     width: 960,
     height: 540
   };
 
-  const category = doc?.category?.title && doc?.category?.slug ? doc.category : null;
-  const categoryUrl = category ? `/category/${category.slug}` : null;
+  $: category = doc?.category?.title && doc?.category?.slug ? doc.category : null;
+  $: categoryUrl = category ? `/category/${category.slug}` : null;
 
-  const hasRelated = relatedQuizzes.length > 0;
-  const nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
-  const nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
+  $: hasRelated = relatedQuizzes.length > 0;
+  $: nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
+  $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
   let firstHintItem;
@@ -85,13 +101,21 @@
     return '';
   };
 
-  const bodyHtml = (() => {
+  let bodyHtml;
+  let hintEntries = [];
+  let hints = [];
+  let firstHint;
+  let restHints = [];
+  let hintsId;
+
+  $: bodyHtml = (() => {
     const fromBody = toHtml(doc?.body);
     if (fromBody.trim().length) return fromBody;
     const fromProblem = toHtml(doc?.problemDescription);
     return fromProblem;
   })();
-  const hintEntries = (() => {
+
+  $: hintEntries = (() => {
     const source = [];
     const append = (value) => {
       if (value === null || value === undefined) return;
@@ -118,10 +142,11 @@
       })
       .filter(({ text }) => text.length > 0);
   })();
-  const hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
-  const firstHint = hints[0];
-  const restHints = hints.slice(1);
-  const hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
+
+  $: hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
+  $: firstHint = hints[0];
+  $: restHints = hints.slice(1);
+  $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
   const toggleHints = async () => {
     hintOpen = !hintOpen;
     if (hintOpen) {
@@ -129,7 +154,8 @@
       firstHintItem?.focus();
     }
   };
-  const answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
+  let answerPath;
+  $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
 
 <main class="quiz-detail hide-chrome">
