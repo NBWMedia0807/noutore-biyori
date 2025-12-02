@@ -28,9 +28,12 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
   "slug": slug.current,
   body,
   problemDescription,
+  hints,
   publishedAt,
   _createdAt,
   _updatedAt,
+  answerExplanation,
+  closingMessage,
   category->{
     _id,
     title,
