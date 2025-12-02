@@ -23,22 +23,8 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
   defined(slug.current)
   ${MAIN_PUBLISHED_FILTER}
 ] | ${ORDER}[0...100]{
-  _id,
-  title,
+  ...,
   "slug": slug.current,
-  body,
-  problemDescription,
-  hints,
-  publishedAt,
-  _createdAt,
-  _updatedAt,
-  answerExplanation,
-  closingMessage,
-  category->{
-    _id,
-    title,
-    "slug": slug.current
-  },
   "mainImage": select(
     defined(mainImage) => mainImage,
     defined(problemImage) => problemImage,
