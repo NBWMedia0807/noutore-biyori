@@ -20,8 +20,11 @@ const CHANNEL = {
   copyright: '© 2025 脳トレ日和'
 };
 
+const sanitizeXmlText = (value: string): string =>
+  typeof value === 'string' ? value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '') : '';
+
 const escapeXml = (value: string): string =>
-  value
+  sanitizeXmlText(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -52,8 +55,9 @@ const renderImageHtml = (source: any, alt: string): string => {
 };
 
 const wrapCdata = (value: string): string => {
-  if (!value) return '<![CDATA[]]>';
-  return `<![CDATA[${value.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
+  const sanitized = sanitizeXmlText(value);
+  if (!sanitized) return '<![CDATA[]]>';
+  return `<![CDATA[${sanitized.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 };
 
 const compactWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
@@ -125,34 +129,42 @@ const toItem = (doc: any) => {
   if (!slug) return null;
   const path = `/quiz/${slug}`;
   const link = getAbsoluteUrl(path);
+  const title = typeof doc?.title === 'string' ? doc.title : '脳トレ問題';
 
   const publishedIso = resolvePublishedDate(doc, doc?._id ?? slug) || doc?.publishedAt || doc?._createdAt;
   const updatedIso = doc?._updatedAt || publishedIso;
   const pubDate = toRfc822(publishedIso);
   const modifiedDate = toRfc822(updatedIso);
 
-  const bodyHtml = renderPortableHtml(doc?.body);
-  const problemDescriptionHtml = renderPortableHtml(doc?.problemDescription) || renderParagraph(doc?.problemDescription);
+  const bodyHtml = renderPortableHtml(doc?.body) || renderParagraph(doc?.body);
+  const descriptionHtml = renderPortableHtml(doc?.problemDescription) || renderParagraph(doc?.problemDescription);
   const hintsHtml = renderPortableHtml(doc?.hints) || renderParagraph(doc?.hints);
-  const answerImageHtml = renderImageHtml(doc?.answerImage, `${doc?.title ?? '脳トレ問題'}の解答画像`);
   const answerHtml = renderPortableHtml(doc?.answerExplanation) || renderParagraph(doc?.answerExplanation);
   const closingHtml = renderPortableHtml(doc?.closingMessage) || renderParagraph(doc?.closingMessage);
+  const mainImageHtml = renderImageHtml(doc?.mainImage, `${title}のメイン画像`);
+  const problemImageHtml = renderImageHtml(doc?.problemImage ?? doc?.questionImage, `${title}の問題画像`);
+  const answerImageHtml = renderImageHtml(doc?.answerImage, `${title}の解答画像`);
   const enclosure = pickEnclosure(doc);
   const enclosureHtml = renderImageHtml(enclosure, `${doc?.title ?? '脳トレ問題'}の問題画像`);
   const plain = toPlainText(doc?.body);
-  const plainProblem = toPlainText(doc?.problemDescription);
+  const plainDescription = toPlainText(doc?.problemDescription);
   const plainHints = toPlainText(doc?.hints);
   const plainAnswer = toPlainText(doc?.answerExplanation);
-  const description = buildDescription(plain, doc?.title ?? '脳トレ問題', [plainProblem, plainHints, plainAnswer]);
+  const plainClosing = toPlainText(doc?.closingMessage);
+  const description = buildDescription(plain, title, [plainDescription, plainHints, plainAnswer, plainClosing]);
 
   const contentParts: string[] = [];
-  if (enclosureHtml) {
-    contentParts.push(enclosureHtml);
+  if (mainImageHtml) {
+    contentParts.push(mainImageHtml);
   }
-  if (bodyHtml || problemDescriptionHtml) {
+  if (bodyHtml) {
+    contentParts.push('<h2>本文</h2>');
+    contentParts.push(bodyHtml);
+  }
+  if (problemImageHtml || descriptionHtml) {
     contentParts.push('<h2>問題</h2>');
-    if (bodyHtml) contentParts.push(bodyHtml);
-    if (problemDescriptionHtml) contentParts.push(problemDescriptionHtml);
+    if (problemImageHtml) contentParts.push(problemImageHtml);
+    if (descriptionHtml) contentParts.push(descriptionHtml);
   }
   if (hintsHtml) {
     contentParts.push('<h2>ヒント</h2>');
@@ -167,12 +179,15 @@ const toItem = (doc: any) => {
     contentParts.push('<h2>締め</h2>');
     contentParts.push(closingHtml);
   }
+  if (!contentParts.length && enclosureHtml) {
+    contentParts.push(enclosureHtml);
+  }
   const encoded = contentParts.join('') || (description ? `<p>${escapeXml(description)}</p>` : '');
   const thumbnail = pickThumbnail(doc);
   const related = buildRelatedLinks(doc);
 
   return {
-    title: typeof doc?.title === 'string' ? doc.title : '脳トレ問題',
+    title,
     link,
     guid: link,
     description,
@@ -264,7 +279,8 @@ const buildFeed = (items: any[]) => {
 };
 
 export const GET: RequestHandler = async ({ setHeaders }) => {
-  setHeaders({ 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+  const headers = { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=300' };
+  setHeaders(headers);
 
   if (shouldSkipSanityFetch()) {
     const emptyFeed = buildFeed([]);
@@ -278,9 +294,13 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
     const items = Array.isArray(docs) ? docs.map(toItem).filter(Boolean).slice(0, 30) : [];
     console.info('[rss] converted items:', items?.length ?? 0);
     const feed = buildFeed(items);
-    return new Response(feed, { status: 200 });
+    return new Response(feed, { status: 200, headers });
   } catch (err: any) {
     console.error('[rss] fetch error:', err?.message, err?.response?.body);
-    throw err;
+    const fallbackFeed = buildFeed([]);
+    return new Response(fallbackFeed, {
+      status: 503,
+      headers
+    });
   }
 };
