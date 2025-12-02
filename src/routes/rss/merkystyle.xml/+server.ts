@@ -6,23 +6,10 @@ import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
 import { resolveImage } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
+import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
-
-const GROQ = `
-*[
-  _type == "quiz" &&
-  !(_id in path("drafts.**")) &&
-  coalesce(publishedAt, _createdAt) <= now()
-]
-| order(coalesce(publishedAt, _createdAt) desc)[0..100]{
-  _id,
-  title,
-  "slug": slug.current,
-  publishedAt,
-  _createdAt
-}`;
 
 const CHANNEL = {
   title: '脳トレ日和',
@@ -42,6 +29,27 @@ const escapeXml = (value: string): string =>
     .replace(/'/g, '&#39;');
 
 const escapeAttribute = (value: string): string => escapeXml(value).replace(/`/g, '&#96;');
+
+const renderPortableHtml = (value: unknown): string => portableTextToHtml(value) || '';
+
+const renderParagraph = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return `<p>${escapeXml(trimmed)}</p>`;
+};
+
+const toPlainText = (value: unknown): string => {
+  if (typeof value === 'string') return value.trim();
+  return portableTextToPlain(value);
+};
+
+const renderImageHtml = (source: any, alt: string): string => {
+  const resolved = resolveImage([source], { minWidth: 640 });
+  if (!resolved?.url) return '';
+  const safeAlt = resolved.alt || alt;
+  return `<p><img src="${escapeAttribute(resolved.url)}" alt="${escapeAttribute(safeAlt)}" /></p>`;
+};
 
 const wrapCdata = (value: string): string => {
   if (!value) return '<![CDATA[]]>';
@@ -68,8 +76,9 @@ const dedupeFragments = (text: string): string[] => {
   return unique;
 };
 
-const buildDescription = (plain: string, fallback: string): string => {
-  const raw = (plain || fallback || '').trim();
+const buildDescription = (plain: string, fallback: string, extras: string[] = []): string => {
+  const candidates = [plain, ...extras, fallback].filter(Boolean);
+  const raw = candidates.join(' ').trim();
   if (!raw) return '';
   const normalized = compactWhitespace(raw);
   const fragments = dedupeFragments(normalized);
@@ -122,11 +131,43 @@ const toItem = (doc: any) => {
   const pubDate = toRfc822(publishedIso);
   const modifiedDate = toRfc822(updatedIso);
 
-  const html = portableTextToHtml(doc?.body);
-  const plain = portableTextToPlain(doc?.body);
-  const description = buildDescription(plain, doc?.title ?? '脳トレ問題');
-  const encoded = html || (description ? `<p>${escapeXml(description)}</p>` : '');
+  const bodyHtml = renderPortableHtml(doc?.body);
+  const problemDescriptionHtml = renderPortableHtml(doc?.problemDescription) || renderParagraph(doc?.problemDescription);
+  const hintsHtml = renderPortableHtml(doc?.hints) || renderParagraph(doc?.hints);
+  const answerImageHtml = renderImageHtml(doc?.answerImage, `${doc?.title ?? '脳トレ問題'}の解答画像`);
+  const answerHtml = renderPortableHtml(doc?.answerExplanation) || renderParagraph(doc?.answerExplanation);
+  const closingHtml = renderPortableHtml(doc?.closingMessage) || renderParagraph(doc?.closingMessage);
   const enclosure = pickEnclosure(doc);
+  const enclosureHtml = renderImageHtml(enclosure, `${doc?.title ?? '脳トレ問題'}の問題画像`);
+  const plain = toPlainText(doc?.body);
+  const plainProblem = toPlainText(doc?.problemDescription);
+  const plainHints = toPlainText(doc?.hints);
+  const plainAnswer = toPlainText(doc?.answerExplanation);
+  const description = buildDescription(plain, doc?.title ?? '脳トレ問題', [plainProblem, plainHints, plainAnswer]);
+
+  const contentParts: string[] = [];
+  if (enclosureHtml) {
+    contentParts.push(enclosureHtml);
+  }
+  if (bodyHtml || problemDescriptionHtml) {
+    contentParts.push('<h2>問題</h2>');
+    if (bodyHtml) contentParts.push(bodyHtml);
+    if (problemDescriptionHtml) contentParts.push(problemDescriptionHtml);
+  }
+  if (hintsHtml) {
+    contentParts.push('<h2>ヒント</h2>');
+    contentParts.push(hintsHtml);
+  }
+  if (answerImageHtml || answerHtml) {
+    contentParts.push('<h2>解答</h2>');
+    if (answerImageHtml) contentParts.push(answerImageHtml);
+    if (answerHtml) contentParts.push(answerHtml);
+  }
+  if (closingHtml) {
+    contentParts.push('<h2>締め</h2>');
+    contentParts.push(closingHtml);
+  }
+  const encoded = contentParts.join('') || (description ? `<p>${escapeXml(description)}</p>` : '');
   const thumbnail = pickThumbnail(doc);
   const related = buildRelatedLinks(doc);
 
@@ -191,11 +232,11 @@ const inferEnclosureTypeFromUrl = (url: string): string => {
 };
 
 const pickEnclosureType = (url: string, fallback?: string | null): string => {
-  if (url) {
-    return inferEnclosureTypeFromUrl(url);
-  }
   if (fallback && fallback.startsWith('image/')) {
     return fallback;
+  }
+  if (url) {
+    return inferEnclosureTypeFromUrl(url);
   }
   return 'image/jpeg';
 };
@@ -231,8 +272,8 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
   }
 
   try {
-    console.log('[rss] groq >>\n', GROQ);
-    const docs: any[] = await client.fetch(GROQ);
+    console.log('[rss] groq >>\n', RSS_MERKYSTYLE_QUERY);
+    const docs: any[] = await client.fetch(RSS_MERKYSTYLE_QUERY);
     console.log('[rss] fetched docs:', docs.length);
     const items = Array.isArray(docs) ? docs.map(toItem).filter(Boolean).slice(0, 30) : [];
     console.info('[rss] converted items:', items?.length ?? 0);
