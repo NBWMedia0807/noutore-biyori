@@ -2,26 +2,21 @@
 import { shouldRestrictToPublishedContent } from '$lib/queries/quizVisibility.js';
 
 const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
-
 const ORDER = `order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)`;
 
+// フィルタは「前の条件の末尾にくっつく」形にして、行頭が && で始まらないようにする
 const MAIN_PUBLISHED_FILTER = shouldRestrictToPublishedContent
-  ? `
-  && !(_id in path("drafts.**"))
-  && ${PUBLISHED_DATETIME_FIELD} <= now()`
+  ? ` && !(_id in path("drafts.**")) && ${PUBLISHED_DATETIME_FIELD} <= now()`
   : '';
 
 const RELATED_PUBLISHED_FILTER = shouldRestrictToPublishedContent
-  ? `
-    && !(_id in path("drafts.**"))
-    && ${PUBLISHED_DATETIME_FIELD} <= now()`
+  ? ` && !(_id in path("drafts.**")) && ${PUBLISHED_DATETIME_FIELD} <= now()`
   : '';
 
 export const RSS_MERKYSTYLE_QUERY = /* groq */ `
 *[
   _type == "quiz" &&
-  defined(slug.current)
-  ${MAIN_PUBLISHED_FILTER}
+  defined(slug.current)${MAIN_PUBLISHED_FILTER}
 ] | ${ORDER}[0...100]{
   ...,
   "slug": slug.current,
@@ -65,8 +60,7 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
     _type == "quiz" &&
     defined(slug.current) &&
     references(^.category._id) &&
-    slug.current != ^.slug
-    ${RELATED_PUBLISHED_FILTER}
+    slug.current != ^.slug${RELATED_PUBLISHED_FILTER}
   ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
     title,
     "slug": slug.current,
