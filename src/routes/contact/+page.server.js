@@ -1,58 +1,75 @@
 import { fail } from '@sveltejs/kit';
 import nodemailer from 'nodemailer';
 import {
-  SMTP_HOST,
-  SMTP_PORT,
-  SMTP_USER,
-  SMTP_PASS,
-  MAIL_TO
+	SMTP_HOST,
+	SMTP_PORT,
+	SMTP_USER,
+	SMTP_PASS,
+	MAIL_FROM,
+	MAIL_TO
 } from '$env/dynamic/private';
 
 export const actions = {
-  default: async ({ request }) => {
-    // 必須の環境変数が設定されているかチェック
-    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_TO) {
-      console.error('メール送信に必要な環境変数が設定されていません。');
-      return fail(500, {
-        message: 'サーバー側の設定エラーにより、現在お問い合わせを送信できません。'
-      });
-    }
+	default: async ({ request }) => {
+		// --- 環境変数チェック ---
+		if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_FROM || !MAIL_TO) {
+			console.error('One or more SMTP environment variables are not set.');
+			return fail(500, {
+				success: false,
+				message: 'サーバー側の設定エラーにより、現在お問い合わせを送信できません。'
+			});
+		}
 
-    const data = await request.formData();
-    const name = data.get('name')?.toString();
-    const email = data.get('email')?.toString();
-    const subject = data.get('subject')?.toString() || '（件名なし）'; // subjectがなくてもOK
-    const message = data.get('message')?.toString();
+		const formData = await request.formData();
 
-    // --- デバッグログ ---
-    console.log('Contact form submission received:', { name, email, subject, message });
+		// --- デバッグ用ログ ---
+		console.log('Received form data:');
+		for (const [key, value] of formData.entries()) {
+			console.log(`${key}: ${value}`);
+		}
 
-    // --- バリデーション（緩和版） ---
-    if (!name || !email || !message) {
-      return fail(400, {
-        data: { name, email, subject, message },
-        message: 'お名前、メールアドレス、お問い合わせ内容は必須です。'
-      });
-    }
+		const name = formData.get('name');
+		const email = formData.get('email');
+		const subject = formData.get('subject') || '（件名なし）';
+		const message = formData.get('message');
 
-    // --- メール送信処理 ---
-    try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT),
-        secure: Number(SMTP_PORT) === 465, // ポート465の場合はtrue, それ以外はfalse
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
+		const data = { name, email, subject, message };
 
-      const mailOptions = {
-        from: `"脳トレ日和 お問い合わせ" <${SMTP_USER}>`,
-        to: MAIL_TO,
-        replyTo: email,
-        subject: `【お問い合わせ】${subject} - ${name}様より`,
-        text: "
+		// --- バリデーション ---
+		const errors = {};
+		if (!name) errors.name = 'お名前は必須です。';
+		if (!email) errors.email = 'メールアドレスは必須です。';
+		if (email && !/^[^string@email.com}]+@[^string@email.com}]+.[^string@email.com}]+$/.test(email))
+			errors.email = '有効なメールアドレスを入力してください。';
+		if (!message) errors.message = 'お問い合わせ内容は必須です。';
+
+		if (Object.keys(errors).length > 0) {
+			return fail(400, {
+				success: false,
+				message: '入力内容に誤りがあります。',
+				data,
+				errors
+			});
+		}
+
+		// --- メール送信処理 ---
+		try {
+			const transporter = nodemailer.createTransport({
+				host: SMTP_HOST,
+				port: Number(SMTP_PORT),
+				secure: Number(SMTP_PORT) === 465, // true for 465, false for other ports
+				auth: {
+					user: SMTP_USER,
+					pass: SMTP_PASS
+				}
+			});
+
+			const mailOptions = {
+				from: `"${MAIL_FROM}" <${SMTP_USER}>`,
+				to: MAIL_TO,
+				replyTo: email,
+				subject: `【お問い合わせ】${subject} - ${name}様より`,
+				text: "
 以下の内容でお問い合わせがありました。
 
 -----------------------------------------
@@ -68,8 +85,8 @@ ${subject}
 お問い合わせ内容:
 ${message}
 -----------------------------------------
-",
-        html: "
+        ",
+			html: "
           <p>以下の内容でお問い合わせがありました。</p>
           <hr>
           <h3>お名前</h3>
@@ -82,17 +99,21 @@ ${message}
           <p>${message.replace(/\n/g, '<br>')}</p>
           <hr>
         "
-      };
+			};
 
-      await transporter.sendMail(mailOptions);
+			await transporter.sendMail(mailOptions);
 
-      return { success: true };
-
-    } catch (e) {
-      console.error('メール送信中にエラーが発生しました:', e);
-      return fail(500, {
-        message: 'サーバーエラーにより、お問い合わせを送信できませんでした。しばらくしてから再度お試しください。'
-      });
-    }
-  }
+			return {
+				success: true,
+				message: 'お問い合わせいただきありがとうございます。'
+			};
+		} catch (error) {
+			console.error('Error sending email:', error);
+			return fail(500, {
+				success: false,
+				message: 'サーバーエラーにより、お問い合わせを送信できませんでした。しばらくしてから再度お試しください。',
+				data
+			});
+		}
+	}
 };
