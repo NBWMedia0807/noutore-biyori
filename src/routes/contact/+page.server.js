@@ -1,18 +1,15 @@
 import { fail } from '@sveltejs/kit';
 import nodemailer from 'nodemailer';
-import {
-	SMTP_HOST,
-	SMTP_PORT,
-	SMTP_USER,
-	SMTP_PASS,
-	MAIL_FROM,
-	MAIL_TO
-} from '$env/dynamic/private';
+// 【変更点】個別の名前ではなく、envオブジェクトとしてまとめて読み込む
+import { env } from '$env/dynamic/private';
 
 export const actions = {
 	default: async ({ request }) => {
+		// 【変更点】env.変数名 の形でアクセスする
+		const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_TO } = env;
+
 		// --- 環境変数チェック ---
-		if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_FROM || !MAIL_TO) {
+		if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_TO) {
 			console.error('One or more SMTP environment variables are not set.');
 			return fail(500, {
 				success: false,
@@ -21,26 +18,20 @@ export const actions = {
 		}
 
 		const formData = await request.formData();
-
-		// --- デバッグ用ログ ---
-		console.log('Received form data:');
-		for (const [key, value] of formData.entries()) {
-			console.log(`${key}: ${value}`);
-		}
-
 		const name = formData.get('name');
 		const email = formData.get('email');
 		const subject = formData.get('subject') || '（件名なし）';
 		const message = formData.get('message');
 
+		// --- デバッグ用ログ ---
+		console.log(`Received inquiry from: ${email}`);
+
 		const data = { name, email, subject, message };
 
-		// --- バリデーション ---
+		// --- 簡易バリデーション ---
 		const errors = {};
 		if (!name) errors.name = 'お名前は必須です。';
 		if (!email) errors.email = 'メールアドレスは必須です。';
-		if (email && !/^[^string@email.com}]+@[^string@email.com}]+.[^string@email.com}]+$/.test(email))
-			errors.email = '有効なメールアドレスを入力してください。';
 		if (!message) errors.message = 'お問い合わせ内容は必須です。';
 
 		if (Object.keys(errors).length > 0) {
@@ -57,7 +48,7 @@ export const actions = {
 			const transporter = nodemailer.createTransport({
 				host: SMTP_HOST,
 				port: Number(SMTP_PORT),
-				secure: Number(SMTP_PORT) === 465, // true for 465, false for other ports
+				secure: Number(SMTP_PORT) === 465, 
 				auth: {
 					user: SMTP_USER,
 					pass: SMTP_PASS
@@ -65,11 +56,11 @@ export const actions = {
 			});
 
 			const mailOptions = {
-				from: `"${MAIL_FROM}" <${SMTP_USER}>`,
+				from: `"お問い合わせ" <${SMTP_USER}>`,
 				to: MAIL_TO,
 				replyTo: email,
 				subject: `【お問い合わせ】${subject} - ${name}様より`,
-				text: "
+				text: `
 以下の内容でお問い合わせがありました。
 
 -----------------------------------------
@@ -85,20 +76,20 @@ ${subject}
 お問い合わせ内容:
 ${message}
 -----------------------------------------
-        ",
-			html: "
-          <p>以下の内容でお問い合わせがありました。</p>
-          <hr>
-          <h3>お名前</h3>
-          <p>${name}</p>
-          <h3>メールアドレス</h3>
-          <p>${email}</p>
-          <h3>件名</h3>
-          <p>${subject}</p>
-          <h3>お問い合わせ内容</h3>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-          <hr>
-        "
+`,
+				html: `
+					<p>以下の内容でお問い合わせがありました。</p>
+					<hr>
+					<h3>お名前</h3>
+					<p>${name}</p>
+					<h3>メールアドレス</h3>
+					<p>${email}</p>
+					<h3>件名</h3>
+					<p>${subject}</p>
+					<h3>お問い合わせ内容</h3>
+					<p>${message.replace(/\n/g, '<br>')}</p>
+					<hr>
+				`
 			};
 
 			await transporter.sendMail(mailOptions);
@@ -111,7 +102,7 @@ ${message}
 			console.error('Error sending email:', error);
 			return fail(500, {
 				success: false,
-				message: 'サーバーエラーにより、お問い合わせを送信できませんでした。しばらくしてから再度お試しください。',
+				message: 'サーバーエラーにより、お問い合わせを送信できませんでした。',
 				data
 			});
 		}
