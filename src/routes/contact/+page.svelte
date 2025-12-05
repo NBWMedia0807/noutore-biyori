@@ -15,7 +15,7 @@
 <div class="content-page">
   <section class="page-content">
     <h2 class="page-title">お問い合わせ</h2>
-    
+
     <div class="contact-intro">
       <p>脳トレ日和をご利用いただき、ありがとうございます。ご質問、ご意見、ご要望などございましたら、下記のフォームよりお気軽にお寄せください。</p>
       <p class="operation-start">運用開始月：2025年9月</p>
@@ -23,14 +23,7 @@
 
     <div class="contact-form-section">
       {#if form?.success}
-        <div
-          class="form-feedback success-message"
-          role="status"
-        >
-          お問い合わせを送信しました。2〜3営業日以内に担当者よりご連絡いたします。
-        </div>
-      {:else}
-        <form class="contact-form" method="POST" use:enhance>
+
           <div class="form-group">
             <label for="name">お名前 <span class="required">*</span></label>
             <input
@@ -107,17 +100,13 @@
           </div>
 
           <div class="form-group">
-            <button type="submit" class="submit-button">
-              送信する
+
             </button>
           </div>
         </form>
 
         {#if form?.errors?.general}
-          <p
-            class="form-feedback error-message"
-            role="alert"
-          >
+
             {form.errors.general}
           </p>
         {/if}
