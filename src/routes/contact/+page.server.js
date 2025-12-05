@@ -1,11 +1,11 @@
 import { fail } from '@sveltejs/kit';
 import nodemailer from 'nodemailer';
-// 【変更点】個別の名前ではなく、envオブジェクトとしてまとめて読み込む
+// 【重要】ビルドエラーを防ぐため、まとめて読み込む方式
 import { env } from '$env/dynamic/private';
 
 export const actions = {
 	default: async ({ request }) => {
-		// 【変更点】env.変数名 の形でアクセスする
+		// envオブジェクトから動的に値を取り出す
 		const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_TO } = env;
 
 		// --- 環境変数チェック ---
@@ -23,15 +23,22 @@ export const actions = {
 		const subject = formData.get('subject') || '（件名なし）';
 		const message = formData.get('message');
 
-		// --- デバッグ用ログ ---
+		// デバッグ用ログ
 		console.log(`Received inquiry from: ${email}`);
 
 		const data = { name, email, subject, message };
-
-		// --- 簡易バリデーション ---
 		const errors = {};
+
+		// --- バリデーション ---
 		if (!name) errors.name = 'お名前は必須です。';
-		if (!email) errors.email = 'メールアドレスは必須です。';
+		
+		if (!email) {
+			errors.email = 'メールアドレスは必須です。';
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			// Codex指摘に対応したシンプルな正規表現
+			errors.email = '有効なメールアドレスを入力してください。';
+		}
+		
 		if (!message) errors.message = 'お問い合わせ内容は必須です。';
 
 		if (Object.keys(errors).length > 0) {
