@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import nodemailer from 'nodemailer';
-// 【重要】ビルドエラーを防ぐため、まとめて読み込む方式に変更
+// 【重要】ビルドエラーを防ぐため、まとめて読み込む方式
 import { env } from '$env/dynamic/private';
 
 export const actions = {
