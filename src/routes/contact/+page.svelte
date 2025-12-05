@@ -1,8 +1,17 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { navigating } from '$app/stores';
+	// 送信中のローディング状態を管理
+	let loading = false;
 
 	export let form;
+
+	const submitHandler = () => {
+		loading = true;
+		return async ({ update }) => {
+			loading = false;
+			await update(); 
+		};
+	};
 </script>
 
 <div class="max-w-2xl mx-auto px-4 py-8">
@@ -19,7 +28,7 @@
 	{:else}
 		<form
 			method="POST"
-			use:enhance
+			use:enhance={submitHandler}
 			class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
 		>
 			{#if form?.message}
@@ -102,9 +111,9 @@
 				<button
 					class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 px-8 rounded focus:outline-none focus:shadow-outline transition duration-300 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
 					type="submit"
-					disabled={$navigating}
+					disabled={loading}
 				>
-					{$navigating ? '送信中...' : '送信する'}
+					{loading ? '送信中...' : '送信する'}
 				</button>
 			</div>
 		</form>
