@@ -8,47 +8,30 @@ import {
   MAIL_TO
 } from '$env/dynamic/private';
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export const actions = {
   default: async ({ request }) => {
     // 必須の環境変数が設定されているかチェック
     if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_TO) {
       console.error('メール送信に必要な環境変数が設定されていません。');
       return fail(500, {
-        errors: { general: 'サーバー側の設定エラーにより、現在お問い合わせを送信できません。' }
+        message: 'サーバー側の設定エラーにより、現在お問い合わせを送信できません。'
       });
     }
 
     const data = await request.formData();
-    const name = data.get('name');
-    const email = data.get('email');
-    const subject = data.get('subject');
-    const message = data.get('message');
+    const name = data.get('name')?.toString();
+    const email = data.get('email')?.toString();
+    const subject = data.get('subject')?.toString() || '（件名なし）'; // subjectがなくてもOK
+    const message = data.get('message')?.toString();
 
-    // --- バリデーション ---
-    const errors = {};
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      errors.name = 'お名前を入力してください。';
-    }
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      errors.email = 'メールアドレスを入力してください。';
-    } else if (!emailPattern.test(email.trim())) {
-      errors.email = 'メールアドレスの形式が正しくありません。';
-    }
-    if (!subject || typeof subject !== 'string' || !subject.trim()) {
-      errors.subject = 'お問い合わせ種別を選択してください。';
-    }
-    if (!message || typeof message !== 'string' || !message.trim()) {
-      errors.message = 'お問い合わせ内容を入力してください。';
-    } else if (message.trim().length < 10) {
-      errors.message = '10文字以上で詳しい内容をご記入ください。';
-    }
+    // --- デバッグログ ---
+    console.log('Contact form submission received:', { name, email, subject, message });
 
-    if (Object.keys(errors).length > 0) {
+    // --- バリデーション（緩和版） ---
+    if (!name || !email || !message) {
       return fail(400, {
         data: { name, email, subject, message },
-        errors
+        message: 'お名前、メールアドレス、お問い合わせ内容は必須です。'
       });
     }
 
@@ -67,9 +50,9 @@ export const actions = {
       const mailOptions = {
         from: `"脳トレ日和 お問い合わせ" <${SMTP_USER}>`,
         to: MAIL_TO,
-        replyTo: email, // 「返信」した際に、ユーザーのメールアドレスが宛先になるように設定
+        replyTo: email,
         subject: `【お問い合わせ】${subject} - ${name}様より`,
-        text: `
+        text: "
 以下の内容でお問い合わせがありました。
 
 -----------------------------------------
@@ -85,8 +68,8 @@ ${subject}
 お問い合わせ内容:
 ${message}
 -----------------------------------------
-`,
-        html: `
+",
+        html: "
           <p>以下の内容でお問い合わせがありました。</p>
           <hr>
           <h3>お名前</h3>
@@ -98,7 +81,7 @@ ${message}
           <h3>お問い合わせ内容</h3>
           <p>${message.replace(/\n/g, '<br>')}</p>
           <hr>
-        `
+        "
       };
 
       await transporter.sendMail(mailOptions);
@@ -108,8 +91,7 @@ ${message}
     } catch (e) {
       console.error('メール送信中にエラーが発生しました:', e);
       return fail(500, {
-        data: { name, email, subject, message },
-        errors: { general: 'サーバーエラーにより、お問い合わせを送信できませんでした。しばらくしてから再度お試しください。' }
+        message: 'サーバーエラーにより、お問い合わせを送信できませんでした。しばらくしてから再度お試しください。'
       });
     }
   }
