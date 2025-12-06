@@ -1,45 +1,62 @@
 <script>
-  import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
+	import { page } from '$app/stores';
+	import { SITE } from '$lib/config/site.js';
+	import { MetaTags } from 'svelte-meta-tags';
 
-  export let title = '';
-  export let description = '';
-  export let image = '';
-  export let noindex = false;
-  export let canonical = '';
+	/** @type {string} */
+	export let title;
+	/** @type {string} */
+	export let description;
+	/** @type {string} */
+	export let image;
+	/** @type {boolean} */
+	export let noindex = false;
 
-  const SITE_URL = 'https://noutorebiyori.com';
+	// ページURLの生成
+	$: canonical = $page.url.origin + $page.url.pathname;
 
-  const finalTitle = title ? `${title} | ${SITE.name}` : `${SITE.tagline} | ${SITE.name}`;
-  const finalDescription = description || SITE.description;
-  const finalImage = image || SITE.defaultOgImage;
-  const finalUrl = canonical || `${SITE_URL}${$page.url.pathname}`;
+	// タイトルの生成
+	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
+
+	// 説明文の生成
+	$: descriptionText = description || SITE.description;
+
+	// 画像URLの生成
+	$: imageUrl = image || SITE.image;
+
+	// 【修正点】キーワードが存在するかチェックしてから処理する（これで落ちません！）
+	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
+	$: keywordsString = keywordsArray.length > 0 ? keywordsArray.join(', ') : '';
 </script>
 
-<svelte:head>
-  <title>{finalTitle}</title>
-  <meta name="description" content={finalDescription} />
-  <link rel="canonical" href={finalUrl} />
-
-  {#if noindex}
-    <meta name="robots" content="noindex, nofollow" />
-  {/if}
-
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content={finalUrl} />
-  <meta property="og:title" content={finalTitle} />
-  <meta property="og:description" content={finalDescription} />
-  <meta property="og:image" content={finalImage} />
-  <meta property="og:site_name" content={SITE.name} />
-  <meta property="og:locale" content={SITE.locale} />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={finalTitle} />
-  <meta name="twitter:description" content={finalDescription} />
-  <meta name="twitter:image" content={finalImage} />
-  {#if SITE.twitterHandle}
-    <meta name="twitter:site" content={SITE.twitterHandle} />
-  {/if}
-</svelte:head>
+<MetaTags
+	title={titleText}
+	description={descriptionText}
+	canonical={canonical}
+	keywords={keywordsString}
+	noindex={noindex}
+	openGraph={{
+		title: titleText,
+		description: descriptionText,
+		url: canonical,
+		type: 'website',
+		images: [
+			{
+				url: imageUrl,
+				alt: titleText,
+				width: 1200,
+				height: 630
+			}
+		],
+		site_name: SITE.title
+	}}
+	twitter={{
+		handle: SITE.twitterHandle,
+		site: SITE.twitterHandle,
+		cardType: 'summary_large_image',
+		title: titleText,
+		description: descriptionText,
+		image: imageUrl,
+		imageAlt: titleText
+	}}
+/>
