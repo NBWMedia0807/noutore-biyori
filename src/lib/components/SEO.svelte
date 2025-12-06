@@ -1,84 +1,57 @@
 <script>
-  import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
-  import { SvelteMeta, OpenGraph } from 'svelte-meta-tags';
+	import { page } from '$app/stores';
 
-  /** @type {string} */
-  export let title = `${SITE.name}｜${SITE.tagline}`;
-  /** @type {string | undefined} */
-  export let description = SITE.description;
-  /** @type {string | undefined} */
-  export let canonical = SITE.url;
-  /** @type {boolean} */
-  export let noindex = false;
-  /** @type {string | undefined} */
-  export let image = SITE.defaultOgImage;
-  /** @type {number | undefined} */
-  export let imageWidth = undefined;
-  /** @type {number | undefined} */
-  export let imageHeight = undefined;
-  /** @type {string | undefined} */
-  export let imageAlt = undefined;
-  /** @type {'website' | 'article' | 'profile' | undefined} */
-  export let type = 'website';
-  /** @type {any | undefined} */
-  export let article = undefined;
-  /** @type {any[]} */
-  export let jsonld = [];
+	// SITE設定の読み込み（エラーガード付き）
+	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
+	import('$lib/config/site.js').then((module) => {
+		if (module.SITE) SITE = module.SITE;
+	}).catch(() => {});
 
-  const twitterHandle = SITE.twitterHandle ?? '';
+	/** @type {string} */
+	export let title = '';
+	/** @type {string} */
+	export let description = '';
+	/** @type {string} */
+	export let image = '';
+	/** @type {boolean} */
+	export let noindex = false;
 
-  $: finalRobotsContent = noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large';
-  $: finalImageAlt = imageAlt ?? `${SITE.name}のイメージ`;
+	// 各種テキストの生成
+	$: canonical = $page.url ? ($page.url.origin + $page.url.pathname) : '';
+	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
+	$: descriptionText = description || SITE.description || '';
+	$: imageUrl = image || SITE.image || '';
+	
+	// キーワード配列の処理
+	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
+	$: keywordsString = keywordsArray.join(', ');
 </script>
 
-<SvelteMeta
-  title={title}
-  description={description}
-  canonical={canonical}
-  keywords={SITE.keywords.join(',')}
-  openGraph={{
-    title: title,
-    description: description,
-    url: canonical,
-    type: type,
-    images: image
-      ? [
-          {
-            url: image,
-            width: imageWidth,
-            height: imageHeight,
-            alt: finalImageAlt
-          }
-        ]
-      : [],
-    siteName: SITE.name,
-    locale: SITE.locale,
-    article: article
-      ? {
-          publishedTime: article.publishedTime,
-          modifiedTime: article.modifiedTime,
-          authors: [article.author],
-          section: article.section
-        }
-      : undefined
-  }}
-  twitter={{
-    cardType: 'summary_large_image',
-    title: title,
-    description: description,
-    image: image,
-    imageAlt: finalImageAlt,
-    site: twitterHandle,
-    creator: twitterHandle
-  }}
-  additionalMetaTags={[{ name: 'robots', content: finalRobotsContent }]}
-/>
+<svelte:head>
+	<title>{titleText}</title>
+	<meta name="description" content={descriptionText} />
+	<meta name="keywords" content={keywordsString} />
+	<link rel="canonical" href={canonical} />
 
-{#if article?.publishedTime}
-  <meta property="og:updated_time" content={article.modifiedTime ?? article.publishedTime} />
-{/if}
+	{#if noindex}
+		<meta name="robots" content="noindex,nofollow" />
+	{:else}
+		<meta name="robots" content="index,follow" />
+	{/if}
 
-{#each jsonld as schema (schema['@id'] ?? JSON.stringify(schema))}
-  <script type="application/ld+json">{JSON.stringify(schema, null, 2)}</script>
-{/each}
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={canonical} />
+	<meta property="og:title" content={titleText} />
+	<meta property="og:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta property="og:image" content={imageUrl} />
+	{/if}
+	<meta property="og:site_name" content={SITE.title} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={titleText} />
+	<meta name="twitter:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta name="twitter:image" content={imageUrl} />
+	{/if}
+</svelte:head>
