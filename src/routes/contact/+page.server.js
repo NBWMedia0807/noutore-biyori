@@ -3,6 +3,9 @@ import nodemailer from 'nodemailer';
 // 【重要】ビルドエラーを防ぐため、envオブジェクトとしてまとめて読み込む
 import { env } from '$env/dynamic/private';
 
+// nodemailer は Edge Runtime で動作しないため、Node.js ランタイムを明示する
+export const config = { runtime: 'nodejs22.x' };
+
 export const actions = {
 	default: async ({ request }) => {
 		// envオブジェクトから動的に値を取り出す
