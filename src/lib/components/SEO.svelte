@@ -1,84 +1,63 @@
 <script>
-  import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
-  import { SvelteMeta, OpenGraph } from 'svelte-meta-tags';
+	import { page } from '$app/stores';
+	import { SITE } from '$lib/config/site.js';
+	// 【修正1】SvelteMeta ではなく MetaTags をインポート (v4以降の正しい名前)
+	import { MetaTags } from 'svelte-meta-tags';
 
-  /** @type {string} */
-  export let title = `${SITE.name}｜${SITE.tagline}`;
-  /** @type {string | undefined} */
-  export let description = SITE.description;
-  /** @type {string | undefined} */
-  export let canonical = SITE.url;
-  /** @type {boolean} */
-  export let noindex = false;
-  /** @type {string | undefined} */
-  export let image = SITE.defaultOgImage;
-  /** @type {number | undefined} */
-  export let imageWidth = undefined;
-  /** @type {number | undefined} */
-  export let imageHeight = undefined;
-  /** @type {string | undefined} */
-  export let imageAlt = undefined;
-  /** @type {'website' | 'article' | 'profile' | undefined} */
-  export let type = 'website';
-  /** @type {any | undefined} */
-  export let article = undefined;
-  /** @type {any[]} */
-  export let jsonld = [];
+	/** @type {string} */
+	export let title;
+	/** @type {string} */
+	export let description;
+	/** @type {string} */
+	export let image;
+	/** @type {boolean} */
+	export let noindex = false;
 
-  const twitterHandle = SITE.twitterHandle ?? '';
+	// ページURLの生成
+	$: canonical = $page.url.origin + $page.url.pathname;
 
-  $: finalRobotsContent = noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large';
-  $: finalImageAlt = imageAlt ?? `${SITE.name}のイメージ`;
+	// タイトルの生成
+	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
+
+	// 説明文の生成
+	$: descriptionText = description || SITE.description;
+
+	// 画像URLの生成
+	$: imageUrl = image || SITE.image;
+
+	// 【修正2】keywordsが存在するかチェックしてからjoinする (Codex指摘対応)
+	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
+	$: keywordsString = keywordsArray.length > 0 ? keywordsArray.join(', ') : '';
 </script>
 
-<SvelteMeta
-  title={title}
-  description={description}
-  canonical={canonical}
-  keywords={SITE.keywords.join(',')}
-  openGraph={{
-    title: title,
-    description: description,
-    url: canonical,
-    type: type,
-    images: image
-      ? [
-          {
-            url: image,
-            width: imageWidth,
-            height: imageHeight,
-            alt: finalImageAlt
-          }
-        ]
-      : [],
-    siteName: SITE.name,
-    locale: SITE.locale,
-    article: article
-      ? {
-          publishedTime: article.publishedTime,
-          modifiedTime: article.modifiedTime,
-          authors: [article.author],
-          section: article.section
-        }
-      : undefined
-  }}
-  twitter={{
-    cardType: 'summary_large_image',
-    title: title,
-    description: description,
-    image: image,
-    imageAlt: finalImageAlt,
-    site: twitterHandle,
-    creator: twitterHandle
-  }}
-  additionalMetaTags={[{ name: 'robots', content: finalRobotsContent }]}
+<MetaTags
+	title={titleText}
+	description={descriptionText}
+	canonical={canonical}
+	keywords={keywordsString}
+	noindex={noindex}
+	openGraph={{
+		title: titleText,
+		description: descriptionText,
+		url: canonical,
+		type: 'website',
+		images: [
+			{
+				url: imageUrl,
+				alt: titleText,
+				width: 1200,
+				height: 630
+			}
+		],
+		site_name: SITE.title
+	}}
+	twitter={{
+		handle: SITE.twitterHandle,
+		site: SITE.twitterHandle,
+		cardType: 'summary_large_image',
+		title: titleText,
+		description: descriptionText,
+		image: imageUrl,
+		imageAlt: titleText
+	}}
 />
-
-{#if article?.publishedTime}
-  <meta property="og:updated_time" content={article.modifiedTime ?? article.publishedTime} />
-{/if}
-
-{#each jsonld as schema (schema['@id'] ?? JSON.stringify(schema))}
-  <script type="application/ld+json">{JSON.stringify(schema, null, 2)}</script>
-{/each}
