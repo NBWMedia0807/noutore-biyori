@@ -1,12 +1,12 @@
 <script>
   import '../lib/styles/global.css';
   import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
   import { createPageSeo } from '$lib/seo.js';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
+  import SEO from '$lib/components/SEO.svelte';
 
   export let data;
 
@@ -20,7 +20,6 @@
         `gtag('config', ${JSON.stringify(gaMeasurementId)}, {"send_page_view": false});`
       ].join('')
     : '';
-  const twitterHandle = SITE.twitterHandle ?? '';
 
   $: currentPage = $page;
   $: ui = currentPage?.data?.ui ?? {};
@@ -31,28 +30,31 @@
   $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
   $: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
   let shouldSkipNextPageView = true;
+
+  $: isErrorPage = !!currentPage.error;
+
+  // SEO object from page data, with fallbacks
   $: fallbackSeo = createPageSeo({
     path: currentPage?.url?.pathname ?? '/',
     appendSiteName: false
   });
   $: providedSeo = currentPage?.data?.seo ?? {};
-  $: resolvedJsonLd = (() => {
-    if (!providedSeo?.jsonld) return fallbackSeo.jsonld;
-    return Array.isArray(providedSeo.jsonld)
-      ? providedSeo.jsonld.filter(Boolean)
-      : [providedSeo.jsonld];
-  })();
   $: seo = {
     ...fallbackSeo,
     ...providedSeo,
-    description: providedSeo.description ?? fallbackSeo.description,
+    title: isErrorPage ? 'エラー' : providedSeo.title ?? fallbackSeo.title,
+    description: isErrorPage ? 'ページが見つかりませんでした。' : providedSeo.description ?? fallbackSeo.description,
     canonical: providedSeo.canonical ?? fallbackSeo.canonical,
     image: providedSeo.image ?? fallbackSeo.image,
     type: providedSeo.type ?? fallbackSeo.type,
-    jsonld: resolvedJsonLd
+    jsonld: Array.isArray(providedSeo.jsonld)
+      ? providedSeo.jsonld.filter(Boolean)
+      : fallbackSeo.jsonld
   };
-  $: imageAlt = providedSeo.imageAlt ?? `${SITE.name}のイメージ`;
-  $: robotsContent = hasQuery ? 'noindex, follow' : 'max-image-preview:large';
+  
+  // Determine if the page should be noindexed
+  $: noindexPage = isErrorPage || hasQuery || seo.noindex === true;
+
   $: if (typeof document !== 'undefined') {
     document.documentElement.dataset.reviewMode = reviewMode ? 'true' : 'false';
     document.body.dataset.reviewMode = reviewMode ? 'true' : 'false';
@@ -79,7 +81,6 @@
 </script>
 
 <svelte:head>
-  <title>{seo.title}</title>
   {#if gaMeasurementId}
     <script
       id="ga4-gtag-script"
@@ -88,7 +89,7 @@
     ></script>
     {#if gaBootstrapScript}
       <script id="ga4-gtag-script-inline">
-        {gaBootstrapScript}
+        {@html gaBootstrapScript}
       </script>
     {/if}
   {/if}
@@ -99,64 +100,20 @@
   ></script>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
   <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
-  {#if seo.description}
-    <meta name="description" content={seo.description} />
-  {/if}
-  <meta name="robots" content={robotsContent} />
-  {#if seo.canonical}
-    <link rel="canonical" href={seo.canonical} />
-  {/if}
-  <meta property="og:site_name" content={SITE.name} />
-  <meta property="og:title" content={seo.title} />
-  {#if seo.description}
-    <meta property="og:description" content={seo.description} />
-  {/if}
-  {#if seo.canonical}
-    <meta property="og:url" content={seo.canonical} />
-  {/if}
-  <meta property="og:type" content={seo.type ?? 'website'} />
-  {#if seo.image}
-    <meta property="og:image" content={seo.image} />
-  {/if}
-  {#if seo.image && seo.imageWidth}
-    <meta property="og:image:width" content={seo.imageWidth} />
-  {/if}
-  {#if seo.image && seo.imageHeight}
-    <meta property="og:image:height" content={seo.imageHeight} />
-  {/if}
-  <meta property="og:locale" content={SITE.locale} />
-  {#if seo.image}
-    <meta property="og:image:alt" content={imageAlt} />
-  {/if}
-  {#if seo.article?.author}
-    <meta name="author" content={seo.article.author} />
-  {/if}
-  {#if seo.article?.section}
-    <meta property="article:section" content={seo.article.section} />
-  {/if}
-  {#if seo.article?.publishedTime}
-    <meta property="article:published_time" content={seo.article.publishedTime} />
-  {/if}
-  {#if seo.article?.modifiedTime}
-    <meta property="article:modified_time" content={seo.article.modifiedTime} />
-    <meta property="og:updated_time" content={seo.article.modifiedTime} />
-  {/if}
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={seo.title} />
-  {#if seo.description}
-    <meta name="twitter:description" content={seo.description} />
-  {/if}
-  {#if seo.image}
-    <meta name="twitter:image" content={seo.image} />
-    <meta name="twitter:image:alt" content={imageAlt} />
-  {/if}
-  {#if twitterHandle}
-    <meta name="twitter:site" content={twitterHandle} />
-    <meta name="twitter:creator" content={twitterHandle} />
-  {/if}
-  {#each seo.jsonld as schema (schema['@id'] ?? JSON.stringify(schema))}
-    <script type="application/ld+json">{JSON.stringify(schema)}</script>
-  {/each}
+
+  <SEO
+    title={seo.title}
+    description={seo.description}
+    canonical={seo.canonical}
+    image={seo.image}
+    imageWidth={seo.imageWidth}
+    imageHeight={seo.imageHeight}
+    imageAlt={seo.imageAlt}
+    type={seo.type}
+    article={seo.article}
+    jsonld={seo.jsonld}
+    noindex={noindexPage}
+  />
 </svelte:head>
 
 {#if ui.showHeader !== false}
