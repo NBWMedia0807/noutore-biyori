@@ -1,11 +1,7 @@
 <script>
 	import { page } from '$app/stores';
-
-	// SITE設定の読み込み（エラーガード付き）
-	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
-	import('$lib/config/site.js').then((module) => {
-		if (module.SITE) SITE = module.SITE;
-	}).catch(() => {});
+	// SEO設定を確実に読み込む（静的インポート）
+	import { SITE } from '$lib/config/site.js';
 
 	/** @type {string} */
 	export let title = '';
@@ -16,13 +12,19 @@
 	/** @type {boolean} */
 	export let noindex = false;
 
-	// 各種テキストの生成
+	// ページURLの生成（$page.urlが存在しない場合の安全対策付き）
 	$: canonical = $page.url ? ($page.url.origin + $page.url.pathname) : '';
+
+	// タイトルの生成
 	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
+
+	// 説明文の生成
 	$: descriptionText = description || SITE.description || '';
+
+	// 画像URLの生成
 	$: imageUrl = image || SITE.image || '';
 	
-	// キーワード配列の処理
+	// キーワード配列の処理（Codex指摘対応：配列チェックを入れる）
 	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
 	$: keywordsString = keywordsArray.join(', ');
 </script>
