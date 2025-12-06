@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import nodemailer from 'nodemailer';
-// 【重要】ビルドエラーを防ぐため、まとめて読み込む方式
+// 【重要】ビルドエラーを防ぐため、envオブジェクトとしてまとめて読み込む
 import { env } from '$env/dynamic/private';
 
 export const actions = {
@@ -35,7 +35,7 @@ export const actions = {
 		if (!email) {
 			errors.email = 'メールアドレスは必須です。';
 		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			// Codex指摘に対応したシンプルな正規表現
+			// シンプルかつ一般的なメールアドレス検証
 			errors.email = '有効なメールアドレスを入力してください。';
 		}
 		
