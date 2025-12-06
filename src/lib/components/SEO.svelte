@@ -1,7 +1,11 @@
 <script>
 	import { page } from '$app/stores';
-	// SEO設定を確実に読み込む（静的インポート）
-	import { SITE } from '$lib/config/site.js';
+
+	// SITE設定の読み込み
+	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
+	import('$lib/config/site.js').then((module) => {
+		if (module.SITE) SITE = module.SITE;
+	}).catch(() => {});
 
 	/** @type {string} */
 	export let title = '';
@@ -11,20 +15,23 @@
 	export let image = '';
 	/** @type {boolean} */
 	export let noindex = false;
+	/** @type {string} */
+	export let canonical = ''; // 【修正】外部から指定できるように追加
 
-	// ページURLの生成（$page.urlが存在しない場合の安全対策付き）
-	$: canonical = $page.url ? ($page.url.origin + $page.url.pathname) : '';
+	// 本番ドメイン（ここをあなたのサイトURLに固定するのが一番安全です）
+	const SITE_URL = 'https://noutorebiyori.com';
+
+	// URLの生成ロジック
+	$: currentPath = $page.url ? $page.url.pathname : '';
+	// もしcanonicalが指定されていればそれを使い、なければ本番ドメイン + パスで作る
+	$: canonicalUrl = canonical || (SITE_URL + currentPath);
 
 	// タイトルの生成
 	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
-
-	// 説明文の生成
 	$: descriptionText = description || SITE.description || '';
-
-	// 画像URLの生成
 	$: imageUrl = image || SITE.image || '';
 	
-	// キーワード配列の処理（Codex指摘対応：配列チェックを入れる）
+	// キーワード配列の処理
 	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
 	$: keywordsString = keywordsArray.join(', ');
 </script>
@@ -33,7 +40,8 @@
 	<title>{titleText}</title>
 	<meta name="description" content={descriptionText} />
 	<meta name="keywords" content={keywordsString} />
-	<link rel="canonical" href={canonical} />
+	
+	<link rel="canonical" href={canonicalUrl} />
 
 	{#if noindex}
 		<meta name="robots" content="noindex,nofollow" />
@@ -42,7 +50,7 @@
 	{/if}
 
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={canonical} />
+	<meta property="og:url" content={canonicalUrl} />
 	<meta property="og:title" content={titleText} />
 	<meta property="og:description" content={descriptionText} />
 	{#if imageUrl}
