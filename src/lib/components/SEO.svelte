@@ -1,45 +1,67 @@
 <script>
-  import { page } from '$app/stores';
-  import { SITE } from '$lib/config/site.js';
+	import { page } from '$app/stores';
 
-  export let title = '';
-  export let description = '';
-  export let image = '';
-  export let noindex = false;
-  export let canonical = '';
+	// サイト設定の読み込み（エラーガード付きで初期化）
+	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
+	
+	// 安全のため動的インポートを使用（読み込み失敗によるクラッシュ防止）
+	import('$lib/config/site.js').then((module) => {
+		if (module.SITE) SITE = module.SITE;
+	}).catch(() => { /* エラー時はデフォルト値を使用 */ });
 
-  const SITE_URL = 'https://noutorebiyori.com';
+	/** @type {string} */
+	export let title = '';
+	/** @type {string} */
+	export let description = '';
+	/** @type {string} */
+	export let image = '';
+	/** @type {boolean} */
+	export let noindex = false;
+	/** @type {string} */
+	export let canonical = '';
 
-  const finalTitle = title ? `${title} | ${SITE.name}` : `${SITE.tagline} | ${SITE.name}`;
-  const finalDescription = description || SITE.description;
-  const finalImage = image || SITE.defaultOgImage;
-  const finalUrl = canonical || `${SITE_URL}${$page.url.pathname}`;
+	// 本番ドメイン（正規URL生成用）
+	const SITE_URL = 'https://noutorebiyori.com';
+
+	// URL生成ロジック
+	$: currentPath = $page.url ? $page.url.pathname : '';
+	$: canonicalUrl = canonical || (SITE_URL + currentPath);
+
+	// 表示テキストの生成
+	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
+	$: descriptionText = description || SITE.description || '';
+	$: imageUrl = image || SITE.image || '';
+	
+	// キーワードの安全な変換（配列かどうかのチェックを入れて500エラー防止）
+	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
+	$: keywordsString = keywordsArray.join(', ');
 </script>
 
 <svelte:head>
-  <title>{finalTitle}</title>
-  <meta name="description" content={finalDescription} />
-  <link rel="canonical" href={finalUrl} />
+	<title>{titleText}</title>
+	<meta name="description" content={descriptionText} />
+	<meta name="keywords" content={keywordsString} />
+	<link rel="canonical" href={canonicalUrl} />
 
-  {#if noindex}
-    <meta name="robots" content="noindex, nofollow" />
-  {/if}
+	{#if noindex}
+		<meta name="robots" content="noindex,nofollow" />
+	{:else}
+		<meta name="robots" content="index,follow" />
+	{/if}
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content={finalUrl} />
-  <meta property="og:title" content={finalTitle} />
-  <meta property="og:description" content={finalDescription} />
-  <meta property="og:image" content={finalImage} />
-  <meta property="og:site_name" content={SITE.name} />
-  <meta property="og:locale" content={SITE.locale} />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={canonicalUrl} />
+	<meta property="og:title" content={titleText} />
+	<meta property="og:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta property="og:image" content={imageUrl} />
+	{/if}
+	<meta property="og:site_name" content={SITE.title} />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={finalTitle} />
-  <meta name="twitter:description" content={finalDescription} />
-  <meta name="twitter:image" content={finalImage} />
-  {#if SITE.twitterHandle}
-    <meta name="twitter:site" content={SITE.twitterHandle} />
-  {/if}
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={titleText} />
+	<meta name="twitter:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta name="twitter:image" content={imageUrl} />
+	{/if}
 </svelte:head>
