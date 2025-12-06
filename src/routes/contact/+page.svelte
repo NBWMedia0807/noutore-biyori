@@ -1,9 +1,21 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { navigating } from '$app/stores';
+	// navigating は二重送信防止には不十分なので使いません
 	import SectionIcon from '$lib/components/SectionIcon.svelte';
 
 	export let form;
+	
+	// 【修正】送信中かどうかを管理する専用の変数
+	let loading = false;
+
+	// 【修正】送信開始と終了を確実に検知するハンドラ
+	const submitHandler = () => {
+		loading = true; // 送信開始：ボタンをロック
+		return async ({ update }) => {
+			loading = false; // 処理終了：ロック解除
+			await update(); 
+		};
+	};
 </script>
 
 <div class="content-page">
@@ -20,7 +32,7 @@
 				<p class="form-description">
 					ご意見、ご感想、不具合のご報告など、お気軽にお寄せください。
 				</p>
-				<form method="POST" use:enhance>
+				<form method="POST" use:enhance={submitHandler}>
 					{#if form?.message && !form.success}
 						<div class="error-message" role="alert">
 							<p>{form.message}</p>
@@ -88,8 +100,8 @@
 					</div>
 
 					<div class="form-actions">
-						<button type="submit" disabled={$navigating}>
-							{$navigating ? '送信中...' : '送信する'}
+						<button type="submit" disabled={loading}>
+							{loading ? '送信中...' : '送信する'}
 						</button>
 					</div>
 				</form>
