@@ -23,16 +23,16 @@
 	// 本番ドメイン
 	const SITE_URL = 'https://noutorebiyori.com';
 
-	// URL生成ロジック
+	// URL生成（canonicalが空なら自動生成）
 	$: currentPath = $page.url ? $page.url.pathname : '';
 	$: canonicalUrl = canonical || (SITE_URL + currentPath);
 
-	// 表示テキストの生成
+	// テキスト生成
 	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
 	$: descriptionText = description || SITE.description || '';
 	$: imageUrl = image || SITE.image || '';
 	
-	// キーワードの安全な変換
+	// キーワード配列の安全処理（配列チェック）
 	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
 	$: keywordsString = keywordsArray.join(', ');
 </script>
