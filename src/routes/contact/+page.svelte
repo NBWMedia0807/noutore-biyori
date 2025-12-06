@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	// import { navigating } from '$app/stores'; // ← これは使いません
+	// navigating は二重送信防止には不十分なので使いません
 	import SectionIcon from '$lib/components/SectionIcon.svelte';
 
 	export let form;
@@ -10,9 +10,9 @@
 
 	// 【修正】送信開始と終了を確実に検知するハンドラ
 	const submitHandler = () => {
-		loading = true;
+		loading = true; // 送信開始：ボタンをロック
 		return async ({ update }) => {
-			loading = false;
+			loading = false; // 処理終了：ロック解除
 			await update(); 
 		};
 	};
