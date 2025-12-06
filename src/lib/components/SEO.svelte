@@ -1,62 +1,67 @@
 <script>
 	import { page } from '$app/stores';
-	import { SITE } from '$lib/config/site.js';
-	import { MetaTags } from 'svelte-meta-tags';
+
+	// SITE設定の読み込み（エラーガード付き）
+	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
+	
+	// 安全のため動的インポートを使用
+	import('$lib/config/site.js').then((module) => {
+		if (module.SITE) SITE = module.SITE;
+	}).catch(() => {});
 
 	/** @type {string} */
-	export let title;
+	export let title = '';
 	/** @type {string} */
-	export let description;
+	export let description = '';
 	/** @type {string} */
-	export let image;
+	export let image = '';
 	/** @type {boolean} */
 	export let noindex = false;
+	/** @type {string} */
+	export let canonical = '';
 
-	// ページURLの生成
-	$: canonical = $page.url.origin + $page.url.pathname;
+	// 本番ドメイン
+	const SITE_URL = 'https://noutorebiyori.com';
 
-	// タイトルの生成
+	// URL生成ロジック
+	$: currentPath = $page.url ? $page.url.pathname : '';
+	$: canonicalUrl = canonical || (SITE_URL + currentPath);
+
+	// 表示テキストの生成
 	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
-
-	// 説明文の生成
-	$: descriptionText = description || SITE.description;
-
-	// 画像URLの生成
-	$: imageUrl = image || SITE.image;
-
-	// 【修正点】キーワードが存在するかチェックしてから処理する（これで落ちません！）
+	$: descriptionText = description || SITE.description || '';
+	$: imageUrl = image || SITE.image || '';
+	
+	// キーワードの安全な変換
 	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
-	$: keywordsString = keywordsArray.length > 0 ? keywordsArray.join(', ') : '';
+	$: keywordsString = keywordsArray.join(', ');
 </script>
 
-<MetaTags
-	title={titleText}
-	description={descriptionText}
-	canonical={canonical}
-	keywords={keywordsString}
-	noindex={noindex}
-	openGraph={{
-		title: titleText,
-		description: descriptionText,
-		url: canonical,
-		type: 'website',
-		images: [
-			{
-				url: imageUrl,
-				alt: titleText,
-				width: 1200,
-				height: 630
-			}
-		],
-		site_name: SITE.title
-	}}
-	twitter={{
-		handle: SITE.twitterHandle,
-		site: SITE.twitterHandle,
-		cardType: 'summary_large_image',
-		title: titleText,
-		description: descriptionText,
-		image: imageUrl,
-		imageAlt: titleText
-	}}
-/>
+<svelte:head>
+	<title>{titleText}</title>
+	<meta name="description" content={descriptionText} />
+	<meta name="keywords" content={keywordsString} />
+	<link rel="canonical" href={canonicalUrl} />
+
+	{#if noindex}
+		<meta name="robots" content="noindex,nofollow" />
+	{:else}
+		<meta name="robots" content="index,follow" />
+	{/if}
+
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={canonicalUrl} />
+	<meta property="og:title" content={titleText} />
+	<meta property="og:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta property="og:image" content={imageUrl} />
+	{/if}
+	<meta property="og:site_name" content={SITE.title} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={titleText} />
+	<meta name="twitter:description" content={descriptionText} />
+	{#if imageUrl}
+		<meta name="twitter:image" content={imageUrl} />
+	{/if}
+</svelte:head>
