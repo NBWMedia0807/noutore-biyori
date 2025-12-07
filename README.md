@@ -148,4 +148,3 @@ main
 - [ ] `<enclosure>` 画像は横 640px 以上、`<thumbnail>` は 300px 以上（利用時）
 - [ ] `pnpm lint` / `pnpm build` が成功する
 - [ ] README の手順に従い、ブラウザと `curl -I` で内容を目視確認できる
-
