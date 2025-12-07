@@ -9,9 +9,10 @@ const PUBLISHED_FILTER = `
   ${PUBLISHED_DATETIME_FIELD} <= now()
 `;
 
+// 【修正】_typeが "post" または "quiz" の両方を取得するように変更
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
-  _type == "quiz" &&
+  (_type == "post" || _type == "quiz") &&
   ${PUBLISHED_FILTER}
 ] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...20]{
   _id,
@@ -20,11 +21,16 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   publishedAt,
   title,
   "slug": slug.current,
+  
+  // 本文（postの場合）
   body,
+  
+  // クイズ用フィールド（quizの場合）
   problemDescription,
   answerExplanation,
   closingMessage,
 
+  // 画像の取得（mainImage優先、なければクイズ用画像）
   "mainImage": select(
     defined(mainImage) => mainImage,
     defined(problemImage) => problemImage,
@@ -38,7 +44,8 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   },
 
   "category": category->{
-    name
+    name,
+    title
   }
 }
 `;
