@@ -29,6 +29,7 @@ const escapeXml = (unsafe) => {
 };
 
 export async function GET() {
+	// クエリに answerImage と hint が含まれていることを前提とします
 	const articles = await client.fetch(RSS_SMARTNEWS_QUERY);
 
 	if (!articles) {
@@ -37,33 +38,57 @@ export async function GET() {
 
 	const buildItem = (article) => {
 		// 記事のベースURL
-		const articleLink = `${siteLink}${article.slug}`; // slugはURLパス全体と仮定
+		const articleLink = `${siteLink}${article.slug}`;
 
-		// 記事の本文HTMLを生成するロジック
 		let contentHtml = '';
 		let descriptionText = '';
 		let rawProblemText = ''; 
+		
+		// 正解画像URLを取得 (あれば)
+		const answerImageUrl = article.answerImage?.asset?.url ? urlFor(article.answerImage).url() : '';
+
 
 		// ★ 記事タイプを判定する（クイズ特有のフィールドがあるか）
 		if (article.problemDescription || article.answerExplanation) {
-			// クイズの場合: problemDescriptionとanswerExplanationを結合
+			
+			// 1. 各Portable TextフィールドのHTML変換
 			let problemHtml = article.problemDescription ? portableTextToHtml(article.problemDescription) : '';
+			let hintHtml = article.hint ? portableTextToHtml(article.hint) : ''; // 【ヒント】
 			let answerHtml = article.answerExplanation ? portableTextToHtml(article.answerExplanation) : '';
 			let closingHtml = article.closingMessage ? portableTextToHtml(article.closingMessage) : '';
 			
-			// 最終的なHTML
+			// 2. 問題部分の構築
+			let problemSection = `<h2>【問題】</h2>`;
+			problemSection += problemHtml;
+			
+			// ヒントを追加
+			if (hintHtml) {
+				problemSection += `<hr><h3>★ ヒント</h3>${hintHtml}`;
+			}
+
+
+			// 3. 解説部分の構築
+			let answerSection = `<h2>【解説】</h2>`;
+
+			// 正解画像を解説の前に挿入
+			if (answerImageUrl) {
+				answerSection += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" />`;
+			}
+
+			answerSection += answerHtml;
+			answerSection += closingHtml;
+			answerSection += '<hr>';
+
+
+			// 4. 最終的なHTML
 			contentHtml = `
-				<h2>【問題】</h2>
-				${problemHtml}
-				<hr>
-				<h2>【解説】</h2>
-				${answerHtml}
-				${closingHtml}
+				${problemSection}
+				${answerSection}
 			`;
 
 			// descriptionには問題文の冒頭を使用
 			rawProblemText = problemHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawProblemText.substring(0, 100) + '...'; 
+			descriptionText = rawProblemText.substring(0, 100) + (rawProblemText.length > 100 ? '...' : ''); 
 
 		} else if (article.body) {
 			// 通常記事の場合: bodyフィールドを使用
@@ -79,8 +104,8 @@ export async function GET() {
             descriptionText = '';
         }
 
-		// メイン画像URLを取得
-		const mainImage = article.mainImage || article.problemImage; // メイン画像がない場合は問題画像を使う
+		// メイン画像URLを取得 (サムネイルとcontent:encodedの冒頭画像として使用)
+		const mainImage = article.mainImage || article.problemImage; 
 		const mainImageUrl = mainImage?.asset?.url ? urlFor(mainImage).url() : siteLogo;
 
 		// 記事公開日
@@ -107,8 +132,6 @@ export async function GET() {
 	};
 
 	const items = articles.map(buildItem).join('\n');
-
-	// XMLヘッダー（省略）
 
 	const xml = `
 	<?xml version="1.0" encoding="UTF-8"?>
