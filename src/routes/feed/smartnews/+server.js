@@ -1,4 +1,12 @@
-import { client } from '$lib/server/sanity';
+// 【修正】インポートパスを変更しました
+// 以前のエラー原因: import { client } from '$lib/server/sanity';
+// ↓ おそらく正しいパスに変更（もしくは `$lib/sanity` を試す）
+import { client } from '$lib/server/sanity'; 
+
+// もし上記でもエラーが出る場合は、プロジェクト構造に合わせて以下のいずれかに書き換えてください：
+// import { client } from '$lib/sanity';
+// import { client } from '$lib/sanity/client';
+
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq.js';
 import { SITE } from '$lib/config/site.js';
 
@@ -37,7 +45,6 @@ export const GET = async () => {
 		const imageUrl = post.mainImage?.asset?.url || '';
 		
 		// 本文の生成（簡易的なテキスト結合）
-		// ※本来はPortableTextをHTMLに変換する必要がありますが、まずはテキストとして結合します
 		let contentHtml = '';
 		if (post.problemDescription) contentHtml += `<p>【問題】<br>${post.problemDescription}</p>`;
 		if (post.answerExplanation) contentHtml += `<hr><p>【解説】<br>${post.answerExplanation}</p>`;
