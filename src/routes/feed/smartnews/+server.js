@@ -1,4 +1,4 @@
-import { client } from '$lib/sanity/client';
+import { client, urlFor } from '$lib/sanity/client'; // urlForをインポート
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText'; 
 
@@ -6,6 +6,9 @@ const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
 const siteDescription = '脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = `${siteLink}logo.png`;
+
+// 画像オブジェクトからURLを生成するヘルパー関数
+const getImageUrl = (imageObject) => imageObject ? urlFor(imageObject).url() : '';
 
 // XML特殊文字エスケープ
 const escapeXml = (unsafe) => {
@@ -26,34 +29,35 @@ export async function GET() {
 	const articles = await client.fetch(RSS_SMARTNEWS_QUERY);
 
 	if (!articles) {
-		return new Response('Articles not found', { status: 404 });
+		// 記事が取得できなかった場合は、空のRSSを返すが、アイテムがない状態
+		// エラーにはせず、空のXML構造を維持する
 	}
 
 	const buildItem = (article) => {
-		// 記事URL
-		const articleLink = `${siteLink}quiz/${article.slug}`; // クイズ記事のURL構造に合わせる
+		// 記事URL (slugが 'matchstick-quiz/article/100' のような形式でくることを想定)
+		const articleLink = `${siteLink}${article.slug}`;
 
 		let contentHtml = '';
 		let descriptionText = '';
+
+		// URL生成（getImageUrlを使用）
+		const problemImageUrl = getImageUrl(article.problemImage);
+		const answerImageUrl = getImageUrl(article.answerImage);
 
 		// ★ 記事タイプごとの処理
 		if (article._type === 'quiz') {
 			
 			// 1. 各パーツのHTML化
 			const problemHtml = article.problemDescription ? portableTextToHtml(article.problemDescription) : '';
-			const hintsHtml = article.hints ? portableTextToHtml(article.hints) : ''; // ★hintsに対応
+			const hintsHtml = article.hints ? portableTextToHtml(article.hints) : '';
 			const answerHtml = article.answerExplanation ? portableTextToHtml(article.answerExplanation) : '';
 			const closingHtml = article.closingMessage ? portableTextToHtml(article.closingMessage) : '';
 
-			// 2. 画像URL
-			const problemImageUrl = article.problemImage?.url || '';
-			const answerImageUrl = article.answerImage?.url || '';
-
-			// 3. 本文の組み立て（SmartNewsで見やすい順序）
+			// 2. 本文の組み立て（SmartNewsで見やすい順序）
 			// 【問題セクション】
 			contentHtml += `<h2>【問題】</h2>`;
 			if (problemImageUrl) {
-				contentHtml += `<img src="${problemImageUrl}" alt="問題画像" /><br>`;
+				contentHtml += `<img src="${problemImageUrl}" alt="${escapeXml(article.title)}の問題画像" /><br>`;
 			}
 			contentHtml += problemHtml;
 
@@ -65,16 +69,16 @@ export async function GET() {
 			// 【解説セクション】
 			contentHtml += `<hr><h2>【解説】</h2>`;
 			if (answerImageUrl) {
-				contentHtml += `<img src="${answerImageUrl}" alt="正解画像" /><br>`;
+				contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
 			}
 			contentHtml += answerHtml;
 			
 			// 【締め】
 			contentHtml += closingHtml;
 
-			// 4. Description生成（問題文の冒頭）
+			// 3. Description生成（問題文の冒頭）
 			const rawText = problemHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawText.substring(0, 100) + '...';
+			descriptionText = rawText.substring(0, 100) + (rawText.length > 100 ? '...' : '');
 
 		} else if (article._type === 'post') {
 			// 通常記事の場合
@@ -82,9 +86,14 @@ export async function GET() {
 			const rawText = contentHtml.replace(/<[^>]*>?/gm, '');
 			descriptionText = rawText.substring(0, 100) + '...';
 		}
+        
+        // 最終チェック
+        if (!contentHtml.trim()) {
+            descriptionText = '';
+        }
 
 		// サムネイル画像（mainImageがあればそれ、なければ問題画像）
-		const thumbnail = article.mainImage?.url || article.problemImage?.url || siteLogo;
+		const thumbnail = getImageUrl(article.mainImage) || problemImageUrl || siteLogo;
 		
 		// 日付
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
@@ -109,7 +118,7 @@ export async function GET() {
 		`.trim();
 	};
 
-	const items = articles.map(buildItem).join('\n');
+	const items = (articles || []).map(buildItem).join('\n'); // articlesがnullでも動くように
 
 	// XML全体
 	const xml = `
