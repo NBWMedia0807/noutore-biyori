@@ -1,6 +1,6 @@
 import { client, urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
-import { portableTextToHtml } from '$lib/utils/portableText'; // ★ Portable Text変換ヘルパーをインポート
+import { portableTextToHtml } from '$lib/utils/portableText'; 
 
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
@@ -37,14 +37,15 @@ export async function GET() {
 
 	const buildItem = (article) => {
 		// 記事のベースURL
-		const articleLink = `${siteLink}${article.slug}`;
+		const articleLink = `${siteLink}${article.slug}`; // slugはURLパス全体と仮定
 
 		// 記事の本文HTMLを生成するロジック
 		let contentHtml = '';
 		let descriptionText = '';
+		let rawProblemText = ''; 
 
-		// 記事タイプを判定して本文を組み立てる
-		if (article._type === 'quiz') {
+		// ★ 記事タイプを判定する（クイズ特有のフィールドがあるか）
+		if (article.problemDescription || article.answerExplanation) {
 			// クイズの場合: problemDescriptionとanswerExplanationを結合
 			let problemHtml = article.problemDescription ? portableTextToHtml(article.problemDescription) : '';
 			let answerHtml = article.answerExplanation ? portableTextToHtml(article.answerExplanation) : '';
@@ -60,20 +61,27 @@ export async function GET() {
 				${closingHtml}
 			`;
 
-			// descriptionには問題文の冒頭を使用（HTMLタグを削除）
-			const rawProblemText = problemHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawProblemText.substring(0, 100) + '...'; // 冒頭100文字を抜粋
-		} else if (article._type === 'post' && article.body) {
+			// descriptionには問題文の冒頭を使用
+			rawProblemText = problemHtml.replace(/<[^>]*>?/gm, '');
+			descriptionText = rawProblemText.substring(0, 100) + '...'; 
+
+		} else if (article.body) {
 			// 通常記事の場合: bodyフィールドを使用
 			contentHtml = portableTextToHtml(article.body);
 			
 			// descriptionには本文の冒頭を使用
 			const rawBodyText = contentHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawBodyText.substring(0, 100) + '...'; // 冒頭100文字を抜粋
+			descriptionText = rawBodyText.substring(0, 100) + '...'; 
 		}
+        
+        // 最終チェック: contentHtmlが空の場合は、descriptionも空にする
+        if (!contentHtml.trim()) {
+            descriptionText = '';
+        }
 
 		// メイン画像URLを取得
-		const mainImageUrl = article.mainImage?.asset?.url ? urlFor(article.mainImage).url() : siteLogo;
+		const mainImage = article.mainImage || article.problemImage; // メイン画像がない場合は問題画像を使う
+		const mainImageUrl = mainImage?.asset?.url ? urlFor(mainImage).url() : siteLogo;
 
 		// 記事公開日
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
@@ -100,7 +108,8 @@ export async function GET() {
 
 	const items = articles.map(buildItem).join('\n');
 
-	// XMLヘッダー
+	// XMLヘッダー（省略）
+
 	const xml = `
 	<?xml version="1.0" encoding="UTF-8"?>
 	<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"
