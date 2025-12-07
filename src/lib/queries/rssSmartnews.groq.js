@@ -1,36 +1,26 @@
 // src/lib/queries/rssSmartnews.groq.js
 
-const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
-
-// 公開判定（ドラフト除外＆公開日時チェック）
-const PUBLISHED_FILTER = `
-  defined(slug.current) &&
-  !(_id in path("drafts.**")) &&
-  ${PUBLISHED_DATETIME_FIELD} <= now()
-`;
-
-// 【修正】_typeが "post" または "quiz" の両方を取得するように変更
+// 【修正】条件を緩和したシンプル版
+// 日付チェックを外し、単に「postかquizで、スラッグがあるもの」を最新順に取得します
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
   (_type == "post" || _type == "quiz") &&
-  ${PUBLISHED_FILTER}
-] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...20]{
-  _id,
-  _createdAt,
-  _updatedAt,
-  publishedAt,
+  defined(slug.current) &&
+  !(_id in path("drafts.**"))
+] | order(_createdAt desc)[0...20]{
   title,
   "slug": slug.current,
   
-  // 本文（postの場合）
-  body,
+  // 日付（publishedAtがなければ作成日を使う）
+  "publishedAt": coalesce(publishedAt, _createdAt),
   
-  // クイズ用フィールド（quizの場合）
+  // 本文データ
+  body,
   problemDescription,
   answerExplanation,
   closingMessage,
 
-  // 画像の取得（mainImage優先、なければクイズ用画像）
+  // 画像データ
   "mainImage": select(
     defined(mainImage) => mainImage,
     defined(problemImage) => problemImage,
@@ -43,6 +33,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     }
   },
 
+  // カテゴリー
   "category": category->{
     name,
     title
