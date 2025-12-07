@@ -26,19 +26,15 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
 
   // --- Quiz用フィールド ---
   problemDescription,
-  hints, // ★正しいフィールド名に変更
+  hints, 
   answerExplanation,
   closingMessage,
 
   // --- 画像関連 ---
-  // メイン画像（サムネイル用）
-  "mainImage": mainImage.asset->{ url, mimeType },
-  
-  // 問題画像（本文表示用）
-  "problemImage": problemImage.asset->{ url, mimeType },
-  
-  // 正解画像（解説表示用）
-  "answerImage": answerImage.asset->{ url, mimeType },
+  // 画像フィールド全体を取得（urlForで使うため）
+  mainImage,
+  problemImage,
+  answerImage,
 
   // カテゴリ
   "category": category->{
