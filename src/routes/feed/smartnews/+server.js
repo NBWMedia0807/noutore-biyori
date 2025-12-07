@@ -1,189 +1,133 @@
-// src/routes/feed/smartnews/+server.js
-
-
-
-// 【修正】Sanityクライアントのインポートパスを、ファイル名（client.js）を含める形に変更しました。
-
-import { client } from '$lib/sanity/client';
-
-import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq.js';
-
-import { SITE } from '$lib/config/site.js';
-
-
-
-// サイトの基本情報（SmartNews用）
-
-const SITE_TITLE = SITE.title || '脳トレ日和';
-
-const SITE_URL = 'https://noutorebiyori.com';
-
-const SITE_DESCRIPTION = SITE.description || '毎日の脳トレで健康な生活を';
-
-const SITE_LOGO = 'https://noutorebiyori.com/logo.png'; // 透過PNG推奨
-
-
-
-export const GET = async () => {
-
-	try {
-
-        // 1. Sanityから記事データを取得
-
-        const posts = await client.fetch(RSS_SMARTNEWS_QUERY);
-
-        
-
-        // 2. XMLのヘッダー部分
-
-        const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
-
-<rss version="2.0" 
-
-    xmlns:content="http://purl.org/rss/1.0/modules/content/"
-
-    xmlns:dc="http://purl.org/dc/elements/1.1/"
-
-    xmlns:media="http://search.yahoo.com/mrss/"
-
-    xmlns:snf="http://www.smartnews.be/snf">
-
-    <channel>
-
-        <title>${SITE_TITLE}</title>
-
-        <link>${SITE_URL}/</link>
-
-        <description>${SITE_DESCRIPTION}</description>
-
-        <pubDate>${new Date().toUTCString()}</pubDate>
-
-        <language>ja</language>
-
-        <copyright>© ${new Date().getFullYear()} ${SITE_TITLE}</copyright>
-
-        <snf:logo><url>${SITE_LOGO}</url></snf:logo>
-
-        <ttl>60</ttl>
-
-`;
-
-
-
-        // 3. 各記事（item）の生成
-
-        const xmlItems = posts.map((post) => {
-
-            const postUrl = `${SITE_URL}/quiz/${post.slug}`;
-
-            const pubDate = new Date(post.publishedAt || post._createdAt).toUTCString();
-
-            const imageUrl = post.mainImage?.asset?.url || '';
-
-            
-
-            // 本文の生成（簡易的なテキスト結合）
-
-            let contentHtml = '';
-
-            if (post.problemDescription) contentHtml += `<p>【問題】<br>${post.problemDescription}</p>`;
-
-            if (post.answerExplanation) contentHtml += `<hr><p>【解説】<br>${post.answerExplanation}</p>`;
-
-            if (post.closingMessage) contentHtml += `<p>${post.closingMessage}</p>`;
-
-
-
-            return `
-
-            <item>
-
-                <title><![CDATA[${post.title}]]></title>
-
-                <link>${postUrl}</link>
-
-                <guid isPermaLink="true">${postUrl}</guid>
-
-                <pubDate>${pubDate}</pubDate>
-
-                <description><![CDATA[${post.problemDescription || ''}]]></description>
-
-                <content:encoded><![CDATA[
-
-                    ${imageUrl ? `<img src="${imageUrl}" alt="${post.title}" />` : ''}
-
-                    ${contentHtml}
-
-                ]]></content:encoded>
-
-                ${post.category?.name ? `<category>${post.category.name}</category>` : ''}
-
-                ${imageUrl ? `<media:thumbnail url="${imageUrl}" />` : ''}
-
-                <dc:creator>${SITE_TITLE}</dc:creator>
-
-                <snf:advertisement>
-
-                    <snf:sponsoredLink link="${SITE_URL}/contact" thumbnail="${SITE_LOGO}" title="お問い合わせ" advertiser="${SITE_TITLE}"/>
-
-                </snf:advertisement>
-
-            </item>`;
-
-        }).join('');
-
-
-
-        // 4. フッターと合体
-
-        const xmlFooter = `
-
-    </channel>
-
-</rss>`;
-
-
-
-        const xml = xmlHeader + xmlItems + xmlFooter;
-
-
-
-        // 5. レスポンスとして返す
-
-        return new Response(xml, {
-
-            headers: {
-
-                'Content-Type': 'application/xml',
-
-                'Cache-Control': 'max-age=0, s-maxage=3600'
-
-            }
-
-        });
-
-
-
-    } catch (error) {
-
-        console.error("RSS Generation Error:", error);
-
-        // エラー発生時はXMLエラーメッセージを返す
-
-        return new Response('<?xml version="1.0" encoding="UTF-8"?><error>RSS generation failed.</error>', {
-
-            status: 500,
-
-            headers: {
-
-                'Content-Type': 'application/xml',
-
-                'Cache-Control': 'no-cache'
-
-            }
-
-        });
-
-    }
-
+import { client, urlFor } from '$lib/sanity/client';
+import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
+import { portableTextToHtml } from '$lib/utils/portableText'; // ★ Portable Text変換ヘルパーをインポート
+
+const siteTitle = '脳トレ日和';
+const siteLink = 'https://noutorebiyori.com/';
+const siteDescription = '脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
+const siteLogo = `${siteLink}logo.png`;
+
+// XML特殊文字をエスケープするヘルパー関数
+const escapeXml = (unsafe) => {
+	if (!unsafe) return '';
+	return unsafe.replace(/[<>&'"]/g, (c) => {
+		switch (c) {
+			case '<':
+				return '&lt;';
+			case '>':
+				return '&gt;';
+			case '&':
+				return '&amp;';
+			case "'":
+				return '&apos;';
+			case '"':
+				return '&quot;';
+			default:
+				return c;
+		}
+	});
 };
+
+export async function GET() {
+	const articles = await client.fetch(RSS_SMARTNEWS_QUERY);
+
+	if (!articles) {
+		return new Response('Articles not found', { status: 404 });
+	}
+
+	const buildItem = (article) => {
+		// 記事のベースURL
+		const articleLink = `${siteLink}${article.slug}`;
+
+		// 記事の本文HTMLを生成するロジック
+		let contentHtml = '';
+		let descriptionText = '';
+
+		// 記事タイプを判定して本文を組み立てる
+		if (article._type === 'quiz') {
+			// クイズの場合: problemDescriptionとanswerExplanationを結合
+			let problemHtml = article.problemDescription ? portableTextToHtml(article.problemDescription) : '';
+			let answerHtml = article.answerExplanation ? portableTextToHtml(article.answerExplanation) : '';
+			let closingHtml = article.closingMessage ? portableTextToHtml(article.closingMessage) : '';
+			
+			// 最終的なHTML
+			contentHtml = `
+				<h2>【問題】</h2>
+				${problemHtml}
+				<hr>
+				<h2>【解説】</h2>
+				${answerHtml}
+				${closingHtml}
+			`;
+
+			// descriptionには問題文の冒頭を使用（HTMLタグを削除）
+			const rawProblemText = problemHtml.replace(/<[^>]*>?/gm, '');
+			descriptionText = rawProblemText.substring(0, 100) + '...'; // 冒頭100文字を抜粋
+		} else if (article._type === 'post' && article.body) {
+			// 通常記事の場合: bodyフィールドを使用
+			contentHtml = portableTextToHtml(article.body);
+			
+			// descriptionには本文の冒頭を使用
+			const rawBodyText = contentHtml.replace(/<[^>]*>?/gm, '');
+			descriptionText = rawBodyText.substring(0, 100) + '...'; // 冒頭100文字を抜粋
+		}
+
+		// メイン画像URLを取得
+		const mainImageUrl = article.mainImage?.asset?.url ? urlFor(article.mainImage).url() : siteLogo;
+
+		// 記事公開日
+		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
+
+		return `
+		<item>
+			<title><![CDATA[ ${escapeXml(article.title)} ]]></title>
+			<link>${articleLink}</link>
+			<guid isPermaLink="true">${articleLink}</guid>
+			<pubDate>${pubDate}</pubDate>
+			<description><![CDATA[ ${escapeXml(descriptionText)} ]]></description>
+			<content:encoded><![CDATA[ 
+				<img src="${mainImageUrl}" alt="${escapeXml(article.title)}" />
+				${contentHtml} 
+			]]></content:encoded>
+			<media:thumbnail url="${mainImageUrl}"/>
+			<dc:creator>脳トレ日和</dc:creator>
+			<snf:advertisement>
+				<snf:sponsoredLink link="${siteLink}contact" thumbnail="${siteLogo}" title="お問い合わせ" advertiser="${siteTitle}"/>
+			</snf:advertisement>
+		</item>
+		`.trim();
+	};
+
+	const items = articles.map(buildItem).join('\n');
+
+	// XMLヘッダー
+	const xml = `
+	<?xml version="1.0" encoding="UTF-8"?>
+	<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"
+		xmlns:dc="http://purl.org/dc/elements/1.1/"
+		xmlns:media="http://search.yahoo.com/mrss/"
+		xmlns:snf="http://www.smartnews.be/snf"
+		version="2.0">
+	<channel>
+		<title>${siteTitle}</title>
+		<link>${siteLink}</link>
+		<description>${siteDescription}</description>
+		<pubDate>${new Date().toUTCString()}</pubDate>
+		<language>ja</language>
+		<copyright>© 2025 ${siteTitle}</copyright>
+		<snf:logo>
+			<url>${siteLogo}</url>
+		</snf:logo>
+		<ttl>60</ttl>
+		${items}
+	</channel>
+	</rss>
+	`.trim();
+
+	return new Response(xml, {
+		headers: {
+			'Content-Type': 'application/xml',
+			'Cache-Control': 'max-age=0, s-maxage=3600',
+		},
+	});
+}
