@@ -1,19 +1,16 @@
 // src/lib/queries/rssSmartnews.groq.js
 
-const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
-
-// 公開判定
+// 公開判定（シンプル版：スラッグがあり、下書きでなければOKとする）
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
-  !(_id in path("drafts.**")) &&
-  ${PUBLISHED_DATETIME_FIELD} <= now()
+  !(_id in path("drafts.**"))
 `;
 
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
   (_type == "post" || _type == "quiz") &&
   ${PUBLISHED_FILTER}
-] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...20]{
+] | order(_createdAt desc)[0...20]{
   _id,
   _type,
   publishedAt,
@@ -31,7 +28,6 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   closingMessage,
 
   // --- 画像関連 ---
-  // 画像フィールド全体を取得（urlForで使うため）
   mainImage,
   problemImage,
   answerImage,
