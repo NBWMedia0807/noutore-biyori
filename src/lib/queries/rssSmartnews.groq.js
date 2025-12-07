@@ -1,39 +1,46 @@
 // src/lib/queries/rssSmartnews.groq.js
 
-// 【修正】条件を緩和したシンプル版
-// 日付チェックを外し、単に「postかquizで、スラッグがあるもの」を最新順に取得します
+const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
+
+// 公開判定
+const PUBLISHED_FILTER = `
+  defined(slug.current) &&
+  !(_id in path("drafts.**")) &&
+  ${PUBLISHED_DATETIME_FIELD} <= now()
+`;
+
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
   (_type == "post" || _type == "quiz") &&
-  defined(slug.current) &&
-  !(_id in path("drafts.**"))
-] | order(_createdAt desc)[0...20]{
+  ${PUBLISHED_FILTER}
+] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...20]{
+  _id,
+  _type,
+  publishedAt,
+  _createdAt,
   title,
   "slug": slug.current,
   
-  // 日付（publishedAtがなければ作成日を使う）
-  "publishedAt": coalesce(publishedAt, _createdAt),
-  
-  // 本文データ
+  // --- Post用フィールド ---
   body,
+
+  // --- Quiz用フィールド ---
   problemDescription,
+  hints, // ★正しいフィールド名に変更
   answerExplanation,
   closingMessage,
 
-  // 画像データ
-  "mainImage": select(
-    defined(mainImage) => mainImage,
-    defined(problemImage) => problemImage,
-    defined(questionImage) => questionImage,
-    null
-  ){
-    asset->{
-      url,
-      mimeType
-    }
-  },
+  // --- 画像関連 ---
+  // メイン画像（サムネイル用）
+  "mainImage": mainImage.asset->{ url, mimeType },
+  
+  // 問題画像（本文表示用）
+  "problemImage": problemImage.asset->{ url, mimeType },
+  
+  // 正解画像（解説表示用）
+  "answerImage": answerImage.asset->{ url, mimeType },
 
-  // カテゴリー
+  // カテゴリ
   "category": category->{
     name,
     title
