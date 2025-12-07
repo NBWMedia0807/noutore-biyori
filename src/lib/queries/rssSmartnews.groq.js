@@ -1,15 +1,9 @@
 // src/lib/queries/rssSmartnews.groq.js
 
-// 公開判定（シンプル版：スラッグがあり、下書きでなければOKとする）
-const PUBLISHED_FILTER = `
-  defined(slug.current) &&
-  !(_id in path("drafts.**"))
-`;
-
+// 記事の公開・下書きステータスに関係なく、とにかくquizとpostタイプの上位20件を取得するクエリ
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
-  (_type == "post" || _type == "quiz") &&
-  ${PUBLISHED_FILTER}
+  _type == "quiz" || _type == "post"
 ] | order(_createdAt desc)[0...20]{
   _id,
   _type,
