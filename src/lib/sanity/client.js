@@ -1,6 +1,9 @@
+// src/lib/sanity/client.js
+
+// 【修正箇所】パスを './sanityDefaults.js' から '../sanityDefaults.js' に変更
 import sanityClient from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
-import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
+import { SANITY_DEFAULTS, warnMissingSanityEnv } from '../sanityDefaults.js'; // ★ここを修正しました
 
 const projectId = import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId;
 const dataset = import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset;
