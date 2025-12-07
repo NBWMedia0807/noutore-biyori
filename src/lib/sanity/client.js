@@ -1,9 +1,11 @@
 // src/lib/sanity/client.js
 
-// 【修正箇所】パスを './sanityDefaults.js' から '../sanityDefaults.js' に変更
-import sanityClient from '@sanity/client';
+// 【修正1】v7以降は createClient を使う必要があります
+import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
-import { SANITY_DEFAULTS, warnMissingSanityEnv } from '../sanityDefaults.js'; // ★ここを修正しました
+
+// 【修正2】パスを './sanityDefaults.js' から '../sanityDefaults.js' に変更（適用済み）
+import { SANITY_DEFAULTS, warnMissingSanityEnv } from '../sanityDefaults.js';
 
 const projectId = import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId;
 const dataset = import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset;
@@ -17,7 +19,8 @@ warnMissingSanityEnv({
   logger: typeof console !== 'undefined' ? console : undefined
 });
 
-export const client = sanityClient({
+// 【修正3】sanityClient() ではなく createClient() を使用
+export const client = createClient({
   projectId,
   dataset,
   apiVersion,
