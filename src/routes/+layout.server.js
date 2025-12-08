@@ -27,37 +27,24 @@ const resolveFlags = () => ({
   )
 });
 
-// グローバルナビでは「間違い探し」を常に先頭に配置したい。
-// Sanityから取得したカテゴリをソートする際に、特定スラッグの優先度を調整する。
-const CATEGORY_PRIORITY = new Map([
-  ['spot-the-difference', 0]
-]);
-
-const getCategoryPriority = (slug) => {
-  if (!slug) return Number.MAX_SAFE_INTEGER;
-  return CATEGORY_PRIORITY.get(slug) ?? Number.MAX_SAFE_INTEGER;
-};
+// 表示したいカテゴリのスラッグと順番を定義
+const DESIRED_CATEGORIES = ['matchstick-quiz', 'kanji-mistake', 'reading-quiz'];
 
 const sanitizeCategories = (entries) => {
   if (!Array.isArray(entries)) return [];
-  const seen = new Set();
-  const sanitized = [];
-
+  
+  // Sanityから取得したカテゴリをスラッグをキーにしたMapに変換
+  const categoryMap = new Map();
   for (const entry of entries) {
     const slug = typeof entry?.slug === 'string' ? entry.slug.trim() : '';
     const title = typeof entry?.title === 'string' ? entry.title.trim() : '';
-    if (!slug || !title || seen.has(slug)) continue;
-    seen.add(slug);
-    sanitized.push({ slug, title });
+    if (slug && title && !categoryMap.has(slug)) {
+      categoryMap.set(slug, { slug, title });
+    }
   }
 
-  return sanitized.sort((a, b) => {
-    const priorityDiff = getCategoryPriority(a.slug) - getCategoryPriority(b.slug);
-    if (priorityDiff !== 0) {
-      return priorityDiff;
-    }
-    return a.title.localeCompare(b.title, 'ja');
-  });
+  // DESIRED_CATEGORIESの順序通りにカテゴリを並べ替え
+  return DESIRED_CATEGORIES.map(slug => categoryMap.get(slug)).filter(Boolean);
 };
 
 const getFallbackCategories = () => {
