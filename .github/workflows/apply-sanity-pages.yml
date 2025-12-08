@@ -63,7 +63,7 @@ jobs:
           {#if data.doc.mainImage}<img src={urlFor(data.doc.mainImage).width(900).url()} alt={data.doc.title} style="width:100%;max-width:900px;border-radius:12px" />{/if}
           {#if data.doc.problemDescription}<p style="margin-top:12px;white-space:pre-wrap;">{data.doc.problemDescription}</p>{/if}
           <button on:click={() => (showHint=!showHint)} style="margin:12px 0;padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#f8f8f8;">{showHint ? 'ヒントを隠す' : 'ヒントを見る'}</button>
-          {#if showHint && data.doc.hint}<div style="padding:12px;border:1px dashed #ccc;border-radius:8px;white-space:pre-wrap;">{data.doc.hint}</div>{/if}
+          {#if showHint && data.doc.hint}<div style="padding:12px;border:1px dashed #ccc;border-radius:8px;">{@html data.doc.hint.replace(/\n/g, '<br>')}</div>{/if}
           <p style="margin-top:20px;"><a href="./answer">→ 解答ページへ</a></p>
           EOF
 
