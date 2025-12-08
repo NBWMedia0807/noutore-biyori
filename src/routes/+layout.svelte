@@ -2,11 +2,12 @@
 	import '../lib/styles/global.css';
 	import { page } from '$app/stores';
 	import { createPageSeo } from '$lib/seo.js';
-	import SEO from '$lib/components/SEO.svelte';
 	import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { loadGtagOnce, sendPageView } from '$lib/ga';
+	// 【修正】安全なSEOコンポーネントをインポート
+	import SEO from '$lib/components/SEO.svelte';
 
 	export let data;
 
@@ -23,9 +24,12 @@
 
 	$: currentPage = $page;
 	$: ui = currentPage?.data?.ui ?? {};
+	
+	// パンくずリスト
 	$: breadcrumbs = Array.isArray(currentPage?.data?.breadcrumbs)
 		? currentPage.data.breadcrumbs
 		: [];
+		
 	$: reviewMode = Boolean(data?.flags?.adsenseReviewMode);
 	$: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
 	$: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
@@ -33,7 +37,7 @@
 
 	$: isErrorPage = !!currentPage.error;
 
-	// SEO object from page data, with fallbacks
+	// SEO設定
 	$: fallbackSeo = createPageSeo({
 		path: currentPage?.url?.pathname ?? '/',
 		appendSiteName: false
@@ -52,10 +56,9 @@
 			: fallbackSeo.jsonld
 	};
 	
-	// Determine if the page should be noindexed
+	// noindex判定
 	$: noindexPage = isErrorPage || hasQuery || seo.noindex === true;
 
-	// サイト名（共通設定）
 	const SITE_NAME = '脳トレ日和';
 
 	$: if (typeof document !== 'undefined') {
@@ -65,31 +68,20 @@
 
 	onMount(() => {
 		loadGtagOnce();
-
 		if (typeof window !== 'undefined') {
 			sendPageView(`${window.location.pathname}${window.location.search}`);
 		}
-
 		afterNavigate((navigation) => {
 			if (shouldSkipNextPageView) {
 				shouldSkipNextPageView = false;
 				return;
 			}
-
 			const path = navigation?.to?.url?.pathname ?? window.location.pathname;
 			const search = navigation?.to?.url?.search ?? window.location.search;
 			sendPageView(`${path}${search}`);
 		});
 	});
 </script>
-
-<SEO
-	title={seo.title}
-	description={seo.description}
-	canonical={seo.canonical}
-	image={seo.image}
-	noindex={noindexPage}
-/>
 
 <svelte:head>
 	{#if gaMeasurementId}
@@ -111,6 +103,14 @@
 	></script>
 	<link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
 	<link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+
+	<SEO
+		title={seo.title}
+		description={seo.description}
+		canonical={seo.canonical}
+		image={seo.image}
+		noindex={noindexPage}
+	/>
 </svelte:head>
 
 {#if ui.showHeader !== false}
@@ -127,7 +127,7 @@
 					fetchpriority="high"
 				/>
 				<div class="title-section">
-					<p class="site-title">脳トレ日和</p>
+					<h1>脳トレ日和</h1>
 					<p class="subtitle">楽しく脳を鍛えましょう</p>
 				</div>
 			</a>
