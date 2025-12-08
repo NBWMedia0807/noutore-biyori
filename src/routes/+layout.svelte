@@ -2,6 +2,7 @@
 	import '../lib/styles/global.css';
 	import { page } from '$app/stores';
 	import { createPageSeo } from '$lib/seo.js';
+	import SEO from '$lib/components/SEO.svelte';
 	import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -82,6 +83,14 @@
 	});
 </script>
 
+<SEO
+	title={seo.title}
+	description={seo.description}
+	canonical={seo.canonical}
+	image={seo.image}
+	noindex={noindexPage}
+/>
+
 <svelte:head>
 	{#if gaMeasurementId}
 		<script
@@ -102,32 +111,6 @@
 	></script>
 	<link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
 	<link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
-
-	<title>{seo.title ? `${seo.title} | ${SITE_NAME}` : SITE_NAME}</title>
-	<meta name="description" content={seo.description} />
-	<link rel="canonical" href={seo.canonical} />
-
-	{#if noindexPage}
-		<meta name="robots" content="noindex,nofollow" />
-	{:else}
-		<meta name="robots" content="index,follow" />
-	{/if}
-
-	<meta property="og:type" content={seo.type || 'website'} />
-	<meta property="og:url" content={seo.canonical} />
-	<meta property="og:title" content={seo.title} />
-	<meta property="og:description" content={seo.description} />
-	<meta property="og:site_name" content={SITE_NAME} />
-	{#if seo.image}
-		<meta property="og:image" content={seo.image} />
-	{/if}
-
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content={seo.title} />
-	<meta name="twitter:description" content={seo.description} />
-	{#if seo.image}
-		<meta name="twitter:image" content={seo.image} />
-	{/if}
 </svelte:head>
 
 {#if ui.showHeader !== false}
@@ -144,7 +127,7 @@
 					fetchpriority="high"
 				/>
 				<div class="title-section">
-					<h1>脳トレ日和</h1>
+					<p class="site-title">脳トレ日和</p>
 					<p class="subtitle">楽しく脳を鍛えましょう</p>
 				</div>
 			</a>
