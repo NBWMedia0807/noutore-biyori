@@ -1,56 +1,54 @@
 <script>
-	import { page } from '$app/stores';
-	import { SITE } from '$lib/config/site.js';
+  import { page } from '$app/stores';
 
-	/** @type {string} */
-	export let title = '';
-	/** @type {string} */
-	export let description = '';
-	/** @type {string} */
-	export let image = '';
-	/** @type {boolean} */
-	export let noindex = false;
-	/** @type {string} */
-	export let canonical = '';
+  // 基本設定（デフォルト値）
+  // 外部ファイルに依存せず、ここで定義することでエラーを回避します
+  const SITE_TITLE = '脳トレ日和';
+  const SITE_DESCRIPTION = '楽しく脳を鍛えましょう';
+  const SITE_URL = 'https://noutorebiyori.com';
 
-	const SITE_URL = 'https://noutorebiyori.com';
+  /** @type {string} */
+  export let title = '';
+  /** @type {string} */
+  export let description = '';
+  /** @type {string} */
+  export let image = '';
+  /** @type {boolean} */
+  export let noindex = false;
+  /** @type {string} */
+  export let canonical = '';
 
-	$: currentPath = $page.url.pathname;
-	$: canonicalUrl = canonical || (SITE_URL + currentPath);
+  // URL生成ロジック
+  $: currentPath = $page.url ? $page.url.pathname : '';
+  $: canonicalUrl = canonical || (SITE_URL + currentPath);
 
-	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
-	$: descriptionText = description || SITE.description;
-	$: imageUrl = image || SITE.image;
-	$: keywordsString = Array.isArray(SITE.keywords) ? SITE.keywords.join(', ') : '';
+  // 表示テキストの生成
+  $: titleText = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
+  $: descriptionText = description || SITE_DESCRIPTION;
+  // 画像がない場合はロゴなどを指定
+  $: imageUrl = image || `${SITE_URL}/logo.svg`;
 </script>
 
 <svelte:head>
-	<title>{titleText}</title>
-	<meta name="description" content={descriptionText} />
-	{#if keywordsString}
-		<meta name="keywords" content={keywordsString} />
-	{/if}
-	<link rel="canonical" href={canonicalUrl} />
+  <title>{titleText}</title>
+  <meta name="description" content={descriptionText} />
+  <link rel="canonical" href={canonicalUrl} />
 
-	{#if noindex}
-		<meta name="robots" content="noindex,nofollow" />
-	{:else}
-		<meta name="robots" content="index,follow" />
-	{/if}
+  {#if noindex}
+    <meta name="robots" content="noindex,nofollow" />
+  {:else}
+    <meta name="robots" content="index,follow" />
+  {/if}
 
-	<meta property="og:type" content="website" />
-	<meta property="og:url" content={canonicalUrl} />
-	<meta property="og:title" content={titleText} />
-	<meta property="og:description" content={descriptionText} />
-	{#if imageUrl}
-		<meta property="og:image" content={imageUrl} />
-	{/if}
-	<meta property="og:site_name" content={SITE.title} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={titleText} />
+  <meta property="og:description" content={descriptionText} />
+  <meta property="og:image" content={imageUrl} />
+  <meta property="og:site_name" content={SITE_TITLE} />
 
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content={titleText} />
-	<meta name="twitter:description" content={descriptionText} />
-	{#if imageUrl}
-		<meta name="twitter:image" content={imageUrl} />
-	{/if}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={titleText} />
+  <meta name="twitter:description" content={descriptionText} />
+  <meta name="twitter:image" content={imageUrl} />
 </svelte:head>
