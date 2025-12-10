@@ -55,8 +55,10 @@
   $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
-  let firstHintItem;
+  // 【修正1】ヒント要素を配列で管理するように変更
+  let hintItems = [];
 
+  // Portable Text (blocks) をテキストに変換する関数
   const blocksToText = (blocks) => {
     if (!Array.isArray(blocks)) return '';
     return blocks
@@ -79,6 +81,7 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
+  // Portable Text を HTML に変換する関数
   const toHtml = (content) => {
     if (!content) return '';
     if (typeof content === 'string') return content;
@@ -102,10 +105,9 @@
   };
 
   let bodyHtml;
-  let hintEntries = [];
+  
+  // ヒント処理
   let hints = [];
-  let firstHint;
-  let restHints = [];
   let hintsId;
 
   $: bodyHtml = (() => {
@@ -115,45 +117,50 @@
     return fromProblem;
   })();
 
-  $: hintEntries = (() => {
-    const source = [];
-    const append = (value) => {
-      if (value === null || value === undefined) return;
-      if (Array.isArray(value)) {
-        source.push(...value);
+  // ヒントデータの正規化
+  $: {
+    const rawHints = [];
+    if (doc?.hint) rawHints.push(doc.hint);
+    if (doc?.hints) {
+      if (Array.isArray(doc.hints)) {
+        rawHints.push(...doc.hints);
       } else {
-        source.push(value);
+        rawHints.push(doc.hints);
       }
-    };
-    append(doc?.hint);
-    append(doc?.hints);
+    }
 
-    return source
-      .map((entry) => {
-        const text = (() => {
-          if (typeof entry === 'string') return entry;
-          if (Array.isArray(entry)) return blocksToText(entry);
-          return blocksToText([entry]);
-        })()
-          .replace(/\r?\n/g, '\n')
-          .trim();
+    hints = rawHints.map(entry => {
+      let text = '';
+      if (typeof entry === 'string') {
+        text = entry;
+      } else if (Array.isArray(entry)) {
+        text = blocksToText(entry);
+      } else {
+        text = blocksToText([entry]);
+      }
+      return { text: text.trim() };
+    }).filter(h => h.text.length > 0);
+  }
 
-        return { raw: entry, text };
-      })
-      .filter(({ text }) => text.length > 0);
-  })();
-
-  $: hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
-  $: firstHint = hints[0];
-  $: restHints = hints.slice(1);
   $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
+  
   const toggleHints = async () => {
     hintOpen = !hintOpen;
     if (hintOpen) {
       await tick();
-      firstHintItem?.focus();
+      // 【修正2】配列の0番目（最初のヒント）にフォーカス
+      if (hintItems[0]) {
+        hintItems[0].focus();
+      }
     }
   };
+
+  // 改行コードを <br> タグに変換する関数
+  const formatText = (text) => {
+    if (!text) return '';
+    return text.replace(/\n/g, '<br>');
+  };
+
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
@@ -223,11 +230,10 @@
           <h2>ヒント</h2>
         </div>
         <ul>
-          {#if firstHint}
-            <li tabindex="-1" bind:this={firstHintItem}>{firstHint.text}</li>
-          {/if}
-          {#each restHints as hint, index (`${hint.text}-${index + 1}`)}
-            <li tabindex="-1">{hint.text}</li>
+          {#each hints as hint, index (index)}
+            <li tabindex="-1" bind:this={hintItems[index]}>
+              {@html formatText(hint.text)}
+            </li>
           {/each}
         </ul>
       </section>
@@ -494,7 +500,5 @@
     .section-header {
       margin-bottom: 14px;
     }
-
   }
 </style>
-
