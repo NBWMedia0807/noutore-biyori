@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { loadGtagOnce, sendPageView } from '$lib/ga';
-	// 【修正】安全なSEOコンポーネントをインポート
+	// 安全なSEOコンポーネントをインポート
 	import SEO from '$lib/components/SEO.svelte';
 
 	export let data;
@@ -103,15 +103,15 @@
 	></script>
 	<link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
 	<link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
-
-	<SEO
-		title={seo.title}
-		description={seo.description}
-		canonical={seo.canonical}
-		image={seo.image}
-		noindex={noindexPage}
-	/>
 </svelte:head>
+
+<SEO
+	title={seo.title}
+	description={seo.description}
+	canonical={seo.canonical}
+	image={seo.image}
+	noindex={noindexPage}
+/>
 
 {#if ui.showHeader !== false}
 	<header data-review-mode={reviewMode}>
