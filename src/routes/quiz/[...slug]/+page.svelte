@@ -1,11 +1,11 @@
 <script>
-  import { tick } from 'svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
 
   export let data;
 
+  // 変数定義
   let doc;
   let relatedQuizzes = [];
   let nextQuiz;
@@ -23,6 +23,7 @@
   let nextQuizUrl;
   let nextQuizLabel;
 
+  // リアクティブな値の更新
   $: doc = data?.doc;
   $: relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   $: nextQuiz = data?.nextQuiz ?? null;
@@ -55,8 +56,8 @@
   $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
-  let firstHintItem;
 
+  // Portable Text変換用関数
   const blocksToText = (blocks) => {
     if (!Array.isArray(blocks)) return '';
     return blocks
@@ -102,10 +103,7 @@
   };
 
   let bodyHtml;
-  let hintEntries = [];
   let hints = [];
-  let firstHint;
-  let restHints = [];
   let hintsId;
 
   $: bodyHtml = (() => {
@@ -115,45 +113,44 @@
     return fromProblem;
   })();
 
-  $: hintEntries = (() => {
-    const source = [];
-    const append = (value) => {
-      if (value === null || value === undefined) return;
-      if (Array.isArray(value)) {
-        source.push(...value);
+  // ヒントデータの整理（シンプル版）
+  $: {
+    const rawHints = [];
+    if (doc?.hint) rawHints.push(doc.hint);
+    if (doc?.hints) {
+      if (Array.isArray(doc.hints)) {
+        rawHints.push(...doc.hints);
       } else {
-        source.push(value);
+        rawHints.push(doc.hints);
       }
-    };
-    append(doc?.hint);
-    append(doc?.hints);
-
-    return source
-      .map((entry) => {
-        const text = (() => {
-          if (typeof entry === 'string') return entry;
-          if (Array.isArray(entry)) return blocksToText(entry);
-          return blocksToText([entry]);
-        })()
-          .replace(/\r?\n/g, '\n')
-          .trim();
-
-        return { raw: entry, text };
-      })
-      .filter(({ text }) => text.length > 0);
-  })();
-
-  $: hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
-  $: firstHint = hints[0];
-  $: restHints = hints.slice(1);
-  $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
-  const toggleHints = async () => {
-    hintOpen = !hintOpen;
-    if (hintOpen) {
-      await tick();
-      firstHintItem?.focus();
     }
+
+    hints = rawHints.map(entry => {
+      let text = '';
+      if (typeof entry === 'string') {
+        text = entry;
+      } else if (Array.isArray(entry)) {
+        text = blocksToText(entry);
+      } else {
+        text = blocksToText([entry]);
+      }
+      return { text: text.trim() };
+    }).filter(h => h.text.length > 0);
+  }
+
+  $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
+  
+  // 単純な開閉のみ（エラーの原因になるフォーカス移動を削除）
+  const toggleHints = () => {
+    hintOpen = !hintOpen;
   };
+
+  // 改行コード変換関数
+  const formatText = (text) => {
+    if (!text) return '';
+    return text.replace(/\n/g, '<br>');
+  };
+
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
@@ -223,11 +220,10 @@
           <h2>ヒント</h2>
         </div>
         <ul>
-          {#if firstHint}
-            <li tabindex="-1" bind:this={firstHintItem}>{firstHint.text}</li>
-          {/if}
-          {#each restHints as hint, index (`${hint.text}-${index + 1}`)}
-            <li tabindex="-1">{hint.text}</li>
+          {#each hints as hint}
+            <li tabindex="-1">
+              {@html formatText(hint.text)}
+            </li>
           {/each}
         </ul>
       </section>
