@@ -1,8 +1,7 @@
 <script>
   import { page } from '$app/stores';
 
-  // 基本設定（デフォルト値）
-  // 外部ファイルに依存せず、ここで定義することでエラーを回避します
+  // サイトの基本設定（ここで直接定義してエラーを防ぎます）
   const SITE_TITLE = '脳トレ日和';
   const SITE_DESCRIPTION = '楽しく脳を鍛えましょう';
   const SITE_URL = 'https://noutorebiyori.com';
@@ -25,7 +24,7 @@
   // 表示テキストの生成
   $: titleText = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
   $: descriptionText = description || SITE_DESCRIPTION;
-  // 画像がない場合はロゴなどを指定
+  // 画像がない場合はロゴを指定
   $: imageUrl = image || `${SITE_URL}/logo.svg`;
 </script>
 
