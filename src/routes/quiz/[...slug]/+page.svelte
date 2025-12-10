@@ -1,5 +1,4 @@
 <script>
-  import { tick } from 'svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
@@ -55,7 +54,6 @@
   $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
-  let firstHintItem;
 
   const blocksToText = (blocks) => {
     if (!Array.isArray(blocks)) return '';
@@ -104,8 +102,6 @@
   let bodyHtml;
   let hintEntries = [];
   let hints = [];
-  let firstHint;
-  let restHints = [];
   let hintsId;
 
   $: bodyHtml = (() => {
@@ -144,15 +140,9 @@
   })();
 
   $: hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
-  $: firstHint = hints[0];
-  $: restHints = hints.slice(1);
   $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
-  const toggleHints = async () => {
+  const toggleHints = () => {
     hintOpen = !hintOpen;
-    if (hintOpen) {
-      await tick();
-      firstHintItem?.focus();
-    }
   };
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
@@ -223,11 +213,8 @@
           <h2>ヒント</h2>
         </div>
         <ul>
-          {#if firstHint}
-            <li tabindex="-1" bind:this={firstHintItem}>{firstHint.text}</li>
-          {/if}
-          {#each restHints as hint, index (`${hint.text}-${index + 1}`)}
-            <li tabindex="-1">{hint.text}</li>
+          {#each hints as hint, index (`${hint.text}-${index}`)}
+            <li>{hint.text}</li>
           {/each}
         </ul>
       </section>
@@ -444,6 +431,7 @@
   .hints li {
     position: relative;
     padding-left: 0.4em;
+    white-space: pre-wrap;
   }
 
   .hints li + li {
