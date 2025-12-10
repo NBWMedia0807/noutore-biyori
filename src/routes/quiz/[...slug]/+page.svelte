@@ -55,6 +55,7 @@
 
   let hintOpen = false;
 
+  // Portable Text (blocks) をテキストに変換する関数
   const blocksToText = (blocks) => {
     if (!Array.isArray(blocks)) return '';
     return blocks
@@ -77,6 +78,7 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
+  // Portable Text を HTML に変換する関数
   const toHtml = (content) => {
     if (!content) return '';
     if (typeof content === 'string') return content;
@@ -100,7 +102,6 @@
   };
 
   let bodyHtml;
-  let hintEntries = [];
   let hints = [];
   let hintsId;
 
@@ -111,39 +112,43 @@
     return fromProblem;
   })();
 
-  $: hintEntries = (() => {
-    const source = [];
-    const append = (value) => {
-      if (value === null || value === undefined) return;
-      if (Array.isArray(value)) {
-        source.push(...value);
+  // ヒントデータの正規化
+  $: {
+    const rawHints = [];
+    if (doc?.hint) rawHints.push(doc.hint);
+    if (doc?.hints) {
+      if (Array.isArray(doc.hints)) {
+        rawHints.push(...doc.hints);
       } else {
-        source.push(value);
+        rawHints.push(doc.hints);
       }
-    };
-    append(doc?.hint);
-    append(doc?.hints);
+    }
 
-    return source
-      .map((entry) => {
-        const text = (() => {
-          if (typeof entry === 'string') return entry;
-          if (Array.isArray(entry)) return blocksToText(entry);
-          return blocksToText([entry]);
-        })()
-          .replace(/\r?\n/g, '\n')
-          .trim();
+    hints = rawHints.map(entry => {
+      let text = '';
+      if (typeof entry === 'string') {
+        text = entry;
+      } else if (Array.isArray(entry)) {
+        text = blocksToText(entry);
+      } else {
+        text = blocksToText([entry]);
+      }
+      return { text: text.trim() };
+    }).filter(h => h.text.length > 0);
+  }
 
-        return { raw: entry, text };
-      })
-      .filter(({ text }) => text.length > 0);
-  })();
-
-  $: hints = hintEntries.map(({ raw, text }) => ({ raw, text }));
   $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
+  
   const toggleHints = () => {
     hintOpen = !hintOpen;
   };
+
+  // 改行コードを <br> タグに変換する関数
+  const formatText = (text) => {
+    if (!text) return '';
+    return text.replace(/\n/g, '<br>');
+  };
+
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 </script>
@@ -213,8 +218,10 @@
           <h2>ヒント</h2>
         </div>
         <ul>
-          {#each hints as hint, index (`${hint.text}-${index}`)}
-            <li>{hint.text}</li>
+          {#each hints as hint}
+            <li tabindex="-1">
+              {@html formatText(hint.text)}
+            </li>
           {/each}
         </ul>
       </section>
@@ -418,9 +425,11 @@
     box-shadow: 0 20px 32px rgba(234, 179, 8, 0.3);
   }
 
+  /* 【修正】リストマーカーを消してスタイル調整 */
   .hints ul {
     margin: 0;
-    padding-left: 1.2em;
+    padding-left: 0;
+    list-style: none; /* ここで丸を消しています */
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -430,18 +439,14 @@
 
   .hints li {
     position: relative;
-    padding-left: 0.4em;
-    white-space: pre-wrap;
+    padding-left: 0;
   }
 
   .hints li + li {
     margin-top: 0.75rem;
   }
 
-  .hints li::marker {
-    color: #f59e0b;
-    font-size: 1.2em;
-  }
+  /* 以前あった .hints li::marker ブロックは削除しました */
 
   .sr-only {
     position: absolute;
