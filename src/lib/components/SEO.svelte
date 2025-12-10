@@ -1,13 +1,6 @@
 <script>
 	import { page } from '$app/stores';
-
-	// サイト設定の読み込み（エラーガード付き）
-	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
-	
-	// 設定ファイルを安全に読み込む
-	import('$lib/config/site.js').then((module) => {
-		if (module.SITE) SITE = module.SITE;
-	}).catch(() => { /* 読み込み失敗時はデフォルト値を使用 */ });
+	import { SITE } from '$lib/config/site.js';
 
 	/** @type {string} */
 	export let title = '';
@@ -20,27 +13,23 @@
 	/** @type {string} */
 	export let canonical = '';
 
-	// 本番ドメイン
 	const SITE_URL = 'https://noutorebiyori.com';
 
-	// URL生成ロジック
-	$: currentPath = $page.url ? $page.url.pathname : '';
+	$: currentPath = $page.url.pathname;
 	$: canonicalUrl = canonical || (SITE_URL + currentPath);
 
-	// 表示テキストの生成
 	$: titleText = title ? `${title} | ${SITE.title}` : SITE.title;
-	$: descriptionText = description || SITE.description || '';
-	$: imageUrl = image || SITE.image || '';
-	
-	// キーワードの安全な変換
-	$: keywordsArray = Array.isArray(SITE.keywords) ? SITE.keywords : [];
-	$: keywordsString = keywordsArray.join(', ');
+	$: descriptionText = description || SITE.description;
+	$: imageUrl = image || SITE.image;
+	$: keywordsString = Array.isArray(SITE.keywords) ? SITE.keywords.join(', ') : '';
 </script>
 
 <svelte:head>
 	<title>{titleText}</title>
 	<meta name="description" content={descriptionText} />
-	<meta name="keywords" content={keywordsString} />
+	{#if keywordsString}
+		<meta name="keywords" content={keywordsString} />
+	{/if}
 	<link rel="canonical" href={canonicalUrl} />
 
 	{#if noindex}
