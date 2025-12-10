@@ -55,7 +55,8 @@
   $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
-  let firstHintItem;
+  // 【修正1】ヒント要素を配列で管理するように変更
+  let hintItems = [];
 
   // Portable Text (blocks) をテキストに変換する関数
   const blocksToText = (blocks) => {
@@ -147,7 +148,10 @@
     hintOpen = !hintOpen;
     if (hintOpen) {
       await tick();
-      firstHintItem?.focus();
+      // 【修正2】配列の0番目（最初のヒント）にフォーカス
+      if (hintItems[0]) {
+        hintItems[0].focus();
+      }
     }
   };
 
@@ -227,7 +231,7 @@
         </div>
         <ul>
           {#each hints as hint, index (index)}
-            <li tabindex="-1" bind:this={index === 0 ? firstHintItem : null}>
+            <li tabindex="-1" bind:this={hintItems[index]}>
               {@html formatText(hint.text)}
             </li>
           {/each}
