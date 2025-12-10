@@ -1,10 +1,11 @@
 // src/lib/queries/rssSmartnews.groq.js
 
-// 記事の公開・下書きステータスに関係なく、とにかくquizとpostタイプの上位20件を取得するクエリ
+// 公開済みの記事のみを取得するクエリ
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
-  _type == "quiz" || _type == "post"
-] | order(_createdAt desc)[0...20]{
+  (_type == "quiz" || _type == "post") &&
+  publishedAt < now()
+] | order(publishedAt desc)[0...20]{
   _id,
   _type,
   publishedAt,
