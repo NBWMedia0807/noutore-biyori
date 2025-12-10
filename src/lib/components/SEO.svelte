@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 
-	// サイト設定の読み込み（エラーになっても落ちない安全対策付き）
+	// サイト設定の読み込み（エラーガード付き）
 	let SITE = { title: '脳トレ日和', description: '', keywords: [] };
 	
 	// 設定ファイルを安全に読み込む
