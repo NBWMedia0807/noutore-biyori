@@ -5,7 +5,7 @@ import { portableTextToHtml } from '$lib/utils/portableText';
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
 const siteDescription = '脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
-const siteLogo = `${siteLink}logo.png`;
+const siteLogo = 'https://noutorebiyori.com/logo.png'; // 要件4: ロゴのURLを絶対パスに修正
 
 // 画像オブジェクトからURLを生成するヘルパー関数
 const getImageUrl = (imageObject) => imageObject ? urlFor(imageObject).url() : '';
@@ -25,75 +25,67 @@ const escapeXml = (unsafe) => {
 	});
 };
 
+// 本文の改行を<br>に変換するヘルパー関数
+const convertNewlinesToBr = (html) => {
+    if (!html) return '';
+    return html.replace(/\n/g, '<br>');
+};
+
 export async function GET() {
 	const articles = await client.fetch(RSS_SMARTNEWS_QUERY);
 
 	if (!articles) {
-		// 記事が取得できなかった場合は、空のRSSを返すが、アイテムがない状態
-		// エラーにはせず、空のXML構造を維持する
+		// 記事が取得できなかった場合でも、空のRSS構造を維持する
 	}
 
 	const buildItem = (article) => {
-		// 記事URL (slugが 'matchstick-quiz/article/100' のような形式でくることを想定)
+		// 記事URL
 		const articleLink = `${siteLink}${article.slug}`;
 
-		let contentHtml = '';
-		let descriptionText = '';
-
-		// URL生成（getImageUrlを使用）
+		// 要件3: 画像設定の強化 (problemImageを優先)
 		const problemImageUrl = getImageUrl(article.problemImage);
-		const answerImageUrl = getImageUrl(article.answerImage);
+		const mainImageUrl = getImageUrl(article.mainImage);
+		const primaryImageUrl = problemImageUrl || mainImageUrl;
+
+		let contentHtml = '';
+
+		// 要件3: content:encodedの冒頭に画像を配置
+		if (primaryImageUrl) {
+			contentHtml += `<img src="${primaryImageUrl}" alt="${escapeXml(article.title)}の画像" /><br>`;
+		}
 
 		// ★ 記事タイプごとの処理
 		if (article._type === 'quiz') {
-			
-			// 1. 各パーツのHTML化
-			const problemHtml = article.problemDescription ? portableTextToHtml(article.problemDescription) : '';
-			const hintsHtml = article.hints ? portableTextToHtml(article.hints) : '';
-			const answerHtml = article.answerExplanation ? portableTextToHtml(article.answerExplanation) : '';
-			const closingHtml = article.closingMessage ? portableTextToHtml(article.closingMessage) : '';
+			// 1. 各パーツのHTML化と改行コードの変換 (要件2)
+			const problemHtml = convertNewlinesToBr(portableTextToHtml(article.problemDescription));
+			const hintsHtml = convertNewlinesToBr(portableTextToHtml(article.hints));
+			const answerHtml = convertNewlinesToBr(portableTextToHtml(article.answerExplanation));
+			const closingHtml = convertNewlinesToBr(portableTextToHtml(article.closingMessage));
+			const answerImageUrl = getImageUrl(article.answerImage);
 
-			// 2. 本文の組み立て（SmartNewsで見やすい順序）
-			// 【問題セクション】
+			// 2. 本文の組み立て
 			contentHtml += `<h2>【問題】</h2>`;
-			if (problemImageUrl) {
-				contentHtml += `<img src="${problemImageUrl}" alt="${escapeXml(article.title)}の問題画像" /><br>`;
-			}
-			contentHtml += problemHtml;
+			contentHtml += problemHtml; // problemImageは先頭で追加済みのため、ここではテキストのみ追加
 
-			// 【ヒントセクション】(あれば表示)
 			if (hintsHtml) {
 				contentHtml += `<hr><h3>★ ヒント</h3>${hintsHtml}`;
 			}
 
-			// 【解説セクション】
 			contentHtml += `<hr><h2>【解説】</h2>`;
 			if (answerImageUrl) {
 				contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
 			}
 			contentHtml += answerHtml;
 			
-			// 【締め】
 			contentHtml += closingHtml;
 
-			// 3. Description生成（問題文の冒頭）
-			const rawText = problemHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawText.substring(0, 100) + (rawText.length > 100 ? '...' : '');
-
 		} else if (article._type === 'post') {
-			// 通常記事の場合
-			contentHtml = article.body ? portableTextToHtml(article.body) : '';
-			const rawText = contentHtml.replace(/<[^>]*>?/gm, '');
-			descriptionText = rawText.substring(0, 100) + '...';
+			// 通常記事の場合 (要件2)
+			contentHtml += convertNewlinesToBr(portableTextToHtml(article.body));
 		}
         
-        // 最終チェック
-        if (!contentHtml.trim()) {
-            descriptionText = '';
-        }
-
-		// サムネイル画像（mainImageがあればそれ、なければ問題画像）
-		const thumbnail = getImageUrl(article.mainImage) || problemImageUrl || siteLogo;
+		// 要件3: サムネイル画像 (problemImageを優先)
+		const thumbnail = primaryImageUrl || siteLogo;
 		
 		// 日付
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
@@ -104,7 +96,7 @@ export async function GET() {
 			<link>${articleLink}</link>
 			<guid isPermaLink="true">${articleLink}</guid>
 			<pubDate>${pubDate}</pubDate>
-			<description><![CDATA[ ${escapeXml(descriptionText)} ]]></description>
+			<description><![CDATA[]]></description> 
 			<content:encoded><![CDATA[ 
 				${contentHtml} 
 			]]></content:encoded>
@@ -118,7 +110,7 @@ export async function GET() {
 		`.trim();
 	};
 
-	const items = (articles || []).map(buildItem).join('\n'); // articlesがnullでも動くように
+	const items = (articles || []).map(buildItem).join('\n');
 
 	// XML全体
 	const xml = `
