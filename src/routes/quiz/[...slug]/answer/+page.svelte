@@ -242,8 +242,6 @@
   }
 
   .closing-card {
-    margin: 0 auto;
-    max-width: 640px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 227, 0.94));
     border-radius: 22px;
     padding: 24px 22px;
