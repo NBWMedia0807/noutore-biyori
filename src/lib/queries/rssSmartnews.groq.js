@@ -29,8 +29,21 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
 
   // カテゴリ
   "category": category->{
+    _ref,
     name,
     title
+  },
+
+  // 関連記事
+  "relatedLinks": *[
+    _type == 'quiz' &&
+    publishedAt < now() &&
+    _id != ^._id && // 自分自身を除外
+    category._ref == ^.category._ref // 同じカテゴリ
+  ] | order(publishedAt desc)[0...3]{
+    title,
+    "slug": slug.current,
+    _type
   }
 }
 `;
