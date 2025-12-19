@@ -40,7 +40,12 @@ export async function GET() {
 
 	const buildItem = (article) => {
 		// 記事URL
-		const articleLink = `${siteLink}${article.slug}`;
+		let articleLink;
+		if (article._type === 'quiz') {
+			articleLink = `${siteLink}quiz/${article.slug}`;
+		} else {
+			articleLink = `${siteLink}${article.slug}`;
+		}
 
 		// 要件3: 画像設定の強化 (problemImageを優先)
 		const problemImageUrl = getImageUrl(article.problemImage);
@@ -90,6 +95,19 @@ export async function GET() {
 		// 日付
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
+		// 関連記事のXMLを生成
+		const relatedLinksXml = (article.relatedLinks || [])
+			.map(related => {
+				if (!related.slug || !related.title) return null;
+				// 関連記事も現時点ではクイズのみを想定
+				const relatedUrl = related._type === 'quiz' 
+					? `${siteLink}quiz/${related.slug}`
+					: `${siteLink}${related.slug}`;
+				return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}" />`;
+			})
+			.filter(Boolean)
+			.join('\n\t\t\t');
+
 		return `
 		<item>
 			<title><![CDATA[ ${escapeXml(article.title)} ]]></title>
@@ -106,6 +124,7 @@ export async function GET() {
 			<snf:advertisement>
 				<snf:sponsoredLink link="${siteLink}contact" thumbnail="${siteLogo}" title="お問い合わせ" advertiser="${siteTitle}"/>
 			</snf:advertisement>
+			${relatedLinksXml}
 		</item>
 		`.trim();
 	};
