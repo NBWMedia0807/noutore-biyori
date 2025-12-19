@@ -146,6 +146,9 @@
 						</li>
 					{/each}
 				{/if}
+				<li>
+					<a href="/number-quiz" class="nav-link" data-sveltekit-preload-data>数字クイズ</a>
+				</li>
 			</ul>
 		</div>
 	</nav>
