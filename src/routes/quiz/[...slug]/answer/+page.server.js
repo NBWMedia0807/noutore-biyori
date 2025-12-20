@@ -2,6 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { sanityClient } from '$lib/sanity/client.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -11,10 +12,18 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   _id,
   title,
   "slug": slug.current,
+  "categoryId": category._ref,
   category->{ title, "slug": slug.current },
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
   closingMessage
+}`;
+
+const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
+  title,
+  "slug": slug.current,
+  category->{ title, "slug": slug.current },
+  mainImage{ asset->{ url, metadata } }
 }`;
 
 export async function load({ params, setHeaders }) {
@@ -30,15 +39,24 @@ export async function load({ params, setHeaders }) {
   if (typeof quiz.slug === 'string' && quiz.slug !== slug) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
+
+  const [related, nextChallengePosts] = await Promise.all([
+    fetchRelatedQuizzes({
+      slug: quiz.slug,
+      categorySlug: quiz.category?.slug ?? null
+    }),
+    sanityClient.fetch(nextChallengeQuery, {
+      slug: quiz.slug,
+      categoryId: quiz.categoryId
+    })
+  ]);
+
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
-  const related = await fetchRelatedQuizzes({
-    slug: quiz.slug,
-    categorySlug: quiz.category?.slug ?? null
-  });
 
   return {
     quiz,
     related,
+    nextChallengePosts,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,

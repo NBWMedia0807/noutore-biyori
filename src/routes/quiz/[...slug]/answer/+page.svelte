@@ -1,8 +1,9 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+  import ArticleGrid from '$lib/components/ArticleGrid.svelte';
 
   export let data;
-  const { quiz } = data;
+  const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
@@ -101,6 +102,13 @@
       <p>{closingText || closingDefault}</p>
     </div>
   </section>
+
+  {#if nextChallengePosts.length > 0}
+  <section class="next-challenge">
+    <h2 class="section-title">さらにもう一問！</h2>
+    <ArticleGrid articles={nextChallengePosts} />
+  </section>
+  {/if}
 
   <RelatedQuizSection
     quizzes={relatedQuizzes}
@@ -251,6 +259,18 @@
     color: #92400e;
     line-height: 1.8;
     white-space: pre-line;
+  }
+
+  .next-challenge {
+    margin-top: 24px;
+  }
+
+  .next-challenge .section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #7c2d12;
   }
 
   @media (max-width: 640px) {
