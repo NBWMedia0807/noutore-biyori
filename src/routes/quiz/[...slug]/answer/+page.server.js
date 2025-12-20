@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
-// 【修正完了】正しいインポート名 'client' を使用
+// ▼ 修正済み: 正しいインポート
 import { client } from '$lib/sanity/client.js';
 
 export const prerender = false;
@@ -20,11 +20,11 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   closingMessage
 }`;
 
+// ▼ 追加: 「さらにもう一問」用のクエリ
 const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  // 画像フィールドは mainImage または answerImage のある方を取得（念のため）
   "image": coalesce(mainImage.asset->url, answerImage.asset->url)
 }`;
 
@@ -42,12 +42,12 @@ export async function load({ params, setHeaders }) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
 
+  // ▼ 修正: 並行してデータ取得
   const [related, nextChallengePosts] = await Promise.all([
     fetchRelatedQuizzes({
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    // カテゴリIDがある場合のみクエリ実行、なければ空配列
     quiz.categoryId 
       ? client.fetch(nextChallengeQuery, {
           slug: quiz.slug,
@@ -61,7 +61,7 @@ export async function load({ params, setHeaders }) {
   return {
     quiz,
     related,
-    nextChallengePosts,
+    nextChallengePosts, // ▼ UIにデータを渡す
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
