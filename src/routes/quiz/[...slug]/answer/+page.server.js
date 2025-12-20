@@ -2,6 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+// 【修正完了】正しいインポート名 'client' を使用
 import { client } from '$lib/sanity/client.js';
 
 export const prerender = false;
@@ -23,7 +24,8 @@ const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slu
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  mainImage{ asset->{ url, metadata } }
+  // 画像フィールドは mainImage または answerImage のある方を取得（念のため）
+  "image": coalesce(mainImage.asset->url, answerImage.asset->url)
 }`;
 
 export async function load({ params, setHeaders }) {
@@ -45,10 +47,13 @@ export async function load({ params, setHeaders }) {
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    client.fetch(nextChallengeQuery, {
-      slug: quiz.slug,
-      categoryId: quiz.categoryId
-    })
+    // カテゴリIDがある場合のみクエリ実行、なければ空配列
+    quiz.categoryId 
+      ? client.fetch(nextChallengeQuery, {
+          slug: quiz.slug,
+          categoryId: quiz.categoryId
+        })
+      : Promise.resolve([])
   ]);
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
