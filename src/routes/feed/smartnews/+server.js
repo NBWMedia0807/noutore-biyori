@@ -1,34 +1,49 @@
 import { client, urlFor } from '$lib/sanity/client'; // urlForをインポート
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
-import { portableTextToHtml } from '$lib/utils/portableText'; 
+import { portableTextToHtml } from '$lib/utils/portableText';
+import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
-const siteDescription = '脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
+const siteDescription =
+	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = 'https://noutorebiyori.com/logo.png'; // 要件4: ロゴのURLを絶対パスに修正
 
+// 「さらにもう一問」用のクエリ
+const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId && defined(problemImage.asset) ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
+  title,
+  "slug": slug.current,
+  "image": problemImage.asset->url
+}`;
+
 // 画像オブジェクトからURLを生成するヘルパー関数
-const getImageUrl = (imageObject) => imageObject ? urlFor(imageObject).url() : '';
+const getImageUrl = (imageObject) => (imageObject ? urlFor(imageObject).url() : '');
 
 // XML特殊文字エスケープ
 const escapeXml = (unsafe) => {
 	if (!unsafe) return '';
 	return unsafe.replace(/[<>&'"]/g, (c) => {
 		switch (c) {
-			case '<': return '&lt;';
-			case '>': return '&gt;';
-			case '&': return '&amp;';
-			case "'": return '&apos;';
-			case '"': return '&quot;';
-			default: return c;
+			case '<':
+				return '&lt;';
+			case '>':
+				return '&gt;';
+			case '&':
+				return '&amp;';
+			case "'":
+				return '&apos;';
+			case '"':
+				return '&quot;';
+			default:
+				return c;
 		}
 	});
 };
 
 // 本文の改行を<br>に変換するヘルパー関数
 const convertNewlinesToBr = (html) => {
-    if (!html) return '';
-    return html.replace(/\n/g, '<br>');
+	if (!html) return '';
+	return html.replace(/\n/g, '<br>');
 };
 
 export async function GET() {
@@ -38,7 +53,7 @@ export async function GET() {
 		// 記事が取得できなかった場合でも、空のRSS構造を維持する
 	}
 
-	const buildItem = (article) => {
+	const buildItem = async (article) => {
 		// 記事URL
 		let articleLink;
 		if (article._type === 'quiz') {
@@ -78,31 +93,68 @@ export async function GET() {
 
 			contentHtml += `<hr><h2>【解説】</h2>`;
 			if (answerImageUrl) {
-				contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
+				contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(
+					article.title
+				)}の正解画像" /><br>`;
 			}
 			contentHtml += answerHtml;
-			
-			contentHtml += closingHtml;
 
+			contentHtml += closingHtml;
 		} else if (article._type === 'post') {
 			// 通常記事の場合 (要件2)
 			contentHtml += convertNewlinesToBr(portableTextToHtml(article.body));
 		}
-        
+
+		// 「さらにもう一問」セクションの追加
+		if (article._type === 'quiz' && article.category?._ref) {
+			try {
+				const nextChallengePosts = await client.fetch(nextChallengeQuery, {
+					slug: article.slug,
+					categoryId: article.category._ref
+				});
+
+				if (nextChallengePosts && nextChallengePosts.length > 0) {
+					let nextChallengeHtml = `
+            <hr />
+            <h3 style="font-size: 18px; font-weight: bold; margin-top: 20px; color: #7c2d12;">さらにもう一問！</h3>
+            <ul style="list-style: none; padding: 0;">
+          `;
+					for (const post of nextChallengePosts) {
+						const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
+						const imageUrl = post.image; // Query already returns the full URL
+						if (imageUrl) {
+							nextChallengeHtml += `
+                <li style="margin-bottom: 15px; clear: both;">
+                  <a href="${postUrl}" style="text-decoration: none; color: #1d4ed8; font-weight: bold;">
+                    <img src="${imageUrl}" style="float: left; width: 100px; height: 75px; object-fit: cover; margin-right: 10px; border-radius: 4px;" />
+                    <span style="display: block; overflow: hidden;">${escapeXml(post.title)}</span>
+                  </a>
+                </li>
+              `;
+						}
+					}
+					nextChallengeHtml += '</ul>';
+					contentHtml += nextChallengeHtml;
+				}
+			} catch (e) {
+				console.error('Failed to fetch next challenge posts for RSS:', e);
+				// RSS生成をブロックしない
+			}
+		}
+
 		// 要件3: サムネイル画像 (problemImageを優先)
 		const thumbnail = primaryImageUrl || siteLogo;
-		
+
 		// 日付
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
 		// 関連記事のXMLを生成
 		const relatedLinksXml = (article.relatedLinks || [])
-			.map(related => {
+			.map((related) => {
 				if (!related.slug || !related.title) return null;
 				// 関連記事も現時点ではクイズのみを想定
-				const relatedUrl = related._type === 'quiz' 
-					? `${siteLink}quiz/${related.slug}`
-					: `${siteLink}${related.slug}`;
+				const relatedUrl =
+					related._type === 'quiz' ? `${siteLink}quiz/${related.slug}` : `${siteLink}${related.slug}`;
 				return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}" />`;
 			})
 			.filter(Boolean)
@@ -129,7 +181,7 @@ export async function GET() {
 		`.trim();
 	};
 
-	const items = (articles || []).map(buildItem).join('\n');
+	const items = (await Promise.all((articles || []).map(buildItem))).join('\n');
 
 	// XML全体
 	const xml = `
@@ -158,7 +210,7 @@ export async function GET() {
 	return new Response(xml, {
 		headers: {
 			'Content-Type': 'application/xml',
-			'Cache-Control': 'max-age=0, s-maxage=3600',
-		},
+			'Cache-Control': 'max-age=0, s-maxage=3600'
+		}
 	});
 }
