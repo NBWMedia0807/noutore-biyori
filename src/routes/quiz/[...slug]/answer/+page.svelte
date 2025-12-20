@@ -1,8 +1,8 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
-
+  
   export let data;
-  const { quiz } = data;
+  const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
@@ -102,6 +102,31 @@
     </div>
   </section>
 
+  {#if nextChallengePosts.length > 0}
+  <section class="next-challenge">
+    <h2 class="section-title">さらにもう一問！</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
+      {#each nextChallengePosts as post}
+        <a href="/quiz/{post.slug}" class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200 overflow-hidden group">
+          {#if post.image}
+            <div class="relative h-32 overflow-hidden bg-gray-100">
+              <img 
+                src={post.image} 
+                alt={post.title} 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          {/if}
+          <div class="p-3">
+            <p class="text-sm font-bold text-gray-800 line-clamp-2">
+              {post.title}
+            </p>
+          </div>
+        </a>
+      {/each}
+    </div>
+  </section>
+  {/if}
   <RelatedQuizSection
     quizzes={relatedQuizzes}
     fallbackImageUrl={relatedFallback}
@@ -251,6 +276,18 @@
     color: #92400e;
     line-height: 1.8;
     white-space: pre-line;
+  }
+
+  .next-challenge {
+    margin-top: 24px;
+  }
+
+  .next-challenge .section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #7c2d12;
   }
 
   @media (max-width: 640px) {

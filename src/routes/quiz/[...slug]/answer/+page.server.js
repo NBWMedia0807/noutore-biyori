@@ -2,6 +2,8 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+// ▼ 修正済み: 正しいインポート
+import { client } from '$lib/sanity/client.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -11,10 +13,19 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   _id,
   title,
   "slug": slug.current,
+  "categoryId": category._ref,
   category->{ title, "slug": slug.current },
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
   closingMessage
+}`;
+
+// ▼ 追加: 「さらにもう一問」用のクエリ
+const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
+  title,
+  "slug": slug.current,
+  category->{ title, "slug": slug.current },
+  "image": coalesce(mainImage.asset->url, answerImage.asset->url)
 }`;
 
 export async function load({ params, setHeaders }) {
@@ -30,15 +41,27 @@ export async function load({ params, setHeaders }) {
   if (typeof quiz.slug === 'string' && quiz.slug !== slug) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
+
+  // ▼ 修正: 並行してデータ取得
+  const [related, nextChallengePosts] = await Promise.all([
+    fetchRelatedQuizzes({
+      slug: quiz.slug,
+      categorySlug: quiz.category?.slug ?? null
+    }),
+    quiz.categoryId 
+      ? client.fetch(nextChallengeQuery, {
+          slug: quiz.slug,
+          categoryId: quiz.categoryId
+        })
+      : Promise.resolve([])
+  ]);
+
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
-  const related = await fetchRelatedQuizzes({
-    slug: quiz.slug,
-    categorySlug: quiz.category?.slug ?? null
-  });
 
   return {
     quiz,
     related,
+    nextChallengePosts, // ▼ UIにデータを渡す
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
