@@ -25,7 +25,11 @@ const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slu
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  "image": coalesce(mainImage.asset->url, answerImage.asset->url)
+  "image": select(
+    defined(mainImage.asset) => mainImage.asset->url,
+    defined(answerImage.asset) => answerImage.asset->url,
+    null
+  )
 }`;
 
 export async function load({ params, setHeaders }) {
