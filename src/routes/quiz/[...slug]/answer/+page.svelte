@@ -1,8 +1,6 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
-  // ArticleGrid は使わず直接書くので削除してもOKですが、念のため残しておきます
-  import ArticleGrid from '$lib/components/ArticleGrid.svelte';
-
+  
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
