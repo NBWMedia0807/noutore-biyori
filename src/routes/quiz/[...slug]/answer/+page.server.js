@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
-import { sanityClient } from '$lib/sanity/client.js';
+import { client } from '$lib/sanity/client.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -45,7 +45,7 @@ export async function load({ params, setHeaders }) {
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    sanityClient.fetch(nextChallengeQuery, {
+    client.fetch(nextChallengeQuery, {
       slug: quiz.slug,
       categoryId: quiz.categoryId
     })
