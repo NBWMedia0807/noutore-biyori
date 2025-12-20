@@ -1,5 +1,6 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+  // ArticleGrid は使わず直接書くので削除してもOKですが、念のため残しておきます
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
 
   export let data;
@@ -106,10 +107,28 @@
   {#if nextChallengePosts.length > 0}
   <section class="next-challenge">
     <h2 class="section-title">さらにもう一問！</h2>
-    <ArticleGrid articles={nextChallengePosts} />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
+      {#each nextChallengePosts as post}
+        <a href="/quiz/{post.slug}" class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200 overflow-hidden group">
+          {#if post.image}
+            <div class="relative h-32 overflow-hidden bg-gray-100">
+              <img 
+                src={post.image} 
+                alt={post.title} 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          {/if}
+          <div class="p-3">
+            <p class="text-sm font-bold text-gray-800 line-clamp-2">
+              {post.title}
+            </p>
+          </div>
+        </a>
+      {/each}
+    </div>
   </section>
   {/if}
-
   <RelatedQuizSection
     quizzes={relatedQuizzes}
     fallbackImageUrl={relatedFallback}
