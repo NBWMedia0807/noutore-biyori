@@ -118,7 +118,7 @@
             </div>
           {/if}
           <div class="p-3">
-            <p class="text-base font-bold text-blue-700 line-clamp-2 group-hover:underline">
+            <p class="text-lg font-bold text-blue-700 line-clamp-2 group-hover:underline">
               {post.title}
             </p>
           </div>

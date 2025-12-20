@@ -25,11 +25,7 @@ const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slu
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  "image": select(
-    defined(mainImage.asset) => mainImage.asset->url,
-    defined(answerImage.asset) => answerImage.asset->url,
-    null
-  )
+  "image": problemImage.asset->url
 }`;
 
 export async function load({ params, setHeaders }) {
@@ -52,7 +48,7 @@ export async function load({ params, setHeaders }) {
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    quiz.categoryId 
+    quiz.categoryId
       ? client.fetch(nextChallengeQuery, {
           slug: quiz.slug,
           categoryId: quiz.categoryId
