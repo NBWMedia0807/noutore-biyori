@@ -16,6 +16,14 @@ const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slu
   "image": problemImage.asset->url
 }`;
 
+// 最新クイズリスト（広告枠用）
+const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" && ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
+  title,
+  "slug": slug.current,
+  problemImage,
+  mainImage
+}`;
+
 // 画像オブジェクトからURLを生成するヘルパー関数
 const getImageUrl = (imageObject) => (imageObject ? urlFor(imageObject).url() : '');
 
@@ -48,12 +56,13 @@ const convertNewlinesToBr = (html) => {
 
 export async function GET() {
 	const articles = await client.fetch(RSS_SMARTNEWS_QUERY);
+	const globalLatestQuizzes = await client.fetch(globalLatestQuizzesQuery);
 
 	if (!articles) {
 		// 記事が取得できなかった場合でも、空のRSS構造を維持する
 	}
 
-	const buildItem = async (article) => {
+	const buildItem = async (article, globalLatestQuizzes) => {
 		// 記事URL
 		let articleLink;
 		if (article._type === 'quiz') {
@@ -148,6 +157,26 @@ export async function GET() {
 		// 日付
 		const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
+		// 広告枠の生成
+		const advertisementLinks = (globalLatestQuizzes || [])
+			.filter((quiz) => quiz.slug !== article.slug) // 現在の記事を除外
+			.slice(0, 5) // 最大5件
+			.map((quiz) => {
+				const link = `${siteLink}quiz/${quiz.slug}`;
+				const thumbnailUrl = getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage) || siteLogo;
+				const title = escapeXml(quiz.title);
+				return `<snf:sponsoredLink link="${link}" thumbnail="${thumbnailUrl}" title="${title}" advertiser="${siteTitle}"/>`;
+			})
+			.join('\n\t\t\t');
+
+		const advertisementXml = advertisementLinks
+			? `
+			<snf:advertisement>
+				${advertisementLinks}
+			</snf:advertisement>
+			`
+			: '';
+
 		// 関連記事のXMLを生成
 		const relatedLinksXml = (article.relatedLinks || [])
 			.map((related) => {
@@ -173,15 +202,13 @@ export async function GET() {
 			<media:thumbnail url="${thumbnail}"/>
 			<dc:creator>脳トレ日和</dc:creator>
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
-			<snf:advertisement>
-				<snf:sponsoredLink link="${siteLink}contact" thumbnail="${siteLogo}" title="お問い合わせ" advertiser="${siteTitle}"/>
-			</snf:advertisement>
+			${advertisementXml}
 			${relatedLinksXml}
 		</item>
 		`.trim();
 	};
 
-	const items = (await Promise.all((articles || []).map(buildItem))).join('\n');
+	const items = (await Promise.all((articles || []).map((article) => buildItem(article, globalLatestQuizzes)))).join('\n');
 
 	// XML全体
 	const xml = `
