@@ -28,8 +28,9 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   answerImage,
 
   // カテゴリ
+  // 修正: -> で展開した先のドキュメントには _ref ではなく _id が存在します
   "category": category->{
-    _ref,
+    _id,
     name,
     title
   },
@@ -39,7 +40,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     _type == 'quiz' &&
     publishedAt < now() &&
     _id != ^._id && // 自分自身を除外
-    category._ref == ^.category._ref // 同じカテゴリ
+    category._ref == ^.category._ref // 同じカテゴリ (展開前の参照IDと比較)
   ] | order(publishedAt desc)[0...3]{
     title,
     "slug": slug.current,
