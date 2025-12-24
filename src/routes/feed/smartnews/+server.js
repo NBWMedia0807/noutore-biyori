@@ -10,15 +10,16 @@ const siteDescription =
 const siteLogo = 'https://noutorebiyori.com/logo.png';
 
 // 「さらにもう一問」用のクエリ
-// 修正: defined(problemImage.asset) の後ろに && を追加 (構文エラー修正)
-const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId && defined(problemImage.asset) && ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
+// 修正: QUIZ_PUBLISHED_FILTERが先頭に&&を含んでいるため、直前の&&を削除して結合
+const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId && defined(problemImage.asset) ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
   title,
   "slug": slug.current,
   "image": problemImage.asset->url
 }`;
 
 // 最新クイズリスト（広告枠用）
-const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" && ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
+// 修正: こちらも同様に直前の&&を削除
+const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
   title,
   "slug": slug.current,
   problemImage,
@@ -26,7 +27,6 @@ const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" && ${QUIZ_PUBLISH
 }`;
 
 // 画像オブジェクトからURLを生成するヘルパー関数
-// 安全対策: imageObjectやurlForが存在しない場合のクラッシュを防ぐ
 const getImageUrl = (imageObject) => {
 	if (!imageObject || !urlFor) return '';
 	try {
@@ -70,7 +70,7 @@ export async function GET() {
 		const globalLatestQuizzes = await client.fetch(globalLatestQuizzesQuery);
 
 		if (!articles) {
-			// 記事が取得できなかった場合でも処理を続行（空配列として扱う）
+			// 記事が取得できなかった場合でも処理を続行
 		}
 
 		const buildItem = async (article, globalLatestQuizzes) => {
@@ -82,28 +82,28 @@ export async function GET() {
 				articleLink = `${siteLink}${article.slug}`;
 			}
 
-			// 画像設定 (problemImageを優先)
+			// 画像設定
 			const problemImageUrl = getImageUrl(article.problemImage);
 			const mainImageUrl = getImageUrl(article.mainImage);
 			const primaryImageUrl = problemImageUrl || mainImageUrl;
 
 			let contentHtml = '';
 
-			// content:encodedの冒頭に画像を配置
+			// 画像配置
 			if (primaryImageUrl) {
 				contentHtml += `<img src="${primaryImageUrl}" alt="${escapeXml(article.title)}の画像" /><br>`;
 			}
 
-			// ★ 記事タイプごとの処理
+			// 記事タイプごとの処理
 			if (article._type === 'quiz') {
-				// 1. 各パーツのHTML化 (Null安全対策: || [] を追加してクラッシュ回避)
+				// Null安全対策
 				const problemHtml = convertNewlinesToBr(portableTextToHtml(article.problemDescription || []));
 				const hintsHtml = convertNewlinesToBr(portableTextToHtml(article.hints || []));
 				const answerHtml = convertNewlinesToBr(portableTextToHtml(article.answerExplanation || []));
 				const closingHtml = convertNewlinesToBr(portableTextToHtml(article.closingMessage || []));
 				const answerImageUrl = getImageUrl(article.answerImage);
 
-				// 2. 本文の組み立て
+				// 本文組み立て
 				contentHtml += `<h2>【問題】</h2>`;
 				contentHtml += problemHtml;
 
@@ -121,12 +121,11 @@ export async function GET() {
 
 				contentHtml += closingHtml;
 			} else if (article._type === 'post') {
-				// 通常記事の場合 (Null安全対策)
 				contentHtml += convertNewlinesToBr(portableTextToHtml(article.body || []));
 			}
 
-			// 「さらにもう一問」セクションの追加
-			// 修正: GROQ側の変更に合わせて _ref ではなく _id をチェック
+			// 「さらにもう一問」セクション
+			// 修正: category._ref は存在しないため _id を使用
 			if (article._type === 'quiz' && article.category?._id) {
 				try {
 					const nextChallengePosts = await client.fetch(nextChallengeQuery, {
@@ -159,17 +158,16 @@ export async function GET() {
 					}
 				} catch (e) {
 					console.error('Failed to fetch next challenge posts for RSS:', e);
-					// エラーでもRSS生成自体は止めない
 				}
 			}
 
-			// サムネイル画像
+			// サムネイル
 			const thumbnail = primaryImageUrl || siteLogo;
 
 			// 日付
 			const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
-			// 広告枠の生成
+			// 広告枠
 			const advertisementLinks = (globalLatestQuizzes || [])
 				.filter((quiz) => quiz.slug !== article.slug)
 				.slice(0, 5)
@@ -190,7 +188,7 @@ export async function GET() {
 			`
 				: '';
 
-			// 関連記事のXMLを生成
+			// 関連記事
 			const relatedLinksXml = (article.relatedLinks || [])
 				.map((related) => {
 					if (!related.slug || !related.title) return null;
@@ -201,7 +199,7 @@ export async function GET() {
 				.filter(Boolean)
 				.join('\n\t\t\t');
 
-			// CDATAセクション内の ]]> エスケープ
+			// CDATA修正
 			const safeContentHtml = contentHtml.replace(/]]>/g, ']]&gt;');
 
 			return `
@@ -225,7 +223,7 @@ export async function GET() {
 			await Promise.all((articles || []).map((article) => buildItem(article, globalLatestQuizzes)))
 		).join('\n');
 
-		// XML全体生成
+		// XML全体
 		const xml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -257,7 +255,6 @@ export async function GET() {
 		});
 	} catch (err) {
 		console.error('RSS Feed Generation Error:', err);
-		// サーバーログにエラーを出力しつつ、ブラウザには500を返す
 		return new Response('Internal Server Error', { status: 500 });
 	}
 }
