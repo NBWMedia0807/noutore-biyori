@@ -147,6 +147,9 @@
 					{/each}
 				{/if}
 				<li>
+					<a href="/business-manner" class="nav-link" data-sveltekit-preload-data>ビジネスマナー</a>
+				</li>
+				<li>
 					<a href="/number-quiz" class="nav-link" data-sveltekit-preload-data>数字クイズ</a>
 				</li>
 			</ul>
