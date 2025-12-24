@@ -189,16 +189,17 @@ export async function GET() {
 			.filter(Boolean)
 			.join('\n\t\t\t');
 
+		// CDATAセクションが壊れるのを防ぐ
+		const safeContentHtml = contentHtml.replace(/]]>/g, ']]&gt;');
+
 		return `
 		<item>
-			<title><![CDATA[ ${escapeXml(article.title)} ]]></title>
+			<title>${escapeXml(article.title)}</title>
 			<link>${articleLink}</link>
 			<guid isPermaLink="true">${articleLink}</guid>
 			<pubDate>${pubDate}</pubDate>
-			<description><![CDATA[]]></description> 
-			<content:encoded><![CDATA[ 
-				${contentHtml} 
-			]]></content:encoded>
+			<description><![CDATA[]]></description>
+			<content:encoded><![CDATA[${safeContentHtml}]]></content:encoded>
 			<media:thumbnail url="${thumbnail}"/>
 			<dc:creator>脳トレ日和</dc:creator>
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
