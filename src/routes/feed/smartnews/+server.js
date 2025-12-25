@@ -142,37 +142,40 @@ export async function GET() {
 					});
 
 					if (nextChallengePosts && nextChallengePosts.length > 0) {
-						// ▼▼▼ MSN対策: テーブルレイアウトに変更 ▼▼▼
 						let nextChallengeHtml = `
 							<hr />
 							<h3 style="font-size: 18px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #7c2d12;">さらにもう一問！</h3>
-							<table style="width: 100%; border-collapse: collapse; border: none;">
 						`;
 
 						for (const post of nextChallengePosts) {
+							// 安全対策: データが不正な場合はスキップ
+							if (!post || !post.slug) continue;
+
 							const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
-							const imageUrl = post.image;
-							
+							const title = escapeXml(post.title || '無題');
+							const imageUrl = post.image; // クエリですでにURL化されている前提
+
+							// 1. 画像ブロック (存在する場合のみ)
 							if (imageUrl) {
 								nextChallengeHtml += `
-									<tr style="border-bottom: 1px solid #eee;">
-										<td style="width: 110px; padding: 10px 0; vertical-align: top;">
-											<a href="${postUrl}" style="text-decoration: none;">
-												<img src="${imageUrl}" style="display: block; width: 100px; height: 75px; object-fit: cover; border-radius: 4px;" alt="サムネイル" />
-											</a>
-										</td>
-										<td style="padding: 10px 0 10px 10px; vertical-align: middle;">
-											<a href="${postUrl}" style="text-decoration: none; color: #1d4ed8; font-weight: bold; font-size: 16px; line-height: 1.5;">
-												${escapeXml(post.title)}
-											</a>
-										</td>
-									</tr>
-								`;
+                  <p>
+                    <a href="${postUrl}" style="text-decoration: none; display: block;">
+                      <img src="${imageUrl}" alt="${title}" style="width: 100%; height: auto; border-radius: 8px; display: block; margin-bottom: 8px;" />
+                    </a>
+                  </p>
+                `;
 							}
+
+							// 2. タイトルテキストブロック (縦積み)
+							nextChallengeHtml += `
+                <p style="margin-bottom: 24px; font-weight: bold; line-height: 1.5;">
+                   <a href="${postUrl}" style="color: #1d4ed8; text-decoration: none;">
+                     ▶ ${title}
+                   </a>
+                </p>
+              `;
 						}
-						nextChallengeHtml += '</table><br />';
 						contentHtml += nextChallengeHtml;
-						// ▲▲▲ MSN対策ここまで ▲▲▲
 					}
 				} catch (e) {
 					console.error('Failed to fetch next challenge posts for RSS:', e);
