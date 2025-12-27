@@ -10,7 +10,6 @@ const siteDescription =
 const siteLogo = 'https://noutorebiyori.com/logo.png';
 
 // 「さらにもう一問」用のクエリ
-// 修正: QUIZ_PUBLISHED_FILTERの前に&&をつけない（フィルタ自体に含まれていると仮定、または構文エラー回避）
 const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId && defined(problemImage.asset) ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
   title,
   "slug": slug.current,
@@ -130,8 +129,6 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			// ★重要: カテゴリIDが存在する場合のみクエリを実行（クラッシュ防止）
-			// ※ groq側で _ref としてマッピングされていることを想定していますが、念のため _id もチェック
 			const categoryId = article.category?._ref || article.category?._id;
 
 			if (article._type === 'quiz' && categoryId) {
@@ -142,9 +139,11 @@ export async function GET() {
 					});
 
 					if (nextChallengePosts && nextChallengePosts.length > 0) {
+                        // 修正箇所：ここではエスケープ文字(&lt;)ではなく、生のHTMLタグ(<)を使います。
+                        // RSSのCDATAセクション内に入るため、タグはそのまま記述しないと機能しません。
 						let nextChallengeHtml = `
-            &lt;hr /&gt;
-            &lt;h3&gt;さらにもう一問！&lt;/h3&gt;
+            <hr />
+            <h3>さらにもう一問！</h3>
           `;
 
 						for (const post of nextChallengePosts) {
@@ -155,26 +154,26 @@ export async function GET() {
 
 							const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
 							const title = escapeXml(post.title);
-							const imageUrl = post.image; // クエリ側でURL文字列になっている前提
+							const imageUrl = post.image;
 
 							// 1. 画像ブロック (画像URLが確実に存在する場合のみ出力)
 							if (imageUrl) {
 								nextChallengeHtml += `
-                  &lt;p&gt;
-                    &lt;a href="${postUrl}"&gt;
-                      &lt;img src="${imageUrl}" alt="${title}" width="100%" style="display: block; width: 100%; height: auto;" /&gt;
-                    &lt;/a&gt;
-                  &lt;/p&gt;
+                  <p>
+                    <a href="${postUrl}">
+                      <img src="${imageUrl}" alt="${title}" width="100%" style="display: block; width: 100%; height: auto;" />
+                    </a>
+                  </p>
                 `;
 							}
 
 							// 2. テキストリンクブロック
 							nextChallengeHtml += `
-                &lt;p&gt;
-                   &lt;a href="${postUrl}" style="color: #1d4ed8; font-weight: bold; text-decoration: none;"&gt;
+                <p>
+                   <a href="${postUrl}" style="color: #1d4ed8; font-weight: bold; text-decoration: none;">
                      ▶ ${title}
-                   &lt;/a&gt;
-                &lt;/p&gt;
+                   </a>
+                </p>
               `;
 						}
 						contentHtml += nextChallengeHtml;
@@ -273,7 +272,6 @@ export async function GET() {
 			}
 		});
 	} catch (err) {
-		// サーバー全体を落とさないための最終防壁
 		console.error('RSS Feed Generation Critical Error:', err);
 		return new Response('Internal Server Error', { status: 500 });
 	}
