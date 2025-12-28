@@ -139,15 +139,14 @@ export async function GET() {
 					});
 
 					if (nextChallengePosts && nextChallengePosts.length > 0) {
-                        // 修正箇所：ここではエスケープ文字(&lt;)ではなく、生のHTMLタグ(<)を使います。
-                        // RSSのCDATAセクション内に入るため、タグはそのまま記述しないと機能しません。
+						// 【ここがポイント】生のHTMLタグ（<）を使いつつ、構造は単純（pとimgのみ）にする
 						let nextChallengeHtml = `
             <hr />
             <h3>さらにもう一問！</h3>
           `;
 
 						for (const post of nextChallengePosts) {
-							// 【最重要】データ欠損によるリンク切れを防ぐ
+							// データ欠損による500エラー防止
 							if (!post || !post.slug || !post.title) {
 								continue;
 							}
@@ -156,7 +155,7 @@ export async function GET() {
 							const title = escapeXml(post.title);
 							const imageUrl = post.image;
 
-							// 1. 画像ブロック (画像URLが確実に存在する場合のみ出力)
+							// 1. 画像ブロック (画像がある場合のみ出力)
 							if (imageUrl) {
 								nextChallengeHtml += `
                   <p>
