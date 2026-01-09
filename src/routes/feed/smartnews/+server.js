@@ -9,13 +9,6 @@ const siteDescription =
 	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = 'https://noutorebiyori.com/logo.png';
 
-// 「さらにもう一問」用のクエリ
-const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId && defined(problemImage.asset) ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
-  title,
-  "slug": slug.current,
-  "image": problemImage.asset->url
-}`;
-
 // 最新クイズリスト（広告枠用）
 const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
   title,
@@ -129,58 +122,45 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			const categoryId = article.category?._ref || article.category?._id;
-
-			if (article._type === 'quiz' && categoryId) {
-				try {
-					const nextChallengePosts = await client.fetch(nextChallengeQuery, {
-						slug: article.slug,
-						categoryId: categoryId
-					});
-
-					if (nextChallengePosts && nextChallengePosts.length > 0) {
-						// 【ここがポイント】生のHTMLタグ（<）を使いつつ、構造は単純（pとimgのみ）にする
-						let nextChallengeHtml = `
+			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
+				let nextChallengeHtml = `
             <hr />
             <h3>さらにもう一問！</h3>
           `;
 
-						for (const post of nextChallengePosts) {
-							// データ欠損による500エラー防止
-							if (!post || !post.slug || !post.title) {
-								continue;
-							}
+				for (const post of article.relatedLinks) {
+					// データ欠損によるエラー防止
+					if (!post || !post.slug || !post.title) {
+						continue;
+					}
 
-							const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
-							const title = escapeXml(post.title);
-							const imageUrl = post.image;
+					const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
+					const title = escapeXml(post.title);
+					// getImageUrlを使用して problemImage または mainImage からURLを取得
+					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-							// 1. 画像ブロック (画像がある場合のみ出力)
-							if (imageUrl) {
-								nextChallengeHtml += `
+					// 1. 画像ブロック (画像がある場合のみ出力)
+					if (imageUrl) {
+						// loading, srcsetなどの属性を含まないシンプルなimgタグ
+						nextChallengeHtml += `
                   <p>
                     <a href="${postUrl}">
-                      <img src="${imageUrl}" alt="${title}" width="100%" style="display: block; width: 100%; height: auto;" />
+                      <img src="${imageUrl}" alt="${title}" width="100%" />
                     </a>
                   </p>
                 `;
-							}
+					}
 
-							// 2. テキストリンクブロック
-							nextChallengeHtml += `
+					// 2. テキストリンクブロック
+					nextChallengeHtml += `
                 <p>
                    <a href="${postUrl}" style="color: #1d4ed8; font-weight: bold; text-decoration: none;">
                      ▶ ${title}
                    </a>
                 </p>
               `;
-						}
-						contentHtml += nextChallengeHtml;
-					}
-				} catch (e) {
-					console.error('Failed to fetch next challenge posts for RSS:', e);
-					// エラー時はログに出し、RSS生成自体は止めずに続行
 				}
+				contentHtml += nextChallengeHtml;
 			}
 
 			// サムネイル画像

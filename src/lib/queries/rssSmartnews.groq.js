@@ -44,7 +44,10 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   ] | order(publishedAt desc)[0...3]{
     title,
     "slug": slug.current,
-    _type
+    _type,
+    // 【修正】関連記事の画像アセット情報を追加
+    mainImage{asset->},
+    problemImage{asset->}
   }
 }
 `;

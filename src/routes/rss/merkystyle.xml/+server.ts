@@ -223,7 +223,7 @@ const buildItemXml = (item: ReturnType<typeof toItem>) => {
   }
 
   if (item.thumbnail) {
-    lines.push(`    <thumbnail url="${escapeAttribute(item.thumbnail)}" />`);
+    lines.push(`    <media:thumbnail url="${escapeAttribute(item.thumbnail)}" />`);
   }
 
   if (item.related && item.related.length > 0) {
@@ -261,7 +261,7 @@ const buildFeed = (items: any[]) => {
   const itemXml = items.map(buildItemXml).filter(Boolean).join('\n');
   const channelLines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">',
+    '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">',
     '<channel>',
     `  <title>${escapeXml(CHANNEL.title)}</title>`,
     `  <link>${escapeXml(CHANNEL.link)}</link>`,
