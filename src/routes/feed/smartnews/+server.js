@@ -107,10 +107,12 @@ export async function GET() {
 				contentHtml += problemHtml;
 
 				if (hintsHtml) {
-					contentHtml += `<hr><h3>★ ヒント</h3>${hintsHtml}`;
+					// <hr> を削除し、<br><br> に変更（MSN対策）
+					contentHtml += `<br><br><h3>★ ヒント</h3>${hintsHtml}`;
 				}
 
-				contentHtml += `<hr><h2>【解説】</h2>`;
+				// <hr> を削除し、<br><br> に変更（MSN対策）
+				contentHtml += `<br><br><h2>【解説】</h2>`;
 				if (answerImageUrl) {
 					contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
 				}
@@ -121,10 +123,10 @@ export async function GET() {
 				contentHtml += convertNewlinesToBr(safePortableTextToHtml(article.body));
 			}
 
-			// 「さらにもう一問」セクションの追加
+			// 「さらにもう一問」セクションの追加（MSN対策による完全書き換え）
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = `
-            <hr />
+            <br /><br />
             <h3>さらにもう一問！</h3>
           `;
 
@@ -141,23 +143,26 @@ export async function GET() {
 
 					// 1. 画像ブロック (画像がある場合のみ出力)
 					if (imageUrl) {
-						// loading, srcsetなどの属性を含まないシンプルなimgタグ
+						// <p>を<div>に変更し、style属性を排除
 						nextChallengeHtml += `
-                  <p>
+                  <div>
                     <a href="${postUrl}">
                       <img src="${imageUrl}" alt="${title}" width="100%" />
                     </a>
-                  </p>
+                  </div>
+                  <br />
                 `;
 					}
 
 					// 2. テキストリンクブロック
+					// <p>を<div>に変更し、style属性（色指定など）を排除
 					nextChallengeHtml += `
-                <p>
-                   <a href="${postUrl}" style="color: #1d4ed8; font-weight: bold; text-decoration: none;">
+                <div>
+                   <a href="${postUrl}">
                      ▶ ${title}
                    </a>
-                </p>
+                </div>
+                <br />
               `;
 				}
 				contentHtml += nextChallengeHtml;
