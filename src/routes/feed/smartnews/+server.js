@@ -124,6 +124,7 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加（MSN対策による完全書き換え）
+			// Manus案採用：画像とリンクを1つの<p>ブロックに入れ、太字(strong)で強調してカード化を促す
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = `
             <br /><br />
@@ -141,29 +142,24 @@ export async function GET() {
 					// getImageUrlを使用して problemImage または mainImage からURLを取得
 					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					// 1. 画像ブロック (画像がある場合のみ出力)
+					// 画像がある場合
 					if (imageUrl) {
-						// <p>を<div>に変更し、style属性を排除
 						nextChallengeHtml += `
-                  <div>
-                    <a href="${postUrl}">
-                      <img src="${imageUrl}" alt="${title}" width="100%" />
-                    </a>
-                  </div>
+                  <p>
+                    <a href="${postUrl}"><img src="${imageUrl}" alt="${title}" width="100%" /></a><br />
+                    <a href="${postUrl}"><strong>${title}</strong></a>
+                  </p>
+                  <br />
+                `;
+					} else {
+						// 画像がない場合
+						nextChallengeHtml += `
+                  <p>
+                    <a href="${postUrl}"><strong>${title}</strong></a>
+                  </p>
                   <br />
                 `;
 					}
-
-					// 2. テキストリンクブロック
-					// <p>を<div>に変更し、style属性（色指定など）を排除
-					nextChallengeHtml += `
-                <div>
-                   <a href="${postUrl}">
-                     ▶ ${title}
-                   </a>
-                </div>
-                <br />
-              `;
 				}
 				contentHtml += nextChallengeHtml;
 			}
@@ -193,13 +189,19 @@ export async function GET() {
 			`
 				: '';
 
-			// 関連記事のXMLを生成
+			// 関連記事のXMLを生成（マーキースタイル対策：thumbnail属性追加）
 			const relatedLinksXml = (article.relatedLinks || [])
 				.map((related) => {
 					if (!related.slug || !related.title) return null;
 					const relatedUrl =
 						related._type === 'quiz' ? `${siteLink}quiz/${related.slug}` : `${siteLink}${related.slug}`;
-					return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}" />`;
+					
+                    // 関連リンクの画像URLを取得
+					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
+					// thumbnail属性を追加 (画像がある時だけ付与)
+                    const thumbAttr = relatedThumb ? ` thumbnail="${relatedThumb}"` : '';
+
+					return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}"${thumbAttr} />`;
 				})
 				.filter(Boolean)
 				.join('\n\t\t\t');
