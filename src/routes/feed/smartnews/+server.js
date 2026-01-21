@@ -124,7 +124,6 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加（MSN対策による完全書き換え）
-			// Manus案採用：画像とリンクを1つの<p>ブロックに入れ、太字(strong)で強調してカード化を促す
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = `
             <br /><br />
@@ -144,12 +143,16 @@ export async function GET() {
 
 					// 画像がある場合
 					if (imageUrl) {
+						// 【重要修正】
+						// 画像とタイトルを同じ <p> に入れると、MSNがタイトルを「キャプション」扱いしてリンクを無効化してしまう。
+						// そのため、<p>タグを分けて記述する。
 						nextChallengeHtml += `
                   <p>
-                    <a href="${postUrl}"><img src="${imageUrl}" alt="${title}" width="100%" /></a><br />
+                    <a href="${postUrl}"><img src="${imageUrl}" alt="${title}" width="100%" /></a>
+                  </p>
+                  <p>
                     <a href="${postUrl}"><strong>${title}</strong></a>
                   </p>
-                  <br />
                 `;
 					} else {
 						// 画像がない場合
@@ -157,9 +160,10 @@ export async function GET() {
                   <p>
                     <a href="${postUrl}"><strong>${title}</strong></a>
                   </p>
-                  <br />
                 `;
 					}
+					// アイテム間の区切り
+					nextChallengeHtml += `<br />`;
 				}
 				contentHtml += nextChallengeHtml;
 			}
