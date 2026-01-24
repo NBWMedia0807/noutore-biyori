@@ -107,11 +107,11 @@ export async function GET() {
 				contentHtml += problemHtml;
 
 				if (hintsHtml) {
-					// <hr> を削除し、<br><br> に変更（MSN対策）
+					// <hr> を削除し、<br><br> に変更
 					contentHtml += `<br><br><h3>★ ヒント</h3>${hintsHtml}`;
 				}
 
-				// <hr> を削除し、<br><br> に変更（MSN対策）
+				// <hr> を削除し、<br><br> に変更
 				contentHtml += `<br><br><h2>【解説】</h2>`;
 				if (answerImageUrl) {
 					contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
@@ -123,7 +123,8 @@ export async function GET() {
 				contentHtml += convertNewlinesToBr(safePortableTextToHtml(article.body));
 			}
 
-			// 「さらにもう一問」セクションの追加（MSN対策による完全書き換え）
+			// 「さらにもう一問」セクションの追加
+			// Manus案採用：divで囲み、画像のリンクを外し、テキストリンクを青文字装飾
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = `
             <br /><br />
@@ -131,39 +132,35 @@ export async function GET() {
           `;
 
 				for (const post of article.relatedLinks) {
-					// データ欠損によるエラー防止
-					if (!post || !post.slug || !post.title) {
-						continue;
-					}
+					if (!post || !post.slug || !post.title) continue;
 
 					const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
 					const title = escapeXml(post.title);
-					// getImageUrlを使用して problemImage または mainImage からURLを取得
 					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
 					// 画像がある場合
 					if (imageUrl) {
-						// 【重要修正】
-						// 画像とタイトルを同じ <p> に入れると、MSNがタイトルを「キャプション」扱いしてリンクを無効化してしまう。
-						// そのため、<p>タグを分けて記述する。
 						nextChallengeHtml += `
-                  <p>
-                    <a href="${postUrl}"><img src="${imageUrl}" alt="${title}" width="100%" /></a>
-                  </p>
-                  <p>
-                    <a href="${postUrl}"><strong>${title}</strong></a>
-                  </p>
+                  <div>
+                    <img src="${imageUrl}" alt="${title}" width="100%" />
+                    <br />
+                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline;">
+                      ▶ 【クイズに挑戦】正解はコチラ
+                    </a>
+                  </div>
+                  <br />
                 `;
 					} else {
 						// 画像がない場合
 						nextChallengeHtml += `
-                  <p>
-                    <a href="${postUrl}"><strong>${title}</strong></a>
-                  </p>
+                  <div>
+                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline;">
+                      ▶ 【クイズに挑戦】正解はコチラ（${title}）
+                    </a>
+                  </div>
+                  <br />
                 `;
 					}
-					// アイテム間の区切り
-					nextChallengeHtml += `<br />`;
 				}
 				contentHtml += nextChallengeHtml;
 			}
@@ -193,17 +190,16 @@ export async function GET() {
 			`
 				: '';
 
-			// 関連記事のXMLを生成（マーキースタイル対策：thumbnail属性追加）
+			// 関連記事のXMLを生成（マーキースタイル対策：thumbnail属性維持）
 			const relatedLinksXml = (article.relatedLinks || [])
 				.map((related) => {
 					if (!related.slug || !related.title) return null;
 					const relatedUrl =
 						related._type === 'quiz' ? `${siteLink}quiz/${related.slug}` : `${siteLink}${related.slug}`;
 					
-                    // 関連リンクの画像URLを取得
+                    // 関連リンクの画像URL
 					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
-					// thumbnail属性を追加 (画像がある時だけ付与)
-                    const thumbAttr = relatedThumb ? ` thumbnail="${relatedThumb}"` : '';
+					const thumbAttr = relatedThumb ? ` thumbnail="${relatedThumb}"` : '';
 
 					return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}"${thumbAttr} />`;
 				})
