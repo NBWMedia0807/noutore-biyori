@@ -124,7 +124,10 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			// Manus案採用：divで囲み、画像のリンクを外し、テキストリンクを青文字装飾
+			// 【最終対策】
+			// 1. <div>をやめて<p>にする（MSNに確実に認識させるため）
+			// 2. 画像にもリンクを貼る（ユーザー体験の改善）
+			// 3. 画像の<p>とテキストの<p>を分ける（キャプション扱いによるリンク無効化の回避）
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = `
             <br /><br />
@@ -141,23 +144,26 @@ export async function GET() {
 					// 画像がある場合
 					if (imageUrl) {
 						nextChallengeHtml += `
-                  <div>
-                    <img src="${imageUrl}" alt="${title}" width="100%" />
-                    <br />
-                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline;">
+                  <p>
+                    <a href="${postUrl}">
+                      <img src="${imageUrl}" alt="${title}" width="100%" />
+                    </a>
+                  </p>
+                  <p>
+                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline; font-weight: bold;">
                       ▶ 【クイズに挑戦】正解はコチラ
                     </a>
-                  </div>
+                  </p>
                   <br />
                 `;
 					} else {
 						// 画像がない場合
 						nextChallengeHtml += `
-                  <div>
-                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline;">
+                  <p>
+                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline; font-weight: bold;">
                       ▶ 【クイズに挑戦】正解はコチラ（${title}）
                     </a>
-                  </div>
+                  </p>
                   <br />
                 `;
 					}
