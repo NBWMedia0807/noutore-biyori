@@ -124,15 +124,13 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			// 【最終対策】
-			// 1. <div>をやめて<p>にする（MSNに確実に認識させるため）
-			// 2. 画像にもリンクを貼る（ユーザー体験の改善）
-			// 3. 画像の<p>とテキストの<p>を分ける（キャプション扱いによるリンク無効化の回避）
+			// 【SmartNews/MSN対策】
+			// 1. 画像は<a>の外に独立配置（フィードリーダーが<a>内<img>を無視する問題の回避）
+			// 2. テキストリンクに記事タイトルを使用（どのクイズかわかるようにする）
+			// 3. インラインスタイル・width属性を除去（フィードリーダー互換性向上）
+			// 4. テンプレートリテラルのインデント空白を排除（HTMLパース問題の回避）
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
-				let nextChallengeHtml = `
-            <br /><br />
-            <h3>さらにもう一問！</h3>
-          `;
+				let nextChallengeHtml = '<br /><br /><h3>さらにもう一問！</h3>';
 
 				for (const post of article.relatedLinks) {
 					if (!post || !post.slug || !post.title) continue;
@@ -141,31 +139,13 @@ export async function GET() {
 					const title = escapeXml(post.title);
 					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					// 画像がある場合
+					// 画像がある場合：画像を独立表示＋タイトルリンク
 					if (imageUrl) {
-						nextChallengeHtml += `
-                  <p>
-                    <a href="${postUrl}">
-                      <img src="${imageUrl}" alt="${title}" width="100%" />
-                    </a>
-                  </p>
-                  <p>
-                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline; font-weight: bold;">
-                      ▶ 【クイズに挑戦】正解はコチラ
-                    </a>
-                  </p>
-                  <br />
-                `;
+						nextChallengeHtml += `<p><img src="${imageUrl}" alt="${title}" /></p>` +
+							`<p><a href="${postUrl}">▶ ${title}</a></p>`;
 					} else {
-						// 画像がない場合
-						nextChallengeHtml += `
-                  <p>
-                    <a href="${postUrl}" style="color: #0066cc; text-decoration: underline; font-weight: bold;">
-                      ▶ 【クイズに挑戦】正解はコチラ（${title}）
-                    </a>
-                  </p>
-                  <br />
-                `;
+						// 画像がない場合：タイトルリンクのみ
+						nextChallengeHtml += `<p><a href="${postUrl}">▶ ${title}</a></p>`;
 					}
 				}
 				contentHtml += nextChallengeHtml;
