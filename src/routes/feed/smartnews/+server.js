@@ -142,10 +142,10 @@ export async function GET() {
 					// 画像がある場合：画像を独立表示＋タイトルリンク
 					if (imageUrl) {
 						nextChallengeHtml += `<p><img src="${imageUrl}" alt="${title}" /></p>` +
-							`<p><a href="${postUrl}">▶ ${title}</a></p>`;
+							`<p>▶ <a href="${postUrl}">${title}</a></p>`;
 					} else {
 						// 画像がない場合：タイトルリンクのみ
-						nextChallengeHtml += `<p><a href="${postUrl}">▶ ${title}</a></p>`;
+						nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
 					}
 				}
 				contentHtml += nextChallengeHtml;
@@ -159,7 +159,7 @@ export async function GET() {
 			// 広告枠の生成
 			const advertisementLinks = (globalLatestQuizzes || [])
 				.filter((quiz) => quiz.slug !== article.slug)
-				.slice(0, 5)
+				.slice(0, 2)
 				.map((quiz) => {
 					const link = `${siteLink}quiz/${quiz.slug}`;
 					const thumbnailUrl = getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage) || siteLogo;
@@ -182,8 +182,8 @@ export async function GET() {
 					if (!related.slug || !related.title) return null;
 					const relatedUrl =
 						related._type === 'quiz' ? `${siteLink}quiz/${related.slug}` : `${siteLink}${related.slug}`;
-					
-                    // 関連リンクの画像URL
+
+					// 関連リンクの画像URL
 					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
 					const thumbAttr = relatedThumb ? ` thumbnail="${relatedThumb}"` : '';
 
