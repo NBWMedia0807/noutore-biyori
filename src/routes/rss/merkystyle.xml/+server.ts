@@ -182,9 +182,21 @@ const toItem = (doc: any) => {
   if (!contentParts.length && enclosureHtml) {
     contentParts.push(enclosureHtml);
   }
+
+  // 「さらにもう一問」セクション: content:encoded 内にリンク付きHTMLを追加
+  const related = buildRelatedLinks(doc);
+  if (related.length > 0) {
+    contentParts.push('<h3>さらにもう一問！</h3>');
+    for (const entry of related) {
+      if (entry.thumbnail) {
+        contentParts.push(`<p><img src="${escapeAttribute(entry.thumbnail)}" alt="${escapeAttribute(entry.title)}" /></p>`);
+      }
+      contentParts.push(`<p><a href="${escapeAttribute(entry.link)}">▶ ${escapeXml(entry.title)}</a></p>`);
+    }
+  }
+
   const encoded = contentParts.join('') || (description ? `<p>${escapeXml(description)}</p>` : '');
   const thumbnail = pickThumbnail(doc);
-  const related = buildRelatedLinks(doc);
 
   return {
     title,
