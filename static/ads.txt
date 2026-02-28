@@ -811,3 +811,4 @@ conversantmedia.com, 100346, RESELLER, 03113cd04947736d
 loopme.com, 2896, RESELLER, 6c8d5f95897a5a3b
 improvedigital.com,1602_129141,DIRECT
 improvedigital.com,1033_129141,DIRECT
+google.com, pub-2298313897414846, DIRECT, f08c47fec0942fa0
