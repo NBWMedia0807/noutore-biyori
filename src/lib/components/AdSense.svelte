@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
 
@@ -9,9 +9,11 @@
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
   let adRef;
+  let containerRef;
   let currentPath = '';
+  let observer = null;
+  let resizeObserver = null;
 
-  // ページパスが変わるたびに広告を再初期化する
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
     pushAd();
@@ -26,12 +28,64 @@
     }
   }
 
+  /**
+   * 広告の実際の高さにコンテナを合わせて余白を除去する
+   */
+  function collapseToAdHeight() {
+    if (!adRef || !containerRef) return;
+    const status = adRef.getAttribute('data-ad-status');
+
+    if (status === 'unfilled') {
+      containerRef.style.display = 'none';
+      return;
+    }
+
+    if (status === 'filled') {
+      containerRef.style.display = '';
+      // iframe の実際の高さに合わせる
+      requestAnimationFrame(() => {
+        const iframe = adRef.querySelector('iframe');
+        if (iframe && iframe.offsetHeight > 0) {
+          containerRef.style.height = iframe.offsetHeight + 'px';
+          containerRef.style.overflow = 'hidden';
+        }
+      });
+    }
+  }
+
+  function setupObservers() {
+    if (!adRef) return;
+
+    // data-ad-status 属性の変化を検知
+    observer = new MutationObserver(() => {
+      collapseToAdHeight();
+    });
+    observer.observe(adRef, {
+      attributes: true,
+      attributeFilter: ['data-ad-status'],
+      childList: true,
+      subtree: true,
+    });
+
+    // iframe のリサイズを検知（遅延読み込み対策）
+    resizeObserver = new ResizeObserver(() => {
+      collapseToAdHeight();
+    });
+    resizeObserver.observe(adRef);
+  }
+
   onMount(() => {
     pushAd();
+    setupObservers();
+  });
+
+  onDestroy(() => {
+    if (observer) observer.disconnect();
+    if (resizeObserver) resizeObserver.disconnect();
   });
 </script>
 
-<div class="adsense-container">
+<div class="adsense-container" bind:this={containerRef}>
   <ins
     bind:this={adRef}
     class="adsbygoogle"
@@ -58,10 +112,5 @@
   .adsense-container :global(ins.adsbygoogle) {
     margin: 0 auto !important;
     padding: 0 !important;
-  }
-
-  /* 未配信と判定された場合のみ非表示（読み込み前は非表示にしない） */
-  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
-    display: none;
   }
 </style>
