@@ -158,9 +158,9 @@
   }
 
   .article-card__content {
-    padding: 1.2rem 1.4rem 1.4rem;
+    padding: 0.6rem 1.1rem 1.1rem;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.25rem;
     flex: 1;
   }
 
