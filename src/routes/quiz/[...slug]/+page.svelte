@@ -2,6 +2,7 @@
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+  import AdSense from '$lib/components/AdSense.svelte';
 
   export let data;
 
@@ -190,6 +191,9 @@
     </div>
   {/if}
 
+  <!-- 記事内: 問題画像下の広告 -->
+  <AdSense slot="3921249196" />
+
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
@@ -235,6 +239,9 @@
       <span aria-hidden="true">→</span>
     </a>
   </nav>
+
+  <!-- 記事下: 関連記事上の広告 -->
+  <AdSense slot="1724332823" />
 
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
