@@ -245,6 +245,8 @@ const buildItemXml = (item: ReturnType<typeof toItem>) => {
         attrs.push(`thumbnail="${escapeAttribute(related.thumbnail)}"`);
       }
       lines.push(`    <relatedlink ${attrs.join(' ')}></relatedlink>`);
+      // MSN互換: atom:link rel="related" 要素を追加
+      lines.push(`    <atom:link rel="related" href="${escapeAttribute(related.link)}" title="${escapeAttribute(related.title)}" />`);
     }
   }
 
@@ -273,7 +275,7 @@ const buildFeed = (items: any[]) => {
   const itemXml = items.map(buildItemXml).filter(Boolean).join('\n');
   const channelLines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">',
+    '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">',
     '<channel>',
     `  <title>${escapeXml(CHANNEL.title)}</title>`,
     `  <link>${escapeXml(CHANNEL.link)}</link>`,
@@ -281,7 +283,8 @@ const buildFeed = (items: any[]) => {
     `  <language>${escapeXml(CHANNEL.language)}</language>`,
     `  <copyright>${escapeXml(CHANNEL.copyright)}</copyright>`,
     `  <pubDate>${escapeXml(now)}</pubDate>`,
-    `  <lastBuildDate>${escapeXml(now)}</lastBuildDate>`
+    `  <lastBuildDate>${escapeXml(now)}</lastBuildDate>`,
+    `  <atom:link href="${escapeXml(CHANNEL.link)}/rss/merkystyle.xml" rel="self" type="application/rss+xml" />`
   ];
   if (itemXml) {
     channelLines.push(itemXml);

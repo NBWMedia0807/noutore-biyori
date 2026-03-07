@@ -2,6 +2,9 @@ import { error, redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
+import { SITE } from '$lib/config/site.js';
+import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 // ▼ 修正済み: 正しいインポート
 import { client } from '$lib/sanity/client.js';
 
@@ -16,8 +19,13 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   "categoryId": category._ref,
   category->{ title, "slug": slug.current },
   answerImage{ asset->{ url, metadata } },
+  problemImage{ asset->{ url, metadata } },
+  mainImage{ asset->{ url, metadata } },
   answerExplanation,
-  closingMessage
+  closingMessage,
+  publishedAt,
+  _createdAt,
+  _updatedAt
 }`;
 
 // ▼ 追加: 「さらにもう一問」用のクエリ
@@ -50,26 +58,56 @@ export async function load({ params, setHeaders }) {
     }),
     quiz.categoryId
       ? client.fetch(nextChallengeQuery, {
-          slug: quiz.slug,
-          categoryId: quiz.categoryId
-        })
+        slug: quiz.slug,
+        categoryId: quiz.categoryId
+      })
       : Promise.resolve([])
   ]);
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
 
+  // SEOデータの生成
+  const quizPath = `/quiz/${quiz.slug}`;
+  const answerPath = `${quizPath}/answer`;
+  const plainAnswer = portableTextToPlain(quiz?.answerExplanation);
+  const plainClosing = portableTextToPlain(quiz?.closingMessage);
+  const seoDescription = (plainAnswer || plainClosing || '').trim() || `${quiz.title}の正解と解説。`;
+  const seoImage = resolveQuizOgImage(quiz);
+  const publishedAt = resolvePublishedDate(quiz, quiz?._id ?? quiz?.slug ?? answerPath);
+
+  const breadcrumbs = [];
+  if (quiz.category?.title && quiz.category?.slug) {
+    breadcrumbs.push({ name: quiz.category.title, url: `/category/${quiz.category.slug}` });
+  }
+  breadcrumbs.push({ name: quiz.title ?? 'クイズ', url: quizPath });
+  breadcrumbs.push({ name: '正解', url: answerPath });
+
+  const seo = createPageSeo({
+    title: `${quiz.title}｜正解`,
+    description: seoDescription,
+    path: answerPath,
+    type: 'article',
+    image: seoImage,
+    breadcrumbs,
+    article: {
+      title: `${quiz.title}｜正解`,
+      datePublished: publishedAt,
+      dateModified: quiz._updatedAt ?? publishedAt,
+      authorName: SITE.organization.name,
+      category: quiz.category?.title
+    }
+  });
+
   return {
     quiz,
     related,
-    nextChallengePosts, // ▼ UIにデータを渡す
+    nextChallengePosts,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
       hideBreadcrumbs: true,
       mainClass: 'main--flush'
     },
-    seo: {
-      canonical: `/quiz/${quiz.slug}/answer`
-    }
+    seo
   };
 }
