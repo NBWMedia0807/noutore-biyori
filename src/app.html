@@ -172,7 +172,33 @@
       }
     })();
   </script>
+
+  <!--
+    Google Consent Mode v2 — デフォルト同意設定
+    日本向けサービスのため全てのストレージを 'granted' に設定。
+    GDPR対象外なのでバナー不要だが、Google要件に準拠するためv2 APIを実装。
+    ※ %sveltekit.head% より前に置かないと GA4/AdSense より遅れてしまうため
+       ここに配置している。
+  -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+
+    // Consent Mode v2 デフォルト: 全て granted（日本向け）
+    gtag('consent', 'default', {
+      'ad_storage': 'granted',
+      'ad_user_data': 'granted',
+      'ad_personalization': 'granted',
+      'analytics_storage': 'granted',
+      'functionality_storage': 'granted',
+      'personalization_storage': 'granted',
+      'security_storage': 'granted',
+      'wait_for_update': 500
+    });
+  </script>
+
   %sveltekit.head%
+
 </head>
 
 <body data-sveltekit-preload-data="hover">
