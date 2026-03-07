@@ -258,12 +258,12 @@
     aria-label="脳トレ日和 公式Xアカウントをフォロー"
   >
     <img
-      src="/x-banner.png"
+      src="/x-banner.jpg"
       alt="脳トレ日和 公式Xはじめました！最新クイズやアハ体験をお届け フォローする"
       loading="lazy"
       decoding="async"
       width="1024"
-      height="256"
+      height="318"
     />
   </a>
 
