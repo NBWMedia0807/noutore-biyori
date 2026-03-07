@@ -3,6 +3,7 @@
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
+  import AdSense from '$lib/components/AdSense.svelte';
 
   export let data;
 
@@ -32,6 +33,9 @@
 </script>
 
 <div class="home-page">
+  <!-- TOPページ: 新着クイズ上の広告 -->
+  <AdSense slot="5756190566" />
+
   {#if hasNewest}
     <section class="home-section" aria-labelledby="newest-heading" id="newest-quizzes">
       <h2 class="section-title" id="newest-heading">新着クイズ</h2>

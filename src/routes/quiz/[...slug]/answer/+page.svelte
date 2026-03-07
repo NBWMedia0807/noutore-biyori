@@ -1,5 +1,6 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+  import AdSense from '$lib/components/AdSense.svelte';
   
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
@@ -80,6 +81,9 @@
     </div>
   {/if}
 
+  <!-- 正解ページ: 画像下の広告 -->
+  <AdSense slot="3921249196" />
+
   {#if answerHtml}
     <section class="answer-explanation content-card">
       <div class="section-header">
@@ -101,6 +105,9 @@
       <p>{closingText || closingDefault}</p>
     </div>
   </section>
+
+  <!-- 正解ページ: もう一問上の広告 -->
+  <AdSense slot="5428887502" />
 
   {#if nextChallengePosts.length > 0}
   <section class="next-challenge">
@@ -127,6 +134,10 @@
     </div>
   </section>
   {/if}
+
+  <!-- 正解ページ: 関連記事上の広告 -->
+  <AdSense slot="1724332823" />
+
   <RelatedQuizSection
     quizzes={relatedQuizzes}
     fallbackImageUrl={relatedFallback}
