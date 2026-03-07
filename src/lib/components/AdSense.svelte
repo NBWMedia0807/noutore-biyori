@@ -55,22 +55,13 @@
     box-sizing: border-box;
   }
 
-  /*
-   * 広告が未配信・未ロード時はコンテナごと非表示にして
-   * 親flexのgapによる余白を完全に消す
-   */
-  .adsense-container:has(> ins.adsbygoogle:not([data-ad-status])),
-  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
-    display: none;
-  }
-
   .adsense-container :global(ins.adsbygoogle) {
     margin: 0 auto !important;
     padding: 0 !important;
   }
 
-  .adsense-container :global(ins.adsbygoogle[data-ad-status='unfilled']) {
-    display: none !important;
-    height: 0 !important;
+  /* 未配信と判定された場合のみ非表示（読み込み前は非表示にしない） */
+  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+    display: none;
   }
 </style>
