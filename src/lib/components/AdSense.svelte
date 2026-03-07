@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
 
-  /** @type {string} 広告スロットID */
+  /** @type {string} */
   export let slot;
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
@@ -17,7 +17,6 @@
   let pollTimer = null;
   let initialized = false;
 
-  // ページパスが変わるたびに広告を再初期化する
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
     if (initialized) pushAd();
@@ -27,27 +26,24 @@
     if (!adRef) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (_) {
-      // AdSenseのスクリプトが未ロードの場合のエラーを無視
-    }
+    } catch (_) {}
     startPolling();
   }
 
-  /**
-   * AdSenseがiframeのheight属性を設定するまでポーリングし、
-   * 確定したら高さをコンテナに適用してポーリングを停止する。
-   */
   function startPolling() {
     stopPolling();
     let attempts = 0;
     pollTimer = setInterval(() => {
       attempts++;
-      if (attempts > 60) {
+      if (attempts > 80) {
+        // 最大8秒
+        // タイムアウト時は container を visible に戻して諦める
+        reveal();
         stopPolling();
         return;
       }
       syncHeight();
-    }, 100); // 最大6秒間試みる
+    }, 100);
   }
 
   function stopPolling() {
@@ -57,14 +53,18 @@
     }
   }
 
-  /**
-   * iframeのheight属性（AdSenseが平文で設定する）を読み取り、
-   * コンテナの高さをその値に揃えることで下部余白をトルツメする。
-   */
+  /** コンテナを表示状態にする */
+  function reveal() {
+    if (containerRef) {
+      containerRef.style.removeProperty('visibility');
+      containerRef.style.removeProperty('overflow');
+    }
+  }
+
   function syncHeight() {
     if (!adRef || !containerRef) return;
 
-    // unfilled の場合は非表示にして終了
+    // unfilled → 非表示のまま終了（visibilityも関係ない）
     if (adRef.dataset.adStatus === 'unfilled') {
       containerRef.style.setProperty('display', 'none', 'important');
       stopPolling();
@@ -74,16 +74,30 @@
     const iframe = adRef.querySelector('iframe');
     if (!iframe) return;
 
-    const h = parseInt(iframe.getAttribute('height') ?? '0', 10);
+    // height属性（AdSenseが設定する）と実レンダリング高さ(offsetHeight)の両方を確認
+    const attrH = parseInt(iframe.getAttribute('height') ?? '0', 10);
+    const renderedH = iframe.offsetHeight;
+    const h = attrH > 0 ? attrH : renderedH;
+
     if (h > 0) {
       const px = `${h}px`;
-      // コンテナ全体を広告の実高に縮小（下部余白トルツメ）
-      containerRef.style.removeProperty('display');
+
+      // コンテナを実高に縮小してから表示
       containerRef.style.setProperty('height', px, 'important');
       containerRef.style.setProperty('max-height', px, 'important');
-      // ins タグも同様に
       adRef.style.setProperty('height', px, 'important');
       adRef.style.setProperty('max-height', px, 'important');
+
+      // AdSense内部div（iframeの兄弟要素）も高さを合わせる
+      Array.from(adRef.children).forEach((child) => {
+        if (child !== iframe && child instanceof HTMLElement) {
+          child.style.setProperty('height', px, 'important');
+          child.style.setProperty('max-height', px, 'important');
+          child.style.setProperty('overflow', 'hidden', 'important');
+        }
+      });
+
+      reveal();
       stopPolling();
     }
   }
@@ -111,17 +125,8 @@
 </div>
 
 <style>
-  /*
-   * フルブリード広告コンテナ
-   * ─────────────────────────────────────────────
-   * 親が padding や flex を持っていても確実に 100vw に広げるため、
-   * `left: 50%; transform: translateX(-50%)` 方式を採用。
-   * margin-left 方式よりも flex コンテナ内での挙動が安定する。
-   * ─────────────────────────────────────────────
-   * 高さは JS の syncHeight() で iframe の実寸に合わせてセットされる。
-   * JS が動く前は height: auto のため、高さは AdSense のデフォルト。
-   */
   .adsense-container {
+    /* フルブリード: flex/padding親の中でも正確に100vwに広げる */
     position: relative;
     left: 50%;
     transform: translateX(-50%);
@@ -130,18 +135,24 @@
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
+
+    /*
+     * 広告ロード前は非表示（JSで高さ確定後に reveal() で表示）
+     * → ユーザーが空白の「ガタ」を見ない
+     */
+    visibility: hidden;
   }
 
-  /* ins 本体: AdSense スクリプトが内部で幅・高さを操作するが、
-     幅は CSS で 100% に固定し、不要な余白を排除する */
+  /* ins 本体: 幅は常に 100% */
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    min-height: 0 !important;
   }
 
-  /* AdSense が生成する内部 div・iframe も余白ゼロ・幅 100% に */
+  /* AdSense内部div・iframeも 100%幅・余白ゼロ */
   .adsense-container :global(ins.adsbygoogle > div),
   .adsense-container :global(ins.adsbygoogle iframe) {
     display: block !important;
@@ -149,5 +160,10 @@
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+
+  /* unfilled時は gap が開かないよう完全非表示（JSでも設定するがCSS側でも保険） */
+  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+    display: none !important;
   }
 </style>
