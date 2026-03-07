@@ -11,7 +11,9 @@ const STATIC_ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.6' },
   { path: '/contact', changefreq: 'monthly', priority: '0.5' },
-  { path: '/privacy-policy', changefreq: 'yearly', priority: '0.4' }
+  { path: '/privacy-policy', changefreq: 'yearly', priority: '0.4' },
+  { path: '/disclaimer', changefreq: 'yearly', priority: '0.4' },
+  { path: '/terms', changefreq: 'yearly', priority: '0.4' }
 ];
 
 const QUERY = /* groq */ `{
@@ -105,12 +107,11 @@ export const GET = async () => {
     });
   });
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
-    Array.from(urlEntries.values())
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${Array.from(urlEntries.values())
       .sort((a, b) => a.loc.localeCompare(b.loc))
       .map((entry) => createUrlElement(entry))
       .join('\n')
-  }\n</urlset>`;
+    }\n</urlset>`;
 
   return new Response(xml, {
     headers: {
