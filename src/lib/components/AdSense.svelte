@@ -9,8 +9,11 @@
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
   let adRef;
+  /** @type {HTMLDivElement|null} */
+  let containerRef;
   let currentPath = '';
-  let observer;
+  let mutationObs;
+  let resizeObs;
 
   // ページパスが変わるたびに広告を再初期化する
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
@@ -27,51 +30,74 @@
     }
   }
 
+  /**
+   * iframeの実際の高さに合わせてコンテナの高さを更新する（トルツメ）
+   * @param {HTMLIFrameElement} iframe
+   */
+  function trimToIframeHeight(iframe) {
+    const heightVal = iframe.getAttribute('height');
+    const h = heightVal ? parseInt(heightVal) : 0;
+    if (h > 0) {
+      const px = `${h}px`;
+      // ins タグの高さを実寸に固定
+      adRef.style.setProperty('height', px, 'important');
+      adRef.style.setProperty('min-height', px, 'important');
+      adRef.style.setProperty('max-height', px, 'important');
+      // 外側コンテナも合わせる
+      if (containerRef) {
+        containerRef.style.setProperty('height', px, 'important');
+        containerRef.style.setProperty('min-height', px, 'important');
+        containerRef.style.setProperty('max-height', px, 'important');
+      }
+    }
+  }
+
+  /**
+   * ins の中に iframeが入ったら ResizeObserver で監視して高さを追随させる
+   */
+  function watchIframe() {
+    if (!adRef || adRef.dataset.adStatus !== 'filled') return;
+    const iframe = adRef.querySelector('iframe');
+    if (!iframe) return;
+
+    // 即座に1回トルツメ
+    trimToIframeHeight(iframe);
+
+    // iframeのサイズが動的に変わった場合にも追随する
+    if (!resizeObs) {
+      resizeObs = new ResizeObserver(() => {
+        const f = adRef?.querySelector('iframe');
+        if (f) trimToIframeHeight(f);
+      });
+    }
+    resizeObs.observe(iframe);
+  }
+
   onMount(() => {
     pushAd();
 
-    // 配信された広告（iframe）の実サイズに合わせて親要素群の高さを調整（トルツメ）する
-    observer = new MutationObserver(() => {
-      if (!adRef || adRef.dataset.adStatus !== 'filled') return;
-
-      const iframe = adRef.querySelector('iframe');
-      if (iframe) {
-        // iframeの高さ属性を取得（AdSenseは通常ここに実サイズを設定する）
-        const heightVal = iframe.getAttribute('height');
-        if (heightVal && parseInt(heightVal) > 0) {
-          const targetHeight = `${parseInt(heightVal)}px`;
-
-          // ins 自体の高さを変更
-          adRef.style.setProperty('height', targetHeight, 'important');
-          adRef.style.setProperty('min-height', targetHeight, 'important');
-
-          // その内部のラッパー(divなど)の高さも変更して隙間を完全に取り除く
-          Array.from(adRef.children).forEach((child) => {
-            if (child.tagName.toLowerCase() !== 'iframe') {
-              child.style.setProperty('height', targetHeight, 'important');
-              child.style.setProperty('min-height', targetHeight, 'important');
-            }
-          });
-        }
-      }
+    // data-ad-status の変化 + iframe の挿入を監視
+    mutationObs = new MutationObserver(() => {
+      watchIframe();
     });
 
     if (adRef) {
-      observer.observe(adRef, {
+      mutationObs.observe(adRef, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['data-ad-status'],
+        attributeFilter: ['data-ad-status', 'height'],
       });
     }
 
     return () => {
-      if (observer) observer.disconnect();
+      mutationObs?.disconnect();
+      resizeObs?.disconnect();
     };
   });
 </script>
 
-<div class="adsense-container">
+<div class="adsense-container" bind:this={containerRef}>
   <ins
     bind:this={adRef}
     class="adsbygoogle"
@@ -92,20 +118,25 @@
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    background: transparent;
-    overflow: hidden; /* 余白などがはみ出ないようにする */
+    overflow: hidden;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
     width: 100% !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     padding: 0 !important;
+    display: block !important;
+    min-height: 0 !important; /* 広告が入るまで余白を作らない */
+  }
+
+  /* iframeも横幅100%・高さautoで確実に表示 */
+  .adsense-container :global(ins.adsbygoogle iframe) {
+    width: 100% !important;
+    max-width: 100% !important;
     display: block !important;
   }
 
-  /* 未配信と判定された場合のみ非表示（読み込み前は非表示にしない） */
+  /* 未配信と判定された場合のみコンテナごと非表示 */
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
     display: none;
   }
