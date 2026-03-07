@@ -16,10 +16,38 @@
   /** @type {ReturnType<typeof setInterval>|null} */
   let pollTimer = null;
   let initialized = false;
+  /** @type {IntersectionObserver|null} */
+  let intersectionObs = null;
+  let adPushed = false;
 
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
-    if (initialized) pushAd();
+    if (initialized) {
+      adPushed = false;
+      observeViewport();
+    }
+  }
+
+  /**
+   * IntersectionObserver でコンテナがビューポートに近づいたらプッシュ。
+   * スクロールされることなく表示される位置（ファーストビュー）なら即時プッシュ。
+   * → 表示される広告だけをロードし、ビューアビリティ率・CPMを向上させる。
+   */
+  function observeViewport() {
+    intersectionObs?.disconnect();
+    if (!containerRef) return;
+
+    intersectionObs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !adPushed) {
+          adPushed = true;
+          pushAd();
+          intersectionObs?.disconnect();
+        }
+      },
+      { rootMargin: '200px 0px' } // 200px 手前でプッシュ開始
+    );
+    intersectionObs.observe(containerRef);
   }
 
   function pushAd() {
@@ -35,9 +63,8 @@
     let attempts = 0;
     pollTimer = setInterval(() => {
       attempts++;
-      if (attempts > 80) {
-        // 最大8秒
-        // タイムアウト時は container を visible に戻して諦める
+      if (attempts > 100) {
+        // 最大10秒
         reveal();
         stopPolling();
         return;
@@ -53,18 +80,17 @@
     }
   }
 
-  /** コンテナを表示状態にする */
+  /** 広告確定後にコンテナを表示・最小高さをリセット */
   function reveal() {
     if (containerRef) {
+      containerRef.style.removeProperty('min-height');
       containerRef.style.removeProperty('visibility');
-      containerRef.style.removeProperty('overflow');
     }
   }
 
   function syncHeight() {
     if (!adRef || !containerRef) return;
 
-    // unfilled → 非表示のまま終了（visibilityも関係ない）
     if (adRef.dataset.adStatus === 'unfilled') {
       containerRef.style.setProperty('display', 'none', 'important');
       stopPolling();
@@ -74,21 +100,17 @@
     const iframe = adRef.querySelector('iframe');
     if (!iframe) return;
 
-    // height属性（AdSenseが設定する）と実レンダリング高さ(offsetHeight)の両方を確認
     const attrH = parseInt(iframe.getAttribute('height') ?? '0', 10);
     const renderedH = iframe.offsetHeight;
     const h = attrH > 0 ? attrH : renderedH;
 
     if (h > 0) {
       const px = `${h}px`;
-
-      // コンテナを実高に縮小してから表示
       containerRef.style.setProperty('height', px, 'important');
       containerRef.style.setProperty('max-height', px, 'important');
       adRef.style.setProperty('height', px, 'important');
       adRef.style.setProperty('max-height', px, 'important');
 
-      // AdSense内部div（iframeの兄弟要素）も高さを合わせる
       Array.from(adRef.children).forEach((child) => {
         if (child !== iframe && child instanceof HTMLElement) {
           child.style.setProperty('height', px, 'important');
@@ -104,11 +126,12 @@
 
   onMount(() => {
     initialized = true;
-    pushAd();
+    observeViewport();
   });
 
   onDestroy(() => {
     stopPolling();
+    intersectionObs?.disconnect();
   });
 </script>
 
@@ -126,7 +149,6 @@
 
 <style>
   .adsense-container {
-    /* フルブリード: flex/padding親の中でも正確に100vwに広げる */
     position: relative;
     left: 50%;
     transform: translateX(-50%);
@@ -137,13 +159,15 @@
     box-sizing: border-box;
 
     /*
-     * 広告ロード前は非表示（JSで高さ確定後に reveal() で表示）
-     * → ユーザーが空白の「ガタ」を見ない
+     * CLS（Cumulative Layout Shift）防止:
+     * visibility:hidden の代わりに min-height で空間を確保。
+     * Googleはページの CLS スコアを広告オークションの品質基準に利用するため、
+     * CLS を最小化することで広告品質スコアが上がり CPM 向上につながる。
+     * 標準バナー高さ(100px)を仮確保; JS で実高に上書きする。
      */
-    visibility: hidden;
+    min-height: 100px;
   }
 
-  /* ins 本体: 幅は常に 100% */
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
     width: 100% !important;
@@ -152,7 +176,6 @@
     min-height: 0 !important;
   }
 
-  /* AdSense内部div・iframeも 100%幅・余白ゼロ */
   .adsense-container :global(ins.adsbygoogle > div),
   .adsense-container :global(ins.adsbygoogle iframe) {
     display: block !important;
@@ -162,7 +185,6 @@
     padding: 0 !important;
   }
 
-  /* unfilled時は gap が開かないよう完全非表示（JSでも設定するがCSS側でも保険） */
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
     display: none !important;
   }
