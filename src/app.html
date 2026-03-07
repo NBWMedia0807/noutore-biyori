@@ -4,12 +4,24 @@
 <head>
   <meta charset="utf-8" />
   <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+
+  <!-- AdSense 高速化: preconnect + preload -->
   <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin />
   <link rel="preconnect" href="https://googleads.g.doubleclick.net" crossorigin />
   <link rel="preconnect" href="https://tpc.googlesyndication.com" crossorigin />
+  <link rel="preconnect" href="https://adservice.google.com" crossorigin />
+  <link rel="preconnect" href="https://adservice.google.co.jp" crossorigin />
+  <link rel="preconnect" href="https://www.googletagservices.com" crossorigin />
   <link rel="dns-prefetch" href="//pagead2.googlesyndication.com" />
   <link rel="dns-prefetch" href="//googleads.g.doubleclick.net" />
   <link rel="dns-prefetch" href="//tpc.googlesyndication.com" />
+  <link rel="dns-prefetch" href="//adservice.google.com" />
+  <link rel="dns-prefetch" href="//adservice.google.co.jp" />
+  <!-- adsbygoogle.js を早めにフェッチ開始（広告表示速度・ビューアビリティ向上） -->
+  <link rel="preload"
+    href="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846" as="script"
+    crossorigin="anonymous" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script type="text/javascript" async="true">
