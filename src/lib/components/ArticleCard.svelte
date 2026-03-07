@@ -37,7 +37,7 @@
       width: 600,
       height: 360,
       quality: 80,
-      fallbackUrl: fallback
+      fallbackUrl: fallback,
     });
   };
 
@@ -64,15 +64,23 @@
 </script>
 
 <article class="article-card">
-  <a class="article-card__link" href={href} aria-label={`${title}の詳細を見る`}>
+  <a class="article-card__link" {href} aria-label={`${title}の詳細を見る`}>
     {#if imageSet?.src}
       <div class="article-card__image">
         <picture>
           {#if imageSet.avifSrcset}
-            <source srcset={imageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 280px, 90vw" />
+            <source
+              srcset={imageSet.avifSrcset}
+              type="image/avif"
+              sizes="(min-width: 768px) 280px, 90vw"
+            />
           {/if}
           {#if imageSet.webpSrcset}
-            <source srcset={imageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 280px, 90vw" />
+            <source
+              srcset={imageSet.webpSrcset}
+              type="image/webp"
+              sizes="(min-width: 768px) 280px, 90vw"
+            />
           {/if}
           <img
             src={imageSet.src}
@@ -103,7 +111,9 @@
     overflow: hidden;
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
     border: 1px solid rgba(248, 196, 113, 0.35);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
     display: flex;
   }
 
@@ -130,14 +140,14 @@
   .article-card__image picture {
     display: block;
     width: 100%;
-    aspect-ratio: calc(16 / 9);
   }
 
   .article-card__image img {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
+    object-fit: contain; /* 全体表示（クロップなし） */
+    background: #f8f8f8;
     transition: transform 0.3s ease;
   }
 
@@ -172,7 +182,7 @@
 
   @media (max-width: 520px) {
     .article-card__image picture {
-      aspect-ratio: calc(3 / 2);
+      /* モバイルでも aspect-ratio を強制しない */
     }
   }
 </style>
