@@ -150,21 +150,17 @@
 <style>
   .adsense-container {
     position: relative;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw;
+    width: 100%;
     overflow: hidden;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
 
     /*
-     * CLS（Cumulative Layout Shift）防止:
-     * visibility:hidden の代わりに min-height で空間を確保。
-     * Googleはページの CLS スコアを広告オークションの品質基準に利用するため、
-     * CLS を最小化することで広告品質スコアが上がり CPM 向上につながる。
-     * 標準バナー高さ(100px)を仮確保; JS で実高に上書きする。
+     * 広告ロード前は非表示（JSで高さ確定後に reveal() で表示）
+     * → ユーザーが空白の「ガタ」を見ない
      */
+    visibility: hidden;
     min-height: 100px;
   }
 
