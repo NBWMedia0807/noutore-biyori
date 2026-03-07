@@ -140,14 +140,15 @@
   .article-card__image picture {
     display: block;
     width: 100%;
+    aspect-ratio: calc(16 / 9); /* カード高さを統一 */
   }
 
   .article-card__image img {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
     object-fit: contain; /* 全体表示（クロップなし） */
-    background: #f8f8f8;
+    background: #ffffff;
     transition: transform 0.3s ease;
   }
 
@@ -182,7 +183,7 @@
 
   @media (max-width: 520px) {
     .article-card__image picture {
-      /* モバイルでも aspect-ratio を強制しない */
+      aspect-ratio: calc(3 / 2);
     }
   }
 </style>
