@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
 
@@ -9,11 +9,10 @@
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
   let adRef;
-  let containerRef;
   let currentPath = '';
-  let observer = null;
-  let resizeObserver = null;
+  let observer;
 
+  // ページパスが変わるたびに広告を再初期化する
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
     pushAd();
@@ -28,64 +27,51 @@
     }
   }
 
-  /**
-   * 広告の実際の高さにコンテナを合わせて余白を除去する
-   */
-  function collapseToAdHeight() {
-    if (!adRef || !containerRef) return;
-    const status = adRef.getAttribute('data-ad-status');
-
-    if (status === 'unfilled') {
-      containerRef.style.display = 'none';
-      return;
-    }
-
-    if (status === 'filled') {
-      containerRef.style.display = '';
-      // iframe の実際の高さに合わせる
-      requestAnimationFrame(() => {
-        const iframe = adRef.querySelector('iframe');
-        if (iframe && iframe.offsetHeight > 0) {
-          containerRef.style.height = iframe.offsetHeight + 'px';
-          containerRef.style.overflow = 'hidden';
-        }
-      });
-    }
-  }
-
-  function setupObservers() {
-    if (!adRef) return;
-
-    // data-ad-status 属性の変化を検知
-    observer = new MutationObserver(() => {
-      collapseToAdHeight();
-    });
-    observer.observe(adRef, {
-      attributes: true,
-      attributeFilter: ['data-ad-status'],
-      childList: true,
-      subtree: true,
-    });
-
-    // iframe のリサイズを検知（遅延読み込み対策）
-    resizeObserver = new ResizeObserver(() => {
-      collapseToAdHeight();
-    });
-    resizeObserver.observe(adRef);
-  }
-
   onMount(() => {
     pushAd();
-    setupObservers();
-  });
 
-  onDestroy(() => {
-    if (observer) observer.disconnect();
-    if (resizeObserver) resizeObserver.disconnect();
+    // 配信された広告（iframe）の実サイズに合わせて親要素群の高さを調整（トルツメ）する
+    observer = new MutationObserver(() => {
+      if (!adRef || adRef.dataset.adStatus !== 'filled') return;
+
+      const iframe = adRef.querySelector('iframe');
+      if (iframe) {
+        // iframeの高さ属性を取得（AdSenseは通常ここに実サイズを設定する）
+        const heightVal = iframe.getAttribute('height');
+        if (heightVal && parseInt(heightVal) > 0) {
+          const targetHeight = `${parseInt(heightVal)}px`;
+
+          // ins 自体の高さを変更
+          adRef.style.setProperty('height', targetHeight, 'important');
+          adRef.style.setProperty('min-height', targetHeight, 'important');
+
+          // その内部のラッパー(divなど)の高さも変更して隙間を完全に取り除く
+          Array.from(adRef.children).forEach((child) => {
+            if (child.tagName.toLowerCase() !== 'iframe') {
+              child.style.setProperty('height', targetHeight, 'important');
+              child.style.setProperty('min-height', targetHeight, 'important');
+            }
+          });
+        }
+      }
+    });
+
+    if (adRef) {
+      observer.observe(adRef, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-ad-status'],
+      });
+    }
+
+    return () => {
+      if (observer) observer.disconnect();
+    };
   });
 </script>
 
-<div class="adsense-container" bind:this={containerRef}>
+<div class="adsense-container">
   <ins
     bind:this={adRef}
     class="adsbygoogle"
@@ -100,17 +86,27 @@
 <style>
   .adsense-container {
     width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     position: relative;
-    left: 50%;
-    transform: translateX(-50%);
     line-height: 0;
     font-size: 0;
-    min-height: 0;
     box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+    overflow: hidden; /* 余白などがはみ出ないようにする */
   }
 
   .adsense-container :global(ins.adsbygoogle) {
+    width: 100% !important;
     margin: 0 auto !important;
     padding: 0 !important;
+    display: block !important;
+  }
+
+  /* 未配信と判定された場合のみ非表示（読み込み前は非表示にしない） */
+  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+    display: none;
   }
 </style>
