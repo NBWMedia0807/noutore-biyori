@@ -46,23 +46,34 @@
 <style>
   .adsense-container {
     width: 100%;
+    max-width: 100%;
     overflow: hidden;
     /* 広告未配信時にコンテナが余計な高さを持たないようにする */
     line-height: 0;
     font-size: 0;
     min-height: 0;
+    /* 広告配信時に広告サイズに合った幅を確保 */
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  /* 広告が配信された場合のみ表示される ins 要素 */
+  /* 広告が配信された場合: コンテナの幅を広告に合わせる */
   .adsense-container :global(ins.adsbygoogle) {
     margin: 0 !important;
     padding: 0 !important;
+    max-width: 100% !important;
   }
 
-  /* AdSense が iframe を挿入した場合、余白を除去 */
+  /* AdSense が未配信の場合、完全に非表示 */
   .adsense-container :global(ins.adsbygoogle[data-ad-status='unfilled']) {
     display: none !important;
     height: 0 !important;
     min-height: 0 !important;
+  }
+
+  /* 配信済み広告の iframe も幅を合わせる */
+  .adsense-container :global(ins.adsbygoogle[data-ad-status='filled']) {
+    display: block !important;
   }
 </style>
