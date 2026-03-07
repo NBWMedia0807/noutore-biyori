@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
 
@@ -8,12 +8,13 @@
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
-  let adRef;
+  /** @type {HTMLElement|null} */
+  let adRef = null;
   /** @type {HTMLDivElement|null} */
-  let containerRef;
+  let containerRef = null;
   let currentPath = '';
-  let mutationObs;
-  let resizeObs;
+  /** @type {ReturnType<typeof setInterval>|null} */
+  let pollTimer = null;
 
   // ページパスが変わるたびに広告を再初期化する
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
@@ -25,75 +26,73 @@
     if (!adRef) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
+    } catch (_) {
       // AdSenseのスクリプトが未ロードの場合のエラーを無視
     }
+    startPolling();
   }
 
   /**
-   * iframeの実際の高さに合わせてコンテナの高さを更新する（トルツメ）
-   * @param {HTMLIFrameElement} iframe
+   * AdSenseが iframe の height 属性を設定するまでポーリングし、
+   * 確定したら高さをコンテナに適用してポーリングを停止する。
    */
-  function trimToIframeHeight(iframe) {
-    const heightVal = iframe.getAttribute('height');
-    const h = heightVal ? parseInt(heightVal) : 0;
-    if (h > 0) {
-      const px = `${h}px`;
-      // ins タグの高さを実寸に固定
-      adRef.style.setProperty('height', px, 'important');
-      adRef.style.setProperty('min-height', px, 'important');
-      adRef.style.setProperty('max-height', px, 'important');
-      // 外側コンテナも合わせる
-      if (containerRef) {
-        containerRef.style.setProperty('height', px, 'important');
-        containerRef.style.setProperty('min-height', px, 'important');
-        containerRef.style.setProperty('max-height', px, 'important');
-      }
+  function startPolling() {
+    stopPolling();
+    let attempts = 0;
+    pollTimer = setInterval(() => {
+      attempts++;
+      if (attempts > 40) {
+        stopPolling();
+        return;
+      } // 最大 4秒間試みる
+      syncHeight();
+    }, 100);
+  }
+
+  function stopPolling() {
+    if (pollTimer !== null) {
+      clearInterval(pollTimer);
+      pollTimer = null;
     }
   }
 
   /**
-   * ins の中に iframeが入ったら ResizeObserver で監視して高さを追随させる
+   * iframe の height 属性（AdSense が平文で設定する）を読み取り、
+   * コンテナの高さをその値に揃えることで下部余白をトルツメする。
    */
-  function watchIframe() {
-    if (!adRef || adRef.dataset.adStatus !== 'filled') return;
+  function syncHeight() {
+    if (!adRef || !containerRef) return;
+
+    // unfilled の場合は非表示にして終了
+    if (adRef.dataset.adStatus === 'unfilled') {
+      containerRef.style.setProperty('display', 'none', 'important');
+      stopPolling();
+      return;
+    }
+
     const iframe = adRef.querySelector('iframe');
     if (!iframe) return;
 
-    // 即座に1回トルツメ
-    trimToIframeHeight(iframe);
-
-    // iframeのサイズが動的に変わった場合にも追随する
-    if (!resizeObs) {
-      resizeObs = new ResizeObserver(() => {
-        const f = adRef?.querySelector('iframe');
-        if (f) trimToIframeHeight(f);
-      });
+    const h = parseInt(iframe.getAttribute('height') ?? '0', 10);
+    if (h > 0) {
+      const px = `${h}px`;
+      // コンテナを広告の実高に縮小
+      containerRef.style.removeProperty('display');
+      containerRef.style.setProperty('height', px, 'important');
+      containerRef.style.setProperty('max-height', px, 'important');
+      // ins タグも同様に
+      adRef.style.setProperty('height', px, 'important');
+      adRef.style.setProperty('max-height', px, 'important');
+      stopPolling();
     }
-    resizeObs.observe(iframe);
   }
 
   onMount(() => {
     pushAd();
+  });
 
-    // data-ad-status の変化 + iframe の挿入を監視
-    mutationObs = new MutationObserver(() => {
-      watchIframe();
-    });
-
-    if (adRef) {
-      mutationObs.observe(adRef, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-ad-status', 'height'],
-      });
-    }
-
-    return () => {
-      mutationObs?.disconnect();
-      resizeObs?.disconnect();
-    };
+  onDestroy(() => {
+    stopPolling();
   });
 </script>
 
@@ -110,34 +109,37 @@
 </div>
 
 <style>
+  /*
+   * 広告コンテナ
+   * - 100vw のフルブリード（ページ幅を超えて画面端まで広げる）
+   * - コンテナ自体は height を JS で上書きするため、initial は auto
+   * - overflow:hidden で AdSense 内部の余白がはみ出るのを防ぐ
+   */
   .adsense-container {
     width: 100vw;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
-    position: relative;
+    overflow: hidden;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
-    overflow: hidden;
   }
 
+  /* ins 本体：AdSense スクリプトが幅・高さを設定するが、幅だけは必ず 100% に保つ */
   .adsense-container :global(ins.adsbygoogle) {
+    display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: block !important;
-    min-height: 0 !important; /* 広告が入るまで余白を作らない */
   }
 
-  /* iframeも横幅100%・高さautoで確実に表示 */
+  /* 内部 iframe も 100% 幅に */
+  .adsense-container :global(ins.adsbygoogle > div),
   .adsense-container :global(ins.adsbygoogle iframe) {
     width: 100% !important;
     max-width: 100% !important;
     display: block !important;
-  }
-
-  /* 未配信と判定された場合のみコンテナごと非表示 */
-  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
-    display: none;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 </style>
