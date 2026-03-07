@@ -161,6 +161,7 @@ main {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 1rem 2rem;
+  overflow-x: clip; /* フルブリード広告コンテナのはみ出しを許容しつつ横スクロール防止 */
 }
 
 main.main--flush {

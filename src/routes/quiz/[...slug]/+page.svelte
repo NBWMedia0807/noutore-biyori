@@ -283,6 +283,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    overflow-x: clip; /* フルブリード広告のはみ出しを許容 */
   }
 
   .quiz-header {
