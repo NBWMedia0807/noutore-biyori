@@ -14,7 +14,9 @@
   let hasNewest = false;
 
   $: categorySections = Array.isArray(data?.categories)
-    ? data.categories.filter((section) => Array.isArray(section?.quizzes) && section.quizzes.length > 0)
+    ? data.categories.filter(
+        (section) => Array.isArray(section?.quizzes) && section.quizzes.length > 0
+      )
     : [];
 
   $: pagination = data?.pagination ?? null;
@@ -51,7 +53,7 @@
           currentPage={pagination?.currentPage ?? 1}
           totalPages={pagination?.totalPages ?? 1}
           totalCount={pagination?.totalCount ?? newestQuizzes.length}
-          pageSize={pageSize}
+          {pageSize}
         />
       {/if}
     </section>
@@ -82,7 +84,9 @@
             </ArticleGrid>
 
             <div class="category-card__footer">
-              <a class="category-link" href={`/category/${section.slug}`}>カテゴリのクイズをもっと見る</a>
+              <a class="category-link" href={`/category/${section.slug}`}
+                >カテゴリのクイズをもっと見る</a
+              >
             </div>
           </article>
         {/each}
@@ -133,6 +137,7 @@
     display: flex;
     flex-direction: column;
     gap: 3rem;
+    overflow-x: clip; /* フルブリード広告のはみ出しを許容 */
   }
 
   :global(.section-icon) {
