@@ -45,35 +45,32 @@
 
 <style>
   .adsense-container {
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-    /* 広告未配信時にコンテナが余計な高さを持たないようにする */
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
     line-height: 0;
     font-size: 0;
     min-height: 0;
-    /* 広告配信時に広告サイズに合った幅を確保 */
     box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
   }
 
-  /* 広告が配信された場合: コンテナの幅を広告に合わせる */
+  /*
+   * 広告が未配信・未ロード時はコンテナごと非表示にして
+   * 親flexのgapによる余白を完全に消す
+   */
+  .adsense-container:has(> ins.adsbygoogle:not([data-ad-status])),
+  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+    display: none;
+  }
+
   .adsense-container :global(ins.adsbygoogle) {
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
-    max-width: 100% !important;
   }
 
-  /* AdSense が未配信の場合、完全に非表示 */
   .adsense-container :global(ins.adsbygoogle[data-ad-status='unfilled']) {
     display: none !important;
     height: 0 !important;
-    min-height: 0 !important;
-  }
-
-  /* 配信済み広告の iframe も幅を合わせる */
-  .adsense-container :global(ins.adsbygoogle[data-ad-status='filled']) {
-    display: block !important;
   }
 </style>
