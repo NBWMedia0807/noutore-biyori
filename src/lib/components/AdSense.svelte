@@ -18,7 +18,6 @@
   }
 
   function pushAd() {
-    // DOMに要素がまだ無い場合はスキップ
     if (!adRef) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -47,7 +46,23 @@
 <style>
   .adsense-container {
     width: 100%;
-    text-align: center;
     overflow: hidden;
+    /* 広告未配信時にコンテナが余計な高さを持たないようにする */
+    line-height: 0;
+    font-size: 0;
+    min-height: 0;
+  }
+
+  /* 広告が配信された場合のみ表示される ins 要素 */
+  .adsense-container :global(ins.adsbygoogle) {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* AdSense が iframe を挿入した場合、余白を除去 */
+  .adsense-container :global(ins.adsbygoogle[data-ad-status='unfilled']) {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
   }
 </style>
