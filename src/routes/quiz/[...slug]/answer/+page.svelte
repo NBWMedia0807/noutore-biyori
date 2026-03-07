@@ -1,7 +1,7 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
-  
+
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
@@ -100,6 +100,23 @@
     </a>
   </nav>
 
+  <a
+    class="x-banner"
+    href="https://x.com/noutorebiyori"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="脳トレ日和 公式Xアカウントをフォロー"
+  >
+    <img
+      src="/x-banner.png"
+      alt="脳トレ日和 公式Xはじめました！最新クイズやアハ体験をお届け フォローする"
+      loading="lazy"
+      decoding="async"
+      width="1024"
+      height="256"
+    />
+  </a>
+
   <section class="closing">
     <div class="closing-card">
       <p>{closingText || closingDefault}</p>
@@ -110,29 +127,32 @@
   <AdSense slot="5428887502" />
 
   {#if nextChallengePosts.length > 0}
-  <section class="next-challenge">
-    <h2 class="section-title">さらにもう一問！</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
-      {#each nextChallengePosts as post}
-        <a href="/quiz/{post.slug}" class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200 overflow-hidden group">
-          {#if post.image}
-            <div class="relative h-32 overflow-hidden bg-gray-100">
-              <img 
-                src={post.image} 
-                alt={post.title} 
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+    <section class="next-challenge">
+      <h2 class="section-title">さらにもう一問！</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
+        {#each nextChallengePosts as post}
+          <a
+            href="/quiz/{post.slug}"
+            class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200 overflow-hidden group"
+          >
+            {#if post.image}
+              <div class="relative h-32 overflow-hidden bg-gray-100">
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            {/if}
+            <div class="p-3">
+              <p class="text-lg font-bold text-blue-700 line-clamp-2 group-hover:underline">
+                {post.title}
+              </p>
             </div>
-          {/if}
-          <div class="p-3">
-            <p class="text-lg font-bold text-blue-700 line-clamp-2 group-hover:underline">
-              {post.title}
-            </p>
-          </div>
-        </a>
-      {/each}
-    </div>
-  </section>
+          </a>
+        {/each}
+      </div>
+    </section>
   {/if}
 
   <!-- 正解ページ: 関連記事上の広告 -->
@@ -249,7 +269,10 @@
     background: linear-gradient(135deg, #facc15, #f97316);
     color: #78350f;
     box-shadow: 0 18px 32px rgba(249, 115, 22, 0.28);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
   }
 
   .action-button:hover {
@@ -319,5 +342,26 @@
       width: 100%;
       padding-inline: 1.8rem;
     }
+  }
+
+  .x-banner {
+    display: block;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .x-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .x-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 </style>

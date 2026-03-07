@@ -39,12 +39,12 @@
     ? createSanityImageSet(problemImageSource, {
         width: 960,
         quality: 80,
-        fallbackUrl: fallbackImageUrl
+        fallbackUrl: fallbackImageUrl,
       })
     : null;
   $: problemImageDimensions = problemImageSource?.asset?.metadata?.dimensions ?? {
     width: 960,
-    height: 540
+    height: 540,
   };
 
   $: category = doc?.category?.title && doc?.category?.slug ? doc.category : null;
@@ -125,21 +125,23 @@
       }
     }
 
-    hints = rawHints.map(entry => {
-      let text = '';
-      if (typeof entry === 'string') {
-        text = entry;
-      } else if (Array.isArray(entry)) {
-        text = blocksToText(entry);
-      } else {
-        text = blocksToText([entry]);
-      }
-      return { text: text.trim() };
-    }).filter(h => h.text.length > 0);
+    hints = rawHints
+      .map((entry) => {
+        let text = '';
+        if (typeof entry === 'string') {
+          text = entry;
+        } else if (Array.isArray(entry)) {
+          text = blocksToText(entry);
+        } else {
+          text = blocksToText([entry]);
+        }
+        return { text: text.trim() };
+      })
+      .filter((h) => h.text.length > 0);
   }
 
   $: hintsId = doc?.slug ? `hints-${doc.slug}` : 'hints';
-  
+
   const toggleHints = () => {
     hintOpen = !hintOpen;
   };
@@ -171,10 +173,18 @@
     <div class="problem-image">
       <picture>
         {#if problemImageSet.avifSrcset}
-          <source srcset={problemImageSet.avifSrcset} type="image/avif" sizes="(min-width: 768px) 720px, 100vw" />
+          <source
+            srcset={problemImageSet.avifSrcset}
+            type="image/avif"
+            sizes="(min-width: 768px) 720px, 100vw"
+          />
         {/if}
         {#if problemImageSet.webpSrcset}
-          <source srcset={problemImageSet.webpSrcset} type="image/webp" sizes="(min-width: 768px) 720px, 100vw" />
+          <source
+            srcset={problemImageSet.webpSrcset}
+            type="image/webp"
+            sizes="(min-width: 768px) 720px, 100vw"
+          />
         {/if}
         <img
           src={problemImageSet.src}
@@ -240,13 +250,29 @@
     </a>
   </nav>
 
+  <a
+    class="x-banner"
+    href="https://x.com/noutorebiyori"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="脳トレ日和 公式Xアカウントをフォロー"
+  >
+    <img
+      src="/x-banner.png"
+      alt="脳トレ日和 公式Xはじめました！最新クイズやアハ体験をお届け フォローする"
+      loading="lazy"
+      decoding="async"
+      width="1024"
+      height="256"
+    />
+  </a>
+
   <!-- 記事下: 関連記事上の広告 -->
   <AdSense slot="1724332823" />
 
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
   {/if}
-
 </main>
 
 <style>
@@ -391,7 +417,10 @@
     background: linear-gradient(135deg, #facc15, #f97316);
     color: #78350f;
     box-shadow: 0 18px 32px rgba(249, 115, 22, 0.28);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
     min-height: 48px;
   }
 
@@ -494,5 +523,26 @@
     .section-header {
       margin-bottom: 14px;
     }
+  }
+
+  .x-banner {
+    display: block;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .x-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .x-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 </style>
