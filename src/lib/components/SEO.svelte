@@ -11,6 +11,10 @@
   export let description = '';
   /** @type {string} */
   export let image = '';
+  /** @type {number|undefined} */
+  export let imageWidth = undefined;
+  /** @type {number|undefined} */
+  export let imageHeight = undefined;
   /** @type {boolean} */
   export let noindex = false;
   /** @type {string} */
@@ -29,9 +33,6 @@
   $: descriptionText = description || SITE_DESCRIPTION;
   $: imageUrl = image || `${SITE_URL}/logo.svg`;
 
-  $: typeText = type === 'article' ? 'Article' : 'WebSite';
-
-  // JSON-LD を安全にシリアライズし、よりリッチな基本構造を付与
   $: jsonldScript = (() => {
     try {
       const baseGraph = {
@@ -47,6 +48,15 @@
               '@id': `${SITE_URL}/#organization`,
             },
             inLanguage: 'ja',
+            // サイト内検索のPotentialAction（Googleのサイト内検索リッチリザルト対応）
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: {
+                '@type': 'EntryPoint',
+                urlTemplate: `${SITE_URL}/quiz?q={search_term_string}`
+              },
+              'query-input': 'required name=search_term_string'
+            }
           },
           {
             '@type': 'Organization',
@@ -59,6 +69,9 @@
               width: 512,
               height: 512,
             },
+            sameAs: [
+              'https://x.com/noutorebiyori'
+            ]
           },
         ],
       };
@@ -79,17 +92,29 @@
   <meta name="description" content={descriptionText} />
   <link rel="canonical" href={canonicalUrl} />
 
+  <!-- テーマカラー（ブラウザのアドレスバー・PWA対応） -->
+  <meta name="theme-color" content="#ffc107" />
+
+  <!-- robots: インデックス対象ページはリッチスニペット最大化のオプションを追加 -->
   {#if noindex}
     <meta name="robots" content="noindex,nofollow" />
   {:else}
-    <meta name="robots" content="index,follow" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   {/if}
 
+  <!-- OGP -->
   <meta property="og:type" content={type} />
   <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content={titleText} />
   <meta property="og:description" content={descriptionText} />
   <meta property="og:image" content={imageUrl} />
+  {#if imageWidth}
+    <meta property="og:image:width" content={String(imageWidth)} />
+  {/if}
+  {#if imageHeight}
+    <meta property="og:image:height" content={String(imageHeight)} />
+  {/if}
+  <meta property="og:image:alt" content={titleText} />
   <meta property="og:site_name" content={SITE_TITLE} />
   <meta property="og:locale" content="ja_JP" />
 
@@ -108,13 +133,14 @@
     {/if}
   {/if}
 
-  <!-- X (Twitter) Card Improvements -->
+  <!-- X (Twitter) Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@noutore_biyori" />
-  <meta name="twitter:creator" content="@noutore_biyori" />
+  <meta name="twitter:site" content="@noutorebiyori" />
+  <meta name="twitter:creator" content="@noutorebiyori" />
   <meta name="twitter:title" content={titleText} />
   <meta name="twitter:description" content={descriptionText} />
   <meta name="twitter:image" content={imageUrl} />
+  <meta name="twitter:image:alt" content={titleText} />
 
   {#if jsonldScript}
     {@html `<script type="application/ld+json">${jsonldScript}</script>`}
