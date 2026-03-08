@@ -30,8 +30,8 @@
 
   /**
    * IntersectionObserver でコンテナがビューポートに近づいたらプッシュ。
-   * スクロールされることなく表示される位置（ファーストビュー）なら即時プッシュ。
-   * → 表示される広告だけをロードし、ビューアビリティ率・CPMを向上させる。
+   * rootMargin を 400px に拡大してより早めにロードし、
+   * ビューアビリティ率・CPM を向上させる。
    */
   function observeViewport() {
     intersectionObs?.disconnect();
@@ -45,7 +45,7 @@
           intersectionObs?.disconnect();
         }
       },
-      { rootMargin: '200px 0px' } // 200px 手前でプッシュ開始
+      { rootMargin: '400px 0px' } // 200px → 400px に拡大してプリロードを早める
     );
     intersectionObs.observe(containerRef);
   }
@@ -64,7 +64,6 @@
     pollTimer = setInterval(() => {
       attempts++;
       if (attempts > 100) {
-        // 最大10秒
         reveal();
         stopPolling();
         return;
@@ -137,10 +136,14 @@
   .adsense-container {
     position: relative;
     width: 100%;
-    /* Use block and text-align to ensure AdSense can measure 100% of the parent width properly */
     display: block;
     text-align: center;
-    overflow: hidden;
+    /*
+     * overflow: hidden → visible に変更
+     * 「hidden」だとAdSenseが描画するiframeやバナー画像が
+     * コンテナ境界でクロップされる原因になるため削除。
+     */
+    overflow: visible;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
@@ -150,13 +153,17 @@
      * → ユーザーが空白の「ガタ」を見ない
      */
     visibility: hidden;
-    /* AdSense auto format typically defaults around 100~280px tall on mobile. Providing a minimum reserve helps CLS marginally */
-    min-height: 100px;
+    /*
+     * min-height を 250px に引き上げ。
+     * AdSenseのレスポンシブ広告は最低250px程度を確保すると
+     * より大きなフォーマット（300x250など）が配信されやすくなりCPM向上に貢献。
+     */
+    min-height: 250px;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
-    width: 100% !important; /* AdSense NEEDS a calculable width to request the right creative size */
+    width: 100% !important;
   }
 
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
