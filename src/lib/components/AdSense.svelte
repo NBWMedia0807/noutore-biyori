@@ -105,20 +105,6 @@
     const h = attrH > 0 ? attrH : renderedH;
 
     if (h > 0) {
-      const px = `${h}px`;
-      containerRef.style.setProperty('height', px, 'important');
-      containerRef.style.setProperty('max-height', px, 'important');
-      adRef.style.setProperty('height', px, 'important');
-      adRef.style.setProperty('max-height', px, 'important');
-
-      Array.from(adRef.children).forEach((child) => {
-        if (child !== iframe && child instanceof HTMLElement) {
-          child.style.setProperty('height', px, 'important');
-          child.style.setProperty('max-height', px, 'important');
-          child.style.setProperty('overflow', 'hidden', 'important');
-        }
-      });
-
       reveal();
       stopPolling();
     }
@@ -151,6 +137,9 @@
   .adsense-container {
     position: relative;
     width: 100%;
+    /* Flex Center allows AdSense to size itself natively and sit centering without being cropped by container left/right edges */
+    display: flex;
+    justify-content: center;
     overflow: hidden;
     line-height: 0;
     font-size: 0;
@@ -161,24 +150,12 @@
      * → ユーザーが空白の「ガタ」を見ない
      */
     visibility: hidden;
+    /* AdSense auto format typically defaults around 100~280px tall on mobile. Providing a minimum reserve helps CLS marginally */
     min-height: 100px;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-  }
-
-  .adsense-container :global(ins.adsbygoogle > div),
-  .adsense-container :global(ins.adsbygoogle iframe) {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
   }
 
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
