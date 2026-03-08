@@ -29,12 +29,45 @@
   $: descriptionText = description || SITE_DESCRIPTION;
   $: imageUrl = image || `${SITE_URL}/logo.svg`;
 
-  // JSON-LD を安全にシリアライズ
+  $: typeText = type === 'article' ? 'Article' : 'WebSite';
+
+  // JSON-LD を安全にシリアライズし、よりリッチな基本構造を付与
   $: jsonldScript = (() => {
-    if (!jsonld || !Array.isArray(jsonld) || jsonld.length === 0) return '';
     try {
-      const graph = { '@context': 'https://schema.org', '@graph': jsonld };
-      return JSON.stringify(graph);
+      const baseGraph = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            '@id': `${SITE_URL}/#website`,
+            url: SITE_URL,
+            name: SITE_TITLE,
+            description: SITE_DESCRIPTION,
+            publisher: {
+              '@id': `${SITE_URL}/#organization`,
+            },
+            inLanguage: 'ja',
+          },
+          {
+            '@type': 'Organization',
+            '@id': `${SITE_URL}/#organization`,
+            name: SITE_TITLE,
+            url: SITE_URL,
+            logo: {
+              '@type': 'ImageObject',
+              url: `${SITE_URL}/logo.svg`,
+              width: 512,
+              height: 512,
+            },
+          },
+        ],
+      };
+
+      if (jsonld && Array.isArray(jsonld)) {
+        baseGraph['@graph'].push(...jsonld);
+      }
+
+      return JSON.stringify(baseGraph);
     } catch {
       return '';
     }
@@ -75,7 +108,10 @@
     {/if}
   {/if}
 
+  <!-- X (Twitter) Card Improvements -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@noutore_biyori" />
+  <meta name="twitter:creator" content="@noutore_biyori" />
   <meta name="twitter:title" content={titleText} />
   <meta name="twitter:description" content={descriptionText} />
   <meta name="twitter:image" content={imageUrl} />
