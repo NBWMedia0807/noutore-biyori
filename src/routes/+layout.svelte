@@ -6,21 +6,9 @@
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
-  // 安全なSEOコンポーネントをインポート
   import SEO from '$lib/components/SEO.svelte';
 
   export let data;
-
-  const gaMeasurementId = import.meta.env.VITE_GA_ID;
-  const gaBootstrapScript = gaMeasurementId
-    ? [
-        'window.dataLayer = window.dataLayer || [];',
-        'function gtag(){window.dataLayer.push(arguments);}',
-        'window.gtag = gtag;',
-        "gtag('js', new Date());",
-        `gtag('config', ${JSON.stringify(gaMeasurementId)}, {"send_page_view": false});`,
-      ].join('')
-    : '';
 
   $: currentPage = $page;
   $: ui = currentPage?.data?.ui ?? {};
@@ -69,6 +57,7 @@
   }
 
   onMount(() => {
+    // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
     loadGtagOnce();
     if (typeof window !== 'undefined') {
       sendPageView(`${window.location.pathname}${window.location.search}`);
@@ -86,25 +75,13 @@
 </script>
 
 <svelte:head>
-  {#if gaMeasurementId}
-    <script
-      id="ga4-gtag-script"
-      async
-      src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-    ></script>
-    {#if gaBootstrapScript}
-      <script id="ga4-gtag-script-inline">
-				{@html gaBootstrapScript}
-      </script>
-    {/if}
-  {/if}
+  <!-- GA4スクリプトはga.tsのloadGtagOnce()で動的に読み込むため、ここには記載しない -->
   <script
     async
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846"
     crossorigin="anonymous"
   ></script>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
-  <!-- LCP image preload -->
   <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
 </svelte:head>
 
@@ -123,7 +100,6 @@
   <header data-review-mode={reviewMode}>
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
-        <!-- LCP optimization: explicit width/height natively, fetchpriority, async decoding -->
         <img
           src="/logo.svg"
           alt="脳トレ日和"
