@@ -104,7 +104,8 @@
     crossorigin="anonymous"
   ></script>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
-  <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+  <!-- LCP image preload -->
+  <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
 </svelte:head>
 
 <SEO
@@ -122,6 +123,7 @@
   <header data-review-mode={reviewMode}>
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
+        <!-- LCP optimization: explicit width/height natively, fetchpriority, async decoding -->
         <img
           src="/logo.svg"
           alt="脳トレ日和"
