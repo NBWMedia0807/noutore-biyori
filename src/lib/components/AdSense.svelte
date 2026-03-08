@@ -137,9 +137,9 @@
   .adsense-container {
     position: relative;
     width: 100%;
-    /* Flex Center allows AdSense to size itself natively and sit centering without being cropped by container left/right edges */
-    display: flex;
-    justify-content: center;
+    /* Use block and text-align to ensure AdSense can measure 100% of the parent width properly */
+    display: block;
+    text-align: center;
     overflow: hidden;
     line-height: 0;
     font-size: 0;
@@ -156,6 +156,7 @@
 
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
+    width: 100% !important; /* AdSense NEEDS a calculable width to request the right creative size */
   }
 
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
