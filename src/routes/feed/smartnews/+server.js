@@ -107,11 +107,9 @@ export async function GET() {
 				contentHtml += problemHtml;
 
 				if (hintsHtml) {
-					// <hr> を削除し、<br><br> に変更
 					contentHtml += `<br><br><h3>★ ヒント</h3>${hintsHtml}`;
 				}
 
-				// <hr> を削除し、<br><br> に変更
 				contentHtml += `<br><br><h2>【解説】</h2>`;
 				if (answerImageUrl) {
 					contentHtml += `<img src="${answerImageUrl}" alt="${escapeXml(article.title)}の正解画像" /><br>`;
@@ -124,11 +122,10 @@ export async function GET() {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			// 【SmartNews/MSN対策】
-			// 1. 画像は<a>の外に独立配置（フィードリーダーが<a>内<img>を無視する問題の回避）
-			// 2. テキストリンクに記事タイトルを使用（どのクイズかわかるようにする）
-			// 3. インラインスタイル・width属性を除去（フィードリーダー互換性向上）
-			// 4. テンプレートリテラルのインデント空白を排除（HTMLパース問題の回避）
+			// 【MSN対策】
+			// 1. 画像を<a>タグで直接ラップ → MSNが画像とリンクを正しく紐付けられるようにする
+			// 2. alt="" に設定 → MSNが画像下にaltテキストをキャプションとして表示するのを防ぐ
+			// 3. タイトルは別行の<a>リンクとして表示
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = '<br /><br /><h3>さらにもう一問！</h3>';
 
@@ -139,9 +136,10 @@ export async function GET() {
 					const title = escapeXml(post.title);
 					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					// 画像がある場合：画像を独立表示＋タイトルリンク
 					if (imageUrl) {
-						nextChallengeHtml += `<p><img src="${imageUrl}" alt="${title}" /></p>` +
+						// 画像を<a>で直接ラップ（MSNのリンク紐付けに必要）
+						// alt=""にしてMSNが画像下にキャプションを表示するのを防ぐ
+						nextChallengeHtml += `<p><a href="${postUrl}"><img src="${imageUrl}" alt="" /></a></p>` +
 							`<p>▶ <a href="${postUrl}">${title}</a></p>`;
 					} else {
 						// 画像がない場合：タイトルリンクのみ
