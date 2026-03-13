@@ -82,6 +82,22 @@ export async function load({ params, setHeaders }) {
   breadcrumbs.push({ name: quiz.title ?? 'クイズ', url: quizPath });
   breadcrumbs.push({ name: '正解', url: answerPath });
 
+  // FAQPage構造化データ（Google検索でFAQリッチスニペット表示の可能性を高める）
+  const faqAnswerText = (plainAnswer || plainClosing || `${quiz.title}の正解と解説。`).trim();
+  const faqSchema = {
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: quiz.title,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faqAnswerText
+        }
+      }
+    ]
+  };
+
   const seo = createPageSeo({
     title: `${quiz.title}｜正解`,
     description: seoDescription,
@@ -95,7 +111,8 @@ export async function load({ params, setHeaders }) {
       dateModified: quiz._updatedAt ?? publishedAt,
       authorName: SITE.organization.name,
       category: quiz.category?.title
-    }
+    },
+    additionalJsonLd: [faqSchema]
   });
 
   return {

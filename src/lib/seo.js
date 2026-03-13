@@ -130,6 +130,8 @@ const buildArticleSchema = ({
   title,
   description,
   image,
+  imageWidth,
+  imageHeight,
   datePublished,
   dateModified,
   authorName,
@@ -138,13 +140,24 @@ const buildArticleSchema = ({
   const published = toIsoString(datePublished);
   const modified = toIsoString(dateModified) ?? published;
 
+  const imageObject = image
+    ? [
+        {
+          '@type': 'ImageObject',
+          url: image,
+          ...(imageWidth && { width: imageWidth }),
+          ...(imageHeight && { height: imageHeight })
+        }
+      ]
+    : undefined;
+
   return {
     '@type': 'BlogPosting',
     '@id': `${canonical}#blogposting`,
     mainEntityOfPage: canonical,
     headline: title,
     description,
-    image: image ? [image] : undefined,
+    image: imageObject,
     datePublished: published,
     dateModified: modified,
     author: {
@@ -219,6 +232,8 @@ export const createPageSeo = ({
             title: articleTitle,
             description: sanitizedDescription,
             image: ogImage,
+            imageWidth: normalizedImageWidth,
+            imageHeight: normalizedImageHeight,
             datePublished: articlePublished,
             dateModified: articleModified,
             authorName: articleAuthor,

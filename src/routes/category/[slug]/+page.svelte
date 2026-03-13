@@ -2,6 +2,7 @@
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
+  import AdSense from '$lib/components/AdSense.svelte';
   import { resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
 
   export let data;
@@ -57,6 +58,9 @@
     <h1 class="category-title" id="category-heading">{categoryTitle}</h1>
     <div class="quiz-count" aria-live="polite">公開中 {totalCount}問</div>
   </section>
+
+  <!-- カテゴリページ: クイズ一覧上の広告 -->
+  <AdSense slot="5756190566" />
 
   <section class="quiz-list-section">
     {#if !sortedNewest.length}
