@@ -29,7 +29,7 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
 }`;
 
 // ▼ 追加: 「さらにもう一問」用のクエリ
-const nextChallengeQuery = /* groq */ `*[_type == "quiz" && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
+const nextChallengeQuery = /* groq */ `*[_type == "quiz" && defined(slug.current) && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...3]{
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
