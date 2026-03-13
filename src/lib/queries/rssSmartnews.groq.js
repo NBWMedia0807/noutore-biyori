@@ -4,6 +4,8 @@
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
 *[
   (_type == "quiz" || _type == "post") &&
+  !(_id in path("drafts.**")) &&
+  defined(slug.current) &&
   publishedAt < now()
 ] | order(publishedAt desc)[0...20]{
   _id,
@@ -38,6 +40,8 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   // 関連記事
   "relatedLinks": *[
     _type == 'quiz' &&
+    !(_id in path("drafts.**")) &&
+    defined(slug.current) &&
     publishedAt < now() &&
     _id != ^._id && // 自分自身を除外
     category._ref == ^.category._ref // 同じカテゴリ (展開前の参照IDと比較)
