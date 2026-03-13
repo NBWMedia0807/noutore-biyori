@@ -77,7 +77,14 @@
 
   {#if quiz.answerImage?.asset?.url}
     <div class="answer-image">
-      <img src={quiz.answerImage.asset.url} alt="正解画像" loading="lazy" decoding="async" />
+      <img
+        src={quiz.answerImage.asset.url}
+        alt="正解画像"
+        loading="lazy"
+        decoding="async"
+        width={quiz.answerImage.asset.metadata?.dimensions?.width ?? 960}
+        height={quiz.answerImage.asset.metadata?.dimensions?.height ?? 540}
+      />
     </div>
   {/if}
 
