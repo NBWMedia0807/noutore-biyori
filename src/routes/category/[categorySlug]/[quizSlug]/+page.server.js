@@ -1,6 +1,14 @@
+/**
+ * /category/[categorySlug]/[quizSlug] — カテゴリ別クイズページ（新 canonical URL）
+ *
+ * 2026年2月 Discover コアアップデート対応:
+ * URL 階層にカテゴリを含めることでトピック権威をシグナルする。
+ * 旧 URL /quiz/[slug] はここへ 308 リダイレクト済み。
+ */
+
 import { env } from '$env/dynamic/private';
 import { error, redirect } from '@sveltejs/kit';
-import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
+import { client } from '$lib/sanity.server.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
@@ -9,12 +17,12 @@ import { ensurePublishedAt, resolvePublishedDate } from '$lib/utils/publishedDat
 
 export const prerender = false;
 export const ssr = true;
+
 const quizBypassToken = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET;
 const quizIsrConfig = { expiration: false };
 if (quizBypassToken) {
   quizIsrConfig.bypassToken = quizBypassToken;
 }
-
 export const config = { runtime: 'nodejs22.x', isr: quizIsrConfig };
 
 const Q = /* groq */ `*[
@@ -47,7 +55,11 @@ const Q = /* groq */ `*[
   answerExplanation,
   publishedAt,
   _createdAt,
-  _updatedAt
+  _updatedAt,
+  "relatedArticles": relatedArticles[]->{
+    "slug": slug.current,
+    "categorySlug": category->slug.current
+  }
 }`;
 
 const buildSeo = ({ doc, path }) => {
@@ -57,6 +69,7 @@ const buildSeo = ({ doc, path }) => {
   const image = resolveQuizOgImage(doc);
   const publishedAt = resolvePublishedDate(doc, doc?._id ?? doc?.slug ?? path);
   const modifiedAt = doc?._updatedAt ?? publishedAt;
+
   const breadcrumbs = [];
   if (doc?.category?.title && doc?.category?.slug) {
     breadcrumbs.push({
@@ -65,6 +78,13 @@ const buildSeo = ({ doc, path }) => {
     });
   }
   breadcrumbs.push({ name: doc?.title ?? 'クイズ', url: path });
+
+  // JSON-LD relatedLink: 関連記事のカテゴリ別 canonical URL を生成
+  const relatedLinks = Array.isArray(doc?.relatedArticles)
+    ? doc.relatedArticles
+        .filter((r) => r?.slug && r?.categorySlug)
+        .map((r) => `/category/${r.categorySlug}/${r.slug}`)
+    : [];
 
   return createPageSeo({
     title: doc?.title ?? '脳トレ問題',
@@ -77,38 +97,42 @@ const buildSeo = ({ doc, path }) => {
       title: doc?.title ?? SITE.name,
       datePublished: publishedAt,
       dateModified: modifiedAt,
-      authorName: SITE.organization.name,
-      category: doc?.category?.title
+      authorName: SITE.authorName,
+      category: doc?.category?.title,
+      relatedLinks
     }
   });
 };
 
 export async function load({ params, setHeaders }) {
-  const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
-  const slug = slugSegments.join('/');
-  const slugContext = createSlugContext(slug);
-  const { doc } = await findQuizDocument({
-    slugContext,
-    query: Q,
-    logPrefix: 'quiz/[...slug]'
-  });
-  if (!doc) throw error(404, `Quiz not found: ${slug}`);
-  const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
+  const { categorySlug, quizSlug } = params;
 
-  // スラッグ正規化リダイレクト
-  if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
-    throw redirect(308, `/quiz/${normalizedDoc.slug}`);
+  let doc;
+  try {
+    doc = await client.fetch(Q, { slug: quizSlug });
+  } catch (err) {
+    console.error('[category/quiz] Sanity fetch error:', err);
+    throw error(503, 'データ取得に失敗しました。しばらくしてから再度お試しください。');
   }
 
-  // カテゴリ別 canonical URL へ 308 リダイレクト（Discover トピック権威対応）
-  // 複数セグメントのスラッグ（例: abc/xyz）はリダイレクト対象外
-  if (slugSegments.length === 1 && normalizedDoc.category?.slug) {
-    throw redirect(308, `/category/${normalizedDoc.category.slug}/${normalizedDoc.slug}`);
+  if (!doc) throw error(404, `Quiz not found: ${quizSlug}`);
+
+  const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? quizSlug);
+
+  // カテゴリスラッグが一致しない場合は正しいカテゴリ URL へリダイレクト
+  const correctCategorySlug = normalizedDoc.category?.slug;
+  if (correctCategorySlug && correctCategorySlug !== categorySlug) {
+    throw redirect(308, `/category/${correctCategorySlug}/${normalizedDoc.slug}`);
+  }
+
+  // カテゴリ情報がない場合はフォールバック（旧 URL へ）
+  if (!correctCategorySlug) {
+    throw redirect(308, `/quiz/${normalizedDoc.slug}`);
   }
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
 
-  const path = `/quiz/${normalizedDoc.slug}`;
+  const path = `/category/${categorySlug}/${normalizedDoc.slug}`;
   const breadcrumbs = [];
   if (normalizedDoc?.category?.title && normalizedDoc?.category?.slug) {
     breadcrumbs.push({

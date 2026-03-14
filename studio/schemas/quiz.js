@@ -61,7 +61,19 @@ export default defineType({
       title: 'タイトル',
       type: 'string',
       group: 'content',
-      validation: (Rule) => Rule.required()
+      // 配列で返すことで required(エラー) と clickbait検出(警告) を独立させる
+      validation: (Rule) => [
+        Rule.required(),
+        Rule.custom((value) => {
+          if (typeof value !== 'string') return true
+          const CLICKBAIT_WORDS = ['衝撃', '判明', '信じられない', 'まさか', '驚愕', '緊急', 'やばい']
+          const found = CLICKBAIT_WORDS.filter((w) => value.includes(w))
+          if (found.length > 0) {
+            return `このタイトルは Google Discover で降格される可能性があります（検出ワード: ${found.join('、')}）。内容に即した具体的なタイトルを推奨します。`
+          }
+          return true
+        }).warning()
+      ]
     }),
     defineField({
       name: 'slug',
@@ -205,8 +217,19 @@ export default defineType({
         '検索結果に表示されるタイトルです。空白の場合はクイズタイトルが使用されます。目安: 30〜60文字。',
       type: 'string',
       group: 'seo',
-      validation: (Rule) =>
-        Rule.max(60).warning('SEOタイトルは60文字以内を推奨します。')
+      // 配列で返すことで max文字数(警告) と clickbait検出(警告) を独立させる
+      validation: (Rule) => [
+        Rule.max(60).warning('SEOタイトルは60文字以内を推奨します。'),
+        Rule.custom((value) => {
+          if (typeof value !== 'string' || !value) return true
+          const CLICKBAIT_WORDS = ['衝撃', '判明', '信じられない', 'まさか', '驚愕', '緊急', 'やばい']
+          const found = CLICKBAIT_WORDS.filter((w) => value.includes(w))
+          if (found.length > 0) {
+            return `Google Discover で降格される可能性があります（検出ワード: ${found.join('、')}）。`
+          }
+          return true
+        }).warning()
+      ]
     }),
     defineField({
       name: 'seoDescription',
@@ -223,15 +246,55 @@ export default defineType({
       name: 'ogImage',
       title: 'OGP画像',
       description:
-        'SNSシェア時に表示されるサムネイル画像です。⚠️ 幅1200px以上の画像を使用してください（それ以下だと大画像サムネイルが表示されず CTR が低下します）。空白の場合は問題画像が使用されます。',
+        'SNSシェア時に表示されるサムネイル画像です。⚠️ 1200×630px（1.91:1）の画像を使用してください。比率がズレると Discover カードの上下が切れて CTR が低下します。空白の場合は問題画像が自動使用されます。',
       type: 'image',
       options: { hotspot: true },
       group: 'seo',
       validation: (Rule) =>
         Rule.custom((image) => {
           if (!image?.asset?._ref) return true
-          return '幅1200px以上の画像を推奨します。アップロード前に画像サイズをご確認ください。'
+          return 'OGP画像は 1200×630px（1.91:1）を推奨します。アップロード前にサイズを確認してください。'
         }).warning()
+    }),
+    defineField({
+      name: 'imageType',
+      title: '画像種別',
+      description:
+        'Google Discover での CTR に直結します。ストック写真はオリジナル画像より大幅に CTR が低下します。',
+      type: 'string',
+      group: 'seo',
+      options: {
+        list: [
+          { title: '✅ オリジナル画像', value: 'original' },
+          { title: '⚠️ ストック写真', value: 'stock' },
+          { title: 'イラスト・図解', value: 'illustration' }
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'original',
+      validation: (Rule) =>
+        Rule.custom((value) => {
+          if (value === 'stock') {
+            return 'ストック写真は Discover の CTR が著しく低下します。オリジナル画像への変更を強く推奨します。'
+          }
+          return true
+        }).warning()
+    }),
+    defineField({
+      name: 'relatedArticles',
+      title: '関連記事',
+      description:
+        'JSON-LD の relatedLink に出力されます。同カテゴリの関連クイズを 3〜5 件選択してください。',
+      type: 'array',
+      group: 'seo',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'quiz' }],
+          options: { disableNew: true }
+        }
+      ],
+      validation: (Rule) => Rule.max(10).warning('関連記事は10件以内を推奨します。')
     }),
 
     // ── カテゴリ ─────────────────────────

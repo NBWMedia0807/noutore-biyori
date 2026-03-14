@@ -133,6 +133,9 @@
     {/if}
   {/if}
 
+  <!-- RSS フィード（Chrome の Discover フォロー機能の技術基盤） -->
+  <link rel="alternate" type="application/rss+xml" title="脳トレ日和" href="/rss/merkystyle.xml" />
+
   <!-- X (Twitter) Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@noutorebiyori" />

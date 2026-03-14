@@ -68,14 +68,15 @@ const composeDescription = (primary, extras = []) => {
 };
 
 /**
- * Sanity CDN URL に OGP 用変換パラメータ（幅1200px・WebP・品質80）を付与する。
+ * Sanity CDN URL に OGP 用変換パラメータを付与する。
+ * アスペクト比 1.91:1（1200×630px）に統一し、Discover カードの表示を最適化する。
  * Sanity 以外の URL はそのまま返す。
  */
 const buildOgImageUrl = (url) => {
   if (!url || typeof url !== 'string') return url;
   if (!url.includes('cdn.sanity.io/images')) return url;
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}w=1200&fm=webp&q=80`;
+  return `${url}${separator}w=1200&h=630&fit=crop&fm=webp&q=80`;
 };
 
 const toIsoString = (value) => {
@@ -148,7 +149,9 @@ const buildArticleSchema = ({
   datePublished,
   dateModified,
   authorName,
-  category
+  authorUrl,
+  category,
+  relatedLinks = []
 }) => {
   const published = toIsoString(datePublished);
   const modified = toIsoString(dateModified) ?? published;
@@ -164,6 +167,10 @@ const buildArticleSchema = ({
       ]
     : undefined;
 
+  const validRelatedLinks = Array.isArray(relatedLinks)
+    ? relatedLinks.filter((u) => typeof u === 'string' && u.startsWith('http'))
+    : [];
+
   return {
     '@type': 'NewsArticle',
     '@id': `${canonical}#newsarticle`,
@@ -175,7 +182,8 @@ const buildArticleSchema = ({
     dateModified: modified,
     author: {
       '@type': 'Organization',
-      name: authorName ?? SITE.authorName ?? SITE.organization.name
+      name: authorName ?? SITE.authorName ?? SITE.organization.name,
+      ...(authorUrl && { url: authorUrl })
     },
     publisher: {
       '@type': 'Organization',
@@ -189,7 +197,8 @@ const buildArticleSchema = ({
       }
     },
     articleSection: category,
-    inLanguage: SITE.locale
+    inLanguage: SITE.locale,
+    ...(validRelatedLinks.length > 0 && { relatedLink: validRelatedLinks })
   };
 };
 
@@ -233,7 +242,11 @@ export const createPageSeo = ({
   const articlePublished = article ? toIsoString(article.datePublished) : undefined;
   const articleModified = article ? toIsoString(article.dateModified) ?? articlePublished : undefined;
   const articleAuthor = article?.authorName ? sanitizeText(article.authorName) : SITE.organization.name;
+  const articleAuthorUrl = article?.authorUrl ? toAbsoluteUrl(article.authorUrl) : undefined;
   const articleSection = article?.category ? sanitizeText(article.category) : undefined;
+  const articleRelatedLinks = Array.isArray(article?.relatedLinks)
+    ? article.relatedLinks.map((u) => toAbsoluteUrl(u)).filter(Boolean)
+    : [];
 
   const jsonld = [
     buildWebSiteSchema(),
@@ -251,7 +264,9 @@ export const createPageSeo = ({
             datePublished: articlePublished,
             dateModified: articleModified,
             authorName: articleAuthor,
-            category: articleSection
+            authorUrl: articleAuthorUrl,
+            category: articleSection,
+            relatedLinks: articleRelatedLinks
           })
         ]
       : []),

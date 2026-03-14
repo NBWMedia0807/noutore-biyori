@@ -7,6 +7,8 @@
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
+  import { env } from '$env/dynamic/public';
+  const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
   export let data;
 
@@ -83,6 +85,10 @@
   ></script>
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
   <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
+  <!-- Google Publisher Center 所有権確認（環境変数 PUBLIC_PUBLISHER_CENTER_VERIFICATION に値を設定） -->
+  {#if PUBLIC_PUBLISHER_CENTER_VERIFICATION}
+    <meta name="google-site-verification" content={PUBLIC_PUBLISHER_CENTER_VERIFICATION} />
+  {/if}
 </svelte:head>
 
 <SEO
