@@ -61,8 +61,10 @@ export default defineType({
       title: 'タイトル',
       type: 'string',
       group: 'content',
-      validation: (Rule) =>
-        Rule.required().custom((value) => {
+      // 配列で返すことで required(エラー) と clickbait検出(警告) を独立させる
+      validation: (Rule) => [
+        Rule.required(),
+        Rule.custom((value) => {
           if (typeof value !== 'string') return true
           const CLICKBAIT_WORDS = ['衝撃', '判明', '信じられない', 'まさか', '驚愕', '緊急', 'やばい']
           const found = CLICKBAIT_WORDS.filter((w) => value.includes(w))
@@ -71,6 +73,7 @@ export default defineType({
           }
           return true
         }).warning()
+      ]
     }),
     defineField({
       name: 'slug',
@@ -214,18 +217,19 @@ export default defineType({
         '検索結果に表示されるタイトルです。空白の場合はクイズタイトルが使用されます。目安: 30〜60文字。',
       type: 'string',
       group: 'seo',
-      validation: (Rule) =>
-        Rule.max(60)
-          .warning('SEOタイトルは60文字以内を推奨します。')
-          .custom((value) => {
-            if (typeof value !== 'string' || !value) return true
-            const CLICKBAIT_WORDS = ['衝撃', '判明', '信じられない', 'まさか', '驚愕', '緊急', 'やばい']
-            const found = CLICKBAIT_WORDS.filter((w) => value.includes(w))
-            if (found.length > 0) {
-              return `Google Discover で降格される可能性があります（検出ワード: ${found.join('、')}）。`
-            }
-            return true
-          }).warning()
+      // 配列で返すことで max文字数(警告) と clickbait検出(警告) を独立させる
+      validation: (Rule) => [
+        Rule.max(60).warning('SEOタイトルは60文字以内を推奨します。'),
+        Rule.custom((value) => {
+          if (typeof value !== 'string' || !value) return true
+          const CLICKBAIT_WORDS = ['衝撃', '判明', '信じられない', 'まさか', '驚愕', '緊急', 'やばい']
+          const found = CLICKBAIT_WORDS.filter((w) => value.includes(w))
+          if (found.length > 0) {
+            return `Google Discover で降格される可能性があります（検出ワード: ${found.join('、')}）。`
+          }
+          return true
+        }).warning()
+      ]
     }),
     defineField({
       name: 'seoDescription',
