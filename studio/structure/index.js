@@ -24,7 +24,10 @@ export const deskStructure = (S) =>
         ),
       S.documentTypeListItem('category')
         .id('category-document-list')
-        .title('カテゴリ')
+        .title('カテゴリ'),
+      S.documentTypeListItem('author')
+        .id('author-document-list')
+        .title('著者')
     ])
 
 export default deskStructure
