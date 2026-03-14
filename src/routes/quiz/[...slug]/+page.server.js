@@ -101,8 +101,8 @@ export async function load({ params, setHeaders }) {
   }
 
   // カテゴリ別 canonical URL へ 308 リダイレクト（Discover トピック権威対応）
-  // 複数セグメントのスラッグ（例: abc/xyz）はリダイレクト対象外
-  if (slugSegments.length === 1 && normalizedDoc.category?.slug) {
+  // 複数セグメントのスラッグ（例: matchstick-quiz/article/123）はリダイレクト対象外
+  if (!slug.includes('/') && normalizedDoc.category?.slug) {
     throw redirect(308, `/category/${normalizedDoc.category.slug}/${normalizedDoc.slug}`);
   }
 
