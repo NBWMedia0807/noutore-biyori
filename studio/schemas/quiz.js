@@ -9,7 +9,8 @@ export default defineType({
   // グループ設定（タブ切り替え）
   groups: [
     { name: 'content', title: 'コンテンツ', default: true },
-    { name: 'publish', title: '公開設定' }
+    { name: 'publish', title: '公開設定' },
+    { name: 'seo', title: 'SEO設定' }
   ],
 
   orderings: [
@@ -194,6 +195,43 @@ export default defineType({
           }
         })
       ]
+    }),
+
+    // ── SEO設定 ──────────────────────────
+    defineField({
+      name: 'seoTitle',
+      title: 'SEOタイトル',
+      description:
+        '検索結果に表示されるタイトルです。空白の場合はクイズタイトルが使用されます。目安: 30〜60文字。',
+      type: 'string',
+      group: 'seo',
+      validation: (Rule) =>
+        Rule.max(60).warning('SEOタイトルは60文字以内を推奨します。')
+    }),
+    defineField({
+      name: 'seoDescription',
+      title: 'メタディスクリプション',
+      description:
+        '検索結果に表示される説明文です。空白の場合は問題文から自動生成されます。目安: 70〜120文字。',
+      type: 'text',
+      rows: 3,
+      group: 'seo',
+      validation: (Rule) =>
+        Rule.max(160).warning('メタディスクリプションは160文字以内を推奨します。')
+    }),
+    defineField({
+      name: 'ogImage',
+      title: 'OGP画像',
+      description:
+        'SNSシェア時に表示されるサムネイル画像です。⚠️ 幅1200px以上の画像を使用してください（それ以下だと大画像サムネイルが表示されず CTR が低下します）。空白の場合は問題画像が使用されます。',
+      type: 'image',
+      options: { hotspot: true },
+      group: 'seo',
+      validation: (Rule) =>
+        Rule.custom((image) => {
+          if (!image?.asset?._ref) return true
+          return '幅1200px以上の画像を推奨します。アップロード前に画像サイズをご確認ください。'
+        }).warning()
     }),
 
     // ── カテゴリ ─────────────────────────

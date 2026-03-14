@@ -30,7 +30,14 @@ const QUERY = /* groq */ `{
     "slug": slug.current,
     _updatedAt,
     _createdAt,
-    publishedAt
+    publishedAt,
+    title,
+    "imageUrl": select(
+      defined(problemImage.asset) => problemImage.asset->url,
+      defined(questionImage.asset) => questionImage.asset->url,
+      defined(mainImage.asset) => mainImage.asset->url,
+      null
+    )
   }
 }`;
 
@@ -45,11 +52,34 @@ const toIsoString = (value) => {
   }
 };
 
-const createUrlElement = ({ loc, lastmod, changefreq, priority }) => {
+/** Sanity CDN URL に sitemap 用変換パラメータを付与する */
+const buildSitemapImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  if (!url.includes('cdn.sanity.io/images')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}w=1200&fm=webp&q=80`;
+};
+
+const escapeXml = (str) =>
+  String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+const createUrlElement = ({ loc, lastmod, changefreq, priority, imageUrl, imageTitle }) => {
   const parts = [`    <loc>${loc}</loc>`];
   if (lastmod) parts.push(`    <lastmod>${lastmod}</lastmod>`);
   if (changefreq) parts.push(`    <changefreq>${changefreq}</changefreq>`);
   if (priority) parts.push(`    <priority>${priority}</priority>`);
+  const resolvedImageUrl = buildSitemapImageUrl(imageUrl);
+  if (resolvedImageUrl) {
+    parts.push(`    <image:image>`);
+    parts.push(`      <image:loc>${escapeXml(resolvedImageUrl)}</image:loc>`);
+    if (imageTitle) parts.push(`      <image:title>${escapeXml(imageTitle)}</image:title>`);
+    parts.push(`    </image:image>`);
+  }
   return `<url>\n${parts.join('\n')}\n  </url>`;
 };
 
@@ -75,7 +105,9 @@ export const GET = async () => {
       loc,
       changefreq: options.changefreq ?? existing.changefreq,
       priority: options.priority ?? existing.priority,
-      lastmod: options.lastmod ?? existing.lastmod
+      lastmod: options.lastmod ?? existing.lastmod,
+      imageUrl: options.imageUrl ?? existing.imageUrl,
+      imageTitle: options.imageTitle ?? existing.imageTitle
     });
   };
 
@@ -98,7 +130,9 @@ export const GET = async () => {
     addEntry(`/quiz/${slug}`, {
       changefreq: 'weekly',
       priority: '0.8',
-      lastmod
+      lastmod,
+      imageUrl: quiz.imageUrl ?? undefined,
+      imageTitle: quiz.title ?? undefined
     });
     addEntry(`/quiz/${slug}/answer`, {
       changefreq: 'weekly',
@@ -107,7 +141,7 @@ export const GET = async () => {
     });
   });
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${Array.from(urlEntries.values())
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${Array.from(urlEntries.values())
       .sort((a, b) => a.loc.localeCompare(b.loc))
       .map((entry) => createUrlElement(entry))
       .join('\n')

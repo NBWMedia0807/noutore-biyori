@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { notifyIndexNow } from '$lib/server/indexnow.js';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 const REVALIDATE_TOKEN = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET || '';
@@ -258,6 +259,20 @@ export const POST = async (event) => {
 
   const results = await revalidatePaths({ event, paths: Array.from(paths) });
 
+  // 記事公開・更新時のみ IndexNow へ通知（削除・スケジュール解除は除外）
+  const isPublishEvent = ['publish', 'update', 'create'].includes(
+    (payload?.transition || payload?.operation || '').toLowerCase()
+  );
+  let indexNowResult = null;
+  if (isPublishEvent && quizSlugs.length > 0) {
+    const baseUrl = env.VERCEL_URL ? `https://${env.VERCEL_URL}` : event.url.origin;
+    const indexNowUrls = quizSlugs.flatMap((slug) => [
+      `${baseUrl}/quiz/${slug}`,
+      `${baseUrl}/quiz/${slug}/answer`
+    ]);
+    indexNowResult = await notifyIndexNow(indexNowUrls);
+  }
+
   const failed = results.filter((result) => result.error);
   const status = failed.length > 0 ? 500 : 200;
 
@@ -266,7 +281,8 @@ export const POST = async (event) => {
       ok: failed.length === 0,
       revalidated: results,
       slugs: quizSlugs,
-      categories: categorySlugs
+      categories: categorySlugs,
+      indexNow: indexNowResult
     },
     { status }
   );
