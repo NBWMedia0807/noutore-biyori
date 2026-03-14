@@ -7,7 +7,8 @@
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
-  import { PUBLIC_PUBLISHER_CENTER_VERIFICATION } from '$env/static/public';
+  import { env } from '$env/dynamic/public';
+  const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
   export let data;
 
