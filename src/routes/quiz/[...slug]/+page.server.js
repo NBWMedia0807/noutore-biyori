@@ -45,6 +45,7 @@ const Q = /* groq */ `*[
   closingMessage,
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
+  author->{ _id, name, "slug": slug.current },
   publishedAt,
   _createdAt,
   _updatedAt
@@ -77,7 +78,7 @@ const buildSeo = ({ doc, path }) => {
       title: doc?.title ?? SITE.name,
       datePublished: publishedAt,
       dateModified: modifiedAt,
-      authorName: SITE.organization.name,
+      authorName: doc?.author?.name ?? SITE.organization.name,
       category: doc?.category?.title
     }
   });

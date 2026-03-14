@@ -306,6 +306,17 @@ export default defineType({
       weak: false,
       group: 'content',
       validation: (Rule) => Rule.required()
+    }),
+
+    // ── 著者 ─────────────────────────
+    defineField({
+      name: 'author',
+      title: '著者',
+      description: '記事の著者を選択してください。E-E-A-T 向上のため設定を推奨します。',
+      type: 'reference',
+      to: [{ type: 'author' }],
+      weak: false,
+      group: 'content'
     })
   ],
 

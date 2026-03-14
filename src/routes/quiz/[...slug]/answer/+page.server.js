@@ -23,6 +23,7 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   mainImage{ asset->{ url, metadata } },
   answerExplanation,
   closingMessage,
+  author->{ _id, name, "slug": slug.current },
   publishedAt,
   _createdAt,
   _updatedAt
@@ -109,7 +110,7 @@ export async function load({ params, setHeaders }) {
       title: `${quiz.title}｜正解`,
       datePublished: publishedAt,
       dateModified: quiz._updatedAt ?? publishedAt,
-      authorName: SITE.organization.name,
+      authorName: quiz?.author?.name ?? SITE.organization.name,
       category: quiz.category?.title
     },
     additionalJsonLd: [faqSchema]
