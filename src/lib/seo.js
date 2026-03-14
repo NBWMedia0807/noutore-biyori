@@ -67,6 +67,17 @@ const composeDescription = (primary, extras = []) => {
   return description;
 };
 
+/**
+ * Sanity CDN URL に OGP 用変換パラメータ（幅1200px・WebP・品質80）を付与する。
+ * Sanity 以外の URL はそのまま返す。
+ */
+const buildOgImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  if (!url.includes('cdn.sanity.io/images')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}w=1200&fm=webp&q=80`;
+};
+
 const toIsoString = (value) => {
   if (!value) return undefined;
   try {
@@ -96,7 +107,9 @@ const buildOrganizationSchema = () => ({
   url: SITE.organization.url,
   logo: {
     '@type': 'ImageObject',
-    url: SITE.organization.logo
+    url: SITE.organization.logo,
+    width: SITE.organization.logoWidth,
+    height: SITE.organization.logoHeight
   },
   sameAs: SITE.organization.sameAs
 });
@@ -152,26 +165,27 @@ const buildArticleSchema = ({
     : undefined;
 
   return {
-    '@type': 'BlogPosting',
-    '@id': `${canonical}#blogposting`,
+    '@type': 'NewsArticle',
+    '@id': `${canonical}#newsarticle`,
     mainEntityOfPage: canonical,
-    headline: title,
+    headline: title.slice(0, 110),
     description,
     image: imageObject,
     datePublished: published,
     dateModified: modified,
     author: {
-      '@type': 'Person',
-      name: authorName ?? SITE.organization.name
+      '@type': 'Organization',
+      name: authorName ?? SITE.authorName ?? SITE.organization.name
     },
     publisher: {
       '@type': 'Organization',
       '@id': SITE.organization.id,
       name: SITE.organization.name,
-      url: SITE.organization.url,
       logo: {
         '@type': 'ImageObject',
-        url: SITE.organization.logo
+        url: SITE.organization.logo,
+        width: SITE.organization.logoWidth,
+        height: SITE.organization.logoHeight
       }
     },
     articleSection: category,
@@ -211,7 +225,7 @@ export const createPageSeo = ({
     return `${baseTitle}｜${SITE.name}`;
   })();
 
-  const ogImage = image ? toAbsoluteUrl(image) : SITE.defaultOgImage;
+  const ogImage = image ? buildOgImageUrl(toAbsoluteUrl(image)) : SITE.defaultOgImage;
   const normalizedImageWidth = typeof imageWidth === 'number' ? Math.max(Math.floor(imageWidth), 0) : undefined;
   const normalizedImageHeight = typeof imageHeight === 'number' ? Math.max(Math.floor(imageHeight), 0) : undefined;
 
