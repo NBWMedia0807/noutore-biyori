@@ -297,6 +297,24 @@ export default defineType({
       validation: (Rule) => Rule.max(10).warning('関連記事は10件以内を推奨します。')
     }),
 
+    // ── 著者 ─────────────────────────────
+    defineField({
+      name: 'author',
+      title: '著者',
+      type: 'reference',
+      to: [{ type: 'author' }],
+      weak: false,
+      group: 'content',
+      initialValue: async ({getClient}) => {
+        const client = getClient({apiVersion: '2024-01-01'})
+        const found = await client.fetch(
+          `*[_type == "author" && slug.current == "editorial-team"][0]{_id}`
+        )
+        if (!found?._id) return undefined
+        return {_type: 'reference', _ref: found._id}
+      }
+    }),
+
     // ── カテゴリ ─────────────────────────
     defineField({
       name: 'category',
