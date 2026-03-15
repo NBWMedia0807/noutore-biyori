@@ -271,7 +271,8 @@
     font-size: 1.1rem;
     font-weight: 600;
     transition: all 0.3s ease;
-    display: inline-block;
+    display: block;
+    text-align: center;
   }
 
   .answer-link:hover {
