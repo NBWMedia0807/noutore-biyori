@@ -134,13 +134,14 @@
   }
 
   .back-nav a {
-    display: inline-block;
+    display: block;
     padding: 12px 20px;
     background: var(--primary-yellow, #ffc107);
     color: #856404;
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
+    text-align: center;
   }
 
   .back-nav a:hover {
