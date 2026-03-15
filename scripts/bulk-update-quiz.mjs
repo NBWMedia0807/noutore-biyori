@@ -1,5 +1,8 @@
 // scripts/bulk-update-quiz.mjs
-// author と imageType が未設定の quiz ドキュメントに一括で初期値をセットします。
+// 以下のフィールドが未設定の quiz ドキュメントに一括で初期値をセットします。
+//   - author     : slug "editorial-team" の著者ドキュメントへの参照
+//   - imageType  : "original"
+//   - relatedArticles : 同カテゴリの他のクイズから最新 5 件
 //
 // 必要な環境変数:
 //   SANITY_PROJECT_ID   : Sanity プロジェクト ID
@@ -44,25 +47,87 @@ async function fetchEditorialTeamId() {
   return author._id;
 }
 
-// author または imageType が未設定の公開済み quiz を取得
-const QUERY = `*[
+// スラッグの先頭セグメントをカテゴリキーとして返す
+// 例: "matchstick-quiz/article/336" → "matchstick-quiz"
+function slugPrefix(slug) {
+  if (typeof slug !== 'string' || !slug) return null;
+  return slug.split('/')[0] || null;
+}
+
+// 全公開済み quiz を取得（relatedArticles 判定・カテゴリグループ化に使用）
+const ALL_QUIZ_QUERY = `*[
   _type == "quiz" &&
-  !(_id in path("drafts.**")) &&
-  (!defined(author) || !defined(imageType))
-]{ _id, "hasAuthor": defined(author), "hasImageType": defined(imageType) }`;
+  !(_id in path("drafts.**"))
+] | order(publishedAt desc) {
+  _id,
+  "slug": slug.current,
+  "categoryRef": category._ref,
+  "hasAuthor": defined(author),
+  "hasImageType": defined(imageType),
+  "hasRelatedArticles": defined(relatedArticles) && count(relatedArticles) > 0,
+  publishedAt
+}`;
+
+// カテゴリキー → 公開日降順の _id リスト のマップを構築
+// カテゴリキーは categoryRef を優先し、未設定時はスラッグプレフィックスで代替
+function buildCategoryMap(docs) {
+  const map = new Map(); // key: categoryRef or slugPrefix → [{ _id, publishedAt }]
+
+  for (const doc of docs) {
+    const key = doc.categoryRef || slugPrefix(doc.slug);
+    if (!key) continue;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(doc);
+  }
+
+  // 各グループをすでに publishedAt desc でソート済み（GROQ で order 済み）
+  return map;
+}
+
+// 対象 doc のカテゴリキーを取得
+function categoryKeyOf(doc) {
+  return doc.categoryRef || slugPrefix(doc.slug);
+}
+
+// 同カテゴリの他クイズから最新 5 件の _id を返す
+function pickRelated(doc, categoryMap) {
+  const key = categoryKeyOf(doc);
+  if (!key) return null;
+
+  const group = categoryMap.get(key) ?? [];
+  const related = group
+    .filter((d) => d._id !== doc._id)
+    .slice(0, 5);
+
+  if (related.length === 0) return null;
+
+  return related.map((d, i) => ({
+    _type: 'reference',
+    _ref: d._id,
+    _key: `related-${i}`
+  }));
+}
 
 async function main() {
-  console.log('=== Bulk update quiz: author / imageType ===');
+  console.log('=== Bulk update quiz: author / imageType / relatedArticles ===');
   console.log(`project: ${projectId}, dataset: ${dataset}`);
 
   const authorId = await fetchEditorialTeamId();
   console.log(`著者 "editorial-team" _id: ${authorId}`);
 
-  const targets = await client.fetch(QUERY);
-  const docs = Array.isArray(targets) ? targets.filter((doc) => doc?._id) : [];
-  console.log(`対象ドキュメント: ${docs.length}件`);
+  const allDocs = await client.fetch(ALL_QUIZ_QUERY);
+  const docs = Array.isArray(allDocs) ? allDocs.filter((d) => d?._id) : [];
+  console.log(`全クイズ数: ${docs.length}件`);
 
-  if (docs.length === 0) {
+  const categoryMap = buildCategoryMap(docs);
+  console.log(`カテゴリ数: ${categoryMap.size}件`);
+
+  const targets = docs.filter(
+    (d) => !d.hasAuthor || !d.hasImageType || !d.hasRelatedArticles
+  );
+  console.log(`更新対象: ${targets.length}件\n`);
+
+  if (targets.length === 0) {
     console.log('更新は不要です。');
     return;
   }
@@ -70,7 +135,7 @@ async function main() {
   let success = 0;
   let skipped = 0;
 
-  for (const doc of docs) {
+  for (const doc of targets) {
     const patch = {};
 
     if (!doc.hasAuthor) {
@@ -79,12 +144,23 @@ async function main() {
     if (!doc.hasImageType) {
       patch.imageType = 'original';
     }
+    if (!doc.hasRelatedArticles) {
+      const related = pickRelated(doc, categoryMap);
+      if (related) {
+        patch.relatedArticles = related;
+      } else {
+        console.warn(`  skip relatedArticles: ${doc._id} (同カテゴリの他クイズなし, key=${categoryKeyOf(doc)})`);
+      }
+    }
+
+    if (Object.keys(patch).length === 0) continue;
 
     try {
       await client.patch(doc._id).set(patch).commit();
       success += 1;
       const fields = Object.keys(patch).join(', ');
-      console.log(`updated: ${doc._id} (${fields})`);
+      const slug = doc.slug ?? doc._id;
+      console.log(`updated: ${slug} (${fields})`);
     } catch (error) {
       skipped += 1;
       console.error(`failed: ${doc._id}`, error.message);
