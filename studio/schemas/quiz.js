@@ -348,7 +348,11 @@ export default defineType({
       description: '未設定の場合は問題文の文字数から自動算出されます（文字数÷600）。',
       type: 'number',
       group: 'content',
-      validation: (Rule) => Rule.min(1).max(60).integer().warning('1〜60分の範囲で入力してください。')
+      // 配列で返すことで integer(エラー) と範囲チェック(警告) を独立させる
+      validation: (Rule) => [
+        Rule.integer(),
+        Rule.min(1).max(60).warning('1〜60分の範囲で入力してください。')
+      ]
     })
   ],
 
