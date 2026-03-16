@@ -67,7 +67,10 @@ const toPreview = (quiz) => {
     _createdAt: quiz?._createdAt ?? null,
     viewCount: toMetric(quiz?.viewCount),
     likeCount: toMetric(quiz?.likeCount),
-    popularityScore: toMetric(quiz?.popularityScore)
+    popularityScore: toMetric(quiz?.popularityScore),
+    difficulty: quiz?.difficulty ?? null,
+    readingTime: quiz?.readingTime ?? null,
+    textLength: toMetric(quiz?.textLength)
   };
 };
 
@@ -84,7 +87,7 @@ export async function fetchRelatedQuizzes({ slug, categorySlug }) {
     const latest = filterVisibleQuizzes(payload?.latest).map(toPreview).filter(Boolean);
 
     const seen = new Set();
-    const limit = 6;
+    const limit = 4;
     const result = [];
 
     const appendItems = (source) => {
