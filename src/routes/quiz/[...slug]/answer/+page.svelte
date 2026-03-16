@@ -25,13 +25,26 @@
 
   onMount(() => {
     if (!nextPostHref) return;
-    // 少し遅らせて表示（答え画像を確認する時間を確保）
-    const timer = setTimeout(() => { showStickyBar = true; }, 1200);
+
+    let delayPassed = false;
+    let sectionOffScreen = true; // 初期値: セクションはまだ画面外と仮定
+
+    const update = () => { showStickyBar = delayPassed && sectionOffScreen; };
+
+    const timer = setTimeout(() => {
+      delayPassed = true;
+      update();
+    }, 1200);
+
     const observer = new IntersectionObserver(
-      ([entry]) => { showStickyBar = !entry.isIntersecting; },
+      ([entry]) => {
+        sectionOffScreen = !entry.isIntersecting;
+        update();
+      },
       { threshold: 0.2 }
     );
     if (nextChallengeEl) observer.observe(nextChallengeEl);
+
     return () => { clearTimeout(timer); observer.disconnect(); };
   });
 
