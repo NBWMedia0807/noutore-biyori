@@ -324,6 +324,31 @@ export default defineType({
       weak: false,
       group: 'content',
       validation: (Rule) => Rule.required()
+    }),
+
+    // ── 難易度・所要時間 ─────────────────
+    defineField({
+      name: 'difficulty',
+      title: '難易度',
+      description: 'カードに表示される難易度バッジ。未設定の場合は非表示になります。',
+      type: 'string',
+      group: 'content',
+      options: {
+        list: [
+          { title: '⭐ やさしい', value: 'easy' },
+          { title: '⭐⭐ ふつう', value: 'normal' },
+          { title: '⭐⭐⭐ むずかしい', value: 'hard' }
+        ],
+        layout: 'radio'
+      }
+    }),
+    defineField({
+      name: 'readingTime',
+      title: '所要時間（分）',
+      description: '未設定の場合は問題文の文字数から自動算出されます（文字数÷600）。',
+      type: 'number',
+      group: 'content',
+      validation: (Rule) => Rule.min(1).max(60).integer().warning('1〜60分の範囲で入力してください。')
     })
   ],
 

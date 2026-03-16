@@ -59,6 +59,9 @@ export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
     stats.score,
     0
   ),
+  difficulty,
+  readingTime,
+  "textLength": length(pt::text(coalesce(problemDescription, body))),
   publishedAt,
   _createdAt
 `;
