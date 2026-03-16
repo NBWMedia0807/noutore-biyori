@@ -222,6 +222,8 @@
   }
 
   .hint-button {
+    display: block;
+    width: 100%;
     background: var(--primary-yellow);
     color: #856404;
     border: none;
@@ -231,7 +233,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    width: 100%;
     margin-bottom: 1rem;
   }
 

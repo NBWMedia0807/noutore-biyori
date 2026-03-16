@@ -7,30 +7,15 @@
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
+  import SideRailAd from '$lib/components/SideRailAd.svelte';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
-  // サイドレール広告スロットID（AdSenseダッシュボードで作成した専用スロットに変更してください）
+  // サイドレール広告スロットID
+  // AdSenseダッシュボードで 160×600 専用ユニットを作成して差し替えてください
   const SIDE_RAIL_SLOT = '5756190566';
-  const AD_CLIENT = 'ca-pub-2298313897414846';
 
-  /** @type {HTMLDivElement|null} */
-  let leftRailRef = null;
-  /** @type {HTMLDivElement|null} */
-  let rightRailRef = null;
-
-  function mountSideRailAd(container) {
-    if (!container) return;
-    const ins = document.createElement('ins');
-    ins.className = 'adsbygoogle';
-    ins.style.cssText = 'display:block;width:160px;height:600px;';
-    ins.dataset.adClient = AD_CLIENT;
-    ins.dataset.adSlot = SIDE_RAIL_SLOT;
-    container.appendChild(ins);
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (_) {}
-  }
+  let showSideRail = false;
 
   export let data;
 
@@ -81,10 +66,10 @@
   }
 
   onMount(() => {
-    // サイドレール広告を初期化（十分な画面幅がある場合のみ）
+    // 1540px以上でのみサイドレール広告を表示
+    // (コンテンツ最大幅1200px + 広告160px×2 + 余裕)
     if (window.innerWidth >= 1540) {
-      mountSideRailAd(leftRailRef);
-      mountSideRailAd(rightRailRef);
+      showSideRail = true;
     }
 
     // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
@@ -183,12 +168,14 @@
 {/if}
 
 <!-- サイドレール広告（PC幅が十分な場合のみ表示） -->
-<aside class="side-rail side-rail--left" aria-hidden="true">
-  <div class="side-rail__inner" bind:this={leftRailRef}></div>
-</aside>
-<aside class="side-rail side-rail--right" aria-hidden="true">
-  <div class="side-rail__inner" bind:this={rightRailRef}></div>
-</aside>
+{#if showSideRail}
+  <aside class="side-rail side-rail--left" aria-hidden="true">
+    <SideRailAd slot={SIDE_RAIL_SLOT} />
+  </aside>
+  <aside class="side-rail side-rail--right" aria-hidden="true">
+    <SideRailAd slot={SIDE_RAIL_SLOT} />
+  </aside>
+{/if}
 
 <main class={mainClass}>
   <slot />
@@ -219,27 +206,20 @@
   }
 
   /* サイドレール広告 */
+  /* {#if showSideRail} で1540px以上の場合のみDOMに挿入されるため display制御不要 */
   .side-rail {
-    display: none;
     position: fixed;
-    top: 140px; /* header + sticky nav の高さ分だけ下げる */
+    top: 140px; /* header + sticky nav の高さ分 */
     width: 160px;
-    z-index: 10; /* sticky nav (z-index:100) より下、コンテンツより上 */
+    z-index: 10; /* sticky nav (z-index:100) より下 */
   }
 
   .side-rail--left {
-    /* コンテンツ左端の外側に配置: 50vw - (コンテンツ幅/2) - 広告幅 - gap */
+    /* コンテンツ左端の外側: 50vw - (コンテンツ幅/2) - 広告幅 - gap */
     left: calc(50vw - 600px - 160px - 8px);
   }
 
   .side-rail--right {
     right: calc(50vw - 600px - 160px - 8px);
-  }
-
-  /* 1540px以上（コンテンツ1200px + 左右160px×2 + 余裕）で表示 */
-  @media (min-width: 1540px) {
-    .side-rail {
-      display: block;
-    }
   }
 </style>
