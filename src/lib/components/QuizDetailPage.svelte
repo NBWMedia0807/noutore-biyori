@@ -2,6 +2,7 @@
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
+  import InlineCta from '$lib/components/InlineCta.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
 
   export let data;
@@ -103,6 +104,9 @@
   };
 
   let bodyHtml;
+  let bodyHtmlTop;
+  let bodyHtmlBottom;
+  let inlineCtaQuizzes;
   let hints = [];
   let hintsId;
 
@@ -112,6 +116,29 @@
     const fromProblem = toHtml(doc?.problemDescription);
     return fromProblem;
   })();
+
+  // 50〜60%地点でbodyHtmlをパラグラフ分割してインラインCTA用に上下2分割
+  $: {
+    const splitBodyHtml = (html) => {
+      if (!html) return { top: '', bottom: '' };
+      // </p> で分割してパラグラフ配列を作る
+      const parts = html.split(/(?<=<\/p>)/);
+      const total = parts.length;
+      if (total <= 2) return { top: html, bottom: '' };
+      // 50〜60%地点（切り上げ）を挿入点とする
+      const insertIdx = Math.ceil(total * 0.55);
+      return {
+        top: parts.slice(0, insertIdx).join(''),
+        bottom: parts.slice(insertIdx).join('')
+      };
+    };
+    const { top, bottom } = splitBodyHtml(bodyHtml);
+    bodyHtmlTop = top;
+    bodyHtmlBottom = bottom;
+  }
+
+  // インラインCTAに使う関連記事（最大3件）
+  $: inlineCtaQuizzes = relatedQuizzes.slice(0, 3);
 
   // ヒントデータの正規化
   $: {
@@ -160,7 +187,7 @@
   <header class="quiz-header">
     {#if category}
       <div class="quiz-meta-row">
-        <a class="category-chip" href={categoryUrl}>#{category.title}</a>
+        <a class="category-chip" href={categoryUrl}>{category.title}</a>
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
@@ -209,7 +236,13 @@
       <div class="section-header">
         <h2>問題</h2>
       </div>
-      <div class="section-body">{@html bodyHtml}</div>
+      {#if bodyHtmlBottom && inlineCtaQuizzes.length > 0}
+        <div class="section-body">{@html bodyHtmlTop}</div>
+        <InlineCta quizzes={inlineCtaQuizzes} />
+        <div class="section-body">{@html bodyHtmlBottom}</div>
+      {:else}
+        <div class="section-body">{@html bodyHtml}</div>
+      {/if}
     </section>
   {/if}
 
@@ -310,18 +343,31 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem 1rem;
+    gap: 0.3rem;
+    padding: 0.3rem 1rem;
     border-radius: 999px;
-    background: rgba(248, 196, 113, 0.35);
+    background: linear-gradient(135deg, rgba(253, 224, 71, 0.6), rgba(251, 191, 36, 0.5));
+    border: 1.5px solid rgba(245, 158, 11, 0.5);
     color: #78350f;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 0.88rem;
     text-decoration: none;
-    min-height: 36px;
+    min-height: 34px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.18);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .category-chip::before {
+    content: '#';
+    opacity: 0.7;
+    font-weight: 900;
   }
 
   .category-chip:hover,
   .category-chip:focus-visible {
-    background: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.75), rgba(245, 158, 11, 0.65));
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.28);
     outline: none;
   }
 

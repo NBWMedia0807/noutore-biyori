@@ -61,6 +61,16 @@
   $: publishContext = quiz?.slug ?? quiz?.id ?? 'article-card';
   $: publishedDate = resolvePublishedDate(quiz, publishContext) ?? '';
   $: formattedDate = formatPublishedDateLabel(publishedDate, { context: publishContext });
+
+  const DIFFICULTY_LABELS = { easy: 'やさしい', normal: 'ふつう', hard: 'むずかしい' };
+  const DIFFICULTY_STARS = { easy: '⭐', normal: '⭐⭐', hard: '⭐⭐⭐' };
+  $: difficultyLabel = quiz?.difficulty ? DIFFICULTY_LABELS[quiz.difficulty] : null;
+  $: difficultyStars = quiz?.difficulty ? DIFFICULTY_STARS[quiz.difficulty] : null;
+  $: readingMinutes = (() => {
+    if (quiz?.readingTime) return quiz.readingTime;
+    const chars = quiz?.textLength ?? 0;
+    return chars > 0 ? Math.max(1, Math.ceil(chars / 600)) : null;
+  })();
 </script>
 
 <article class="article-card">
@@ -100,6 +110,18 @@
         <div class="article-card__date">{formattedDate}</div>
       {/if}
       <h3 class="article-card__title">{title}</h3>
+      {#if difficultyLabel || readingMinutes}
+        <div class="article-card__badges">
+          {#if difficultyLabel}
+            <span class="badge badge--difficulty badge--{quiz.difficulty}">
+              {difficultyStars} {difficultyLabel}
+            </span>
+          {/if}
+          {#if readingMinutes}
+            <span class="badge badge--time">⏱ {readingMinutes}分</span>
+          {/if}
+        </div>
+      {/if}
     </div>
   </a>
 </article>
@@ -179,6 +201,45 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .article-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .badge--difficulty.badge--easy {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .badge--difficulty.badge--normal {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+
+  .badge--difficulty.badge--hard {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge--time {
+    background: #eff6ff;
+    color: #1e40af;
   }
 
   @media (max-width: 520px) {
