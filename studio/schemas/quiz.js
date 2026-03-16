@@ -305,7 +305,9 @@ export default defineType({
       to: [{ type: 'author' }],
       weak: false,
       group: 'content',
-      initialValue: async ({getClient}) => {
+      initialValue: async (context) => {
+        const getClient = context?.getClient
+        if (typeof getClient !== 'function') return undefined
         const client = getClient({apiVersion: '2024-01-01'})
         const found = await client.fetch(
           `*[_type == "author" && slug.current == "editorial-team"][0]{_id}`
