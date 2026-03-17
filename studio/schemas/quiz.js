@@ -328,6 +328,15 @@ export default defineType({
       validation: (Rule) => Rule.required()
     }),
 
+    // ── 再公開フラグ ──────────────────────
+    defineField({
+      name: 'isRepublished',
+      title: '再公開記事',
+      type: 'boolean',
+      group: 'publish',
+      initialValue: false,
+    }),
+
     // ── 難易度・所要時間 ─────────────────
     defineField({
       name: 'difficulty',
