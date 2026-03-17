@@ -136,6 +136,12 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
     raw = message.content[0].text.strip()
     raw = re.sub(r"^```[a-z]*\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw)
+    start = raw.find("[")
+    end = raw.rfind("]")
+    if start == -1 or end == -1:
+        print("⚠️ 検証JSONが見つかりません。元のリストをそのまま使用します。")
+        return quizzes
+    raw = raw[start:end+1]
     result = json.loads(raw)
 
     ok_list = result.get("ok", [])
