@@ -13,6 +13,7 @@ const RELATED_QUERY = /* groq */ `{
     && defined(slug.current)
     && slug.current != $slug
     ${QUIZ_PUBLISHED_FILTER}
+    && isRepublished != true
     && defined(category._ref)
     && category->slug.current == $categorySlug
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
@@ -23,6 +24,7 @@ const RELATED_QUERY = /* groq */ `{
     && defined(slug.current)
     && slug.current != $slug
     ${QUIZ_PUBLISHED_FILTER}
+    && isRepublished != true
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
     ${QUIZ_PREVIEW_PROJECTION}
   }

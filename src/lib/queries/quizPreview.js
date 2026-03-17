@@ -15,7 +15,7 @@ export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
     null
   ){
     ...,
-    asset->{ url, metadata }
+    asset->{ "_ref": _id, url, metadata }
   },
   "mainImage": select(
     defined(mainImage) => mainImage,
@@ -24,11 +24,11 @@ export const QUIZ_PREVIEW_PROJECTION = /* groq */ `
     null
   ){
     ...,
-    asset->{ url, metadata }
+    asset->{ "_ref": _id, url, metadata }
   },
   answerImage{
     ...,
-    asset->{ url, metadata }
+    asset->{ "_ref": _id, url, metadata }
   },
   "thumbnailUrl": coalesce(
     problemImage.asset->url,

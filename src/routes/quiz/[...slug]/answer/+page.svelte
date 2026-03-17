@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
 
@@ -8,6 +9,44 @@
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
+
+  // 次の問題（スティッキーバー用）
+  const nextPost = nextChallengePosts[0] ?? null;
+  const nextPostHref = nextPost?.slug ? `/quiz/${nextPost.slug}` : null;
+
+  // カテゴリリンク
+  const categorySlug = quiz?.category?.slug ?? null;
+  const categoryTitle = quiz?.category?.title ?? null;
+  const categoryHref = categorySlug ? `/category/${categorySlug}` : null;
+
+  // 「さらにもう一問」セクションが画面内に入ったらスティッキーバーを非表示にする
+  let showStickyBar = false;
+  let nextChallengeEl;
+
+  onMount(() => {
+    if (!nextPostHref) return;
+
+    let delayPassed = false;
+    let sectionOffScreen = true; // 初期値: セクションはまだ画面外と仮定
+
+    const update = () => { showStickyBar = delayPassed && sectionOffScreen; };
+
+    const timer = setTimeout(() => {
+      delayPassed = true;
+      update();
+    }, 1200);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        sectionOffScreen = !entry.isIntersecting;
+        update();
+      },
+      { threshold: 0.2 }
+    );
+    if (nextChallengeEl) observer.observe(nextChallengeEl);
+
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  });
 
   const escapeHtml = (value) =>
     value
@@ -134,32 +173,28 @@
   <AdSense slot="5428887502" />
 
   {#if nextChallengePosts.length > 0}
-    <section class="next-challenge">
-      <h2 class="section-title">さらにもう一問！</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
+    <section class="next-challenge" bind:this={nextChallengeEl}>
+      <h2 class="next-challenge__title">さらにもう一問！</h2>
+      <div class="next-challenge__grid">
         {#each nextChallengePosts as post}
-          <a
-            href="/quiz/{post.slug}"
-            class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200 overflow-hidden group"
-          >
+          <a href="/quiz/{post.slug}" class="next-challenge__card">
             {#if post.image}
-              <div class="relative h-32 overflow-hidden bg-gray-100">
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+              <div class="next-challenge__image">
+                <img src={post.image} alt={post.title} loading="lazy" decoding="async" />
               </div>
             {/if}
-            <div class="p-3">
-              <p class="text-lg font-bold text-blue-700 line-clamp-2 group-hover:underline">
-                {post.title}
-              </p>
-            </div>
+            <p class="next-challenge__card-title">{post.title}</p>
           </a>
         {/each}
       </div>
     </section>
+  {/if}
+
+  {#if categoryHref && categoryTitle}
+    <a class="category-cta" href={categoryHref}>
+      <span class="category-cta__label">📂 {categoryTitle}の問題をもっと見る</span>
+      <span class="category-cta__arrow" aria-hidden="true">→</span>
+    </a>
   {/if}
 
   <!-- 正解ページ: 関連記事上の広告 -->
@@ -171,6 +206,13 @@
     headingId="related-answer-heading"
   />
 </main>
+
+{#if nextPostHref && showStickyBar}
+  <div class="sticky-next" role="complementary" aria-label="次の問題へ">
+    <span class="sticky-next__label">{nextPost.title}</span>
+    <a class="sticky-next__btn" href={nextPostHref}>次の問題へ <span aria-hidden="true">→</span></a>
+  </div>
+{/if}
 
 <style>
   .answer-page {
@@ -320,16 +362,163 @@
     white-space: pre-line;
   }
 
+  /* ── さらにもう一問 ─────────────────── */
   .next-challenge {
-    margin-top: 24px;
+    background: #fffef6;
+    border-radius: 24px;
+    padding: 28px 24px 32px;
+    box-shadow: 0 18px 45px rgba(249, 115, 22, 0.14);
+    border: 1px solid rgba(248, 196, 113, 0.35);
   }
 
-  .next-challenge .section-title {
+  .next-challenge__title {
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0 0 20px;
+    color: #9a3412;
+  }
+
+  .next-challenge__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .next-challenge__card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(248, 196, 113, 0.35);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .next-challenge__card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px rgba(234, 88, 12, 0.18);
+  }
+
+  .next-challenge__image {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .next-challenge__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .next-challenge__card:hover .next-challenge__image img {
+    transform: scale(1.04);
+  }
+
+  .next-challenge__card-title {
+    padding: 10px 12px 14px;
+    font-size: 0.95rem;
     font-weight: 700;
-    margin-bottom: 24px;
-    color: #7c2d12;
+    color: #1f2937;
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── カテゴリCTA ─────────────────────── */
+  .category-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, rgba(253, 224, 71, 0.4), rgba(251, 191, 36, 0.3));
+    border: 1.5px solid rgba(245, 158, 11, 0.45);
+    border-radius: 16px;
+    text-decoration: none;
+    color: #78350f;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+  }
+
+  .category-cta:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.55), rgba(245, 158, 11, 0.45));
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.22);
+  }
+
+  .category-cta__label {
+    flex: 1;
+  }
+
+  .category-cta__arrow {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  /* ── スティッキー「次の問題へ」バー ───── */
+  :global(.sticky-next) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #1f2937ee, #111827f5);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideUp 0.3s ease;
+  }
+
+  :global(.sticky-next__label) {
+    flex: 1;
+    font-size: 0.88rem;
+    color: #fef3c7;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  :global(.sticky-next__btn) {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #78350f;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: filter 0.2s ease, transform 0.2s ease;
+  }
+
+  :global(.sticky-next__btn:hover) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
   }
 
   @media (max-width: 640px) {

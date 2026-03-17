@@ -17,10 +17,11 @@ import { createClient } from '@sanity/client';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 
-// 全公開済み quiz を publishedAt 降順で取得
+// 全公開済み quiz を publishedAt 降順で取得（再公開記事を除外）
 const ALL_QUIZ_QUERY = /* groq */ `*[
   _type == "quiz" &&
-  !(_id in path("drafts.**"))
+  !(_id in path("drafts.**")) &&
+  isRepublished != true
 ] | order(publishedAt desc) {
   _id,
   "slug": slug.current,

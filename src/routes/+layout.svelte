@@ -7,7 +7,6 @@
   import { afterNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
-  import SideRailAd from '$lib/components/SideRailAd.svelte';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
@@ -197,8 +196,20 @@
 
 <footer data-review-mode={reviewMode}>
   <div class="footer-content">
-    <p>&copy; 2025年9月 脳トレ日和</p>
-    <p>毎日の脳トレで健康な生活を</p>
+    {#if data?.categories?.length}
+      <nav class="footer-categories" aria-label="カテゴリ一覧">
+        <p class="footer-categories__heading">カテゴリ</p>
+        <ul class="footer-categories__list">
+          {#each data.categories as c}
+            <li><a href="/category/{c.slug}">{c.title}</a></li>
+          {/each}
+          <li><a href="/business-manner">ビジネスマナー</a></li>
+          <li><a href="/number-quiz">数字クイズ</a></li>
+        </ul>
+      </nav>
+    {/if}
+    <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
+    <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
     <nav aria-label="法務および運営情報">
       <ul class="footer-links">
         <li><a href="/privacy-policy">プライバシーポリシー</a></li>
@@ -219,7 +230,47 @@
     padding: 0 1rem;
   }
 
-  /* サイドレール広告 */
+  /* ── フッター カテゴリナビ ────────────── */
+  .footer-categories {
+    margin-bottom: 1.5rem;
+  }
+
+  .footer-categories__heading {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin: 0 0 0.6rem;
+  }
+
+  .footer-categories__list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .footer-categories__list a {
+    font-size: 0.88rem;
+    color: #d1d5db;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .footer-categories__list a:hover {
+    color: #fbbf24;
+  }
+
+  .footer-copy,
+  .footer-tagline {
+    margin: 0.25rem 0;
+  }
+
+  /* ── サイドレール広告 ────────────── */
   .side-rail {
     display: none;
     position: fixed;

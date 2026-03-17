@@ -1,0 +1,32 @@
+name: マッチ棒クイズ 自動生成
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      num_quizzes:
+        description: "生成件数"
+        required: false
+        default: "10"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install anthropic requests
+      - name: クイズを生成して Sanity に入稿
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_TOKEN: ${{ secrets.SANITY_EDITOR_TOKEN }}
+          SANITY_CATEGORY_ID: ${{ secrets.SANITY_CATEGORY_ID }}
+          SANITY_AUTHOR_ID: ${{ secrets.SANITY_AUTHOR_ID }}
+          NUM_QUIZZES: ${{ github.event.inputs.num_quizzes || '10' }}
+        run: python scripts/pipeline.py

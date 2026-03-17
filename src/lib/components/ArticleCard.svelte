@@ -4,6 +4,7 @@
 
   export let quiz = {};
   export let fallbackImageUrl = '/logo.svg';
+  export let priority = false;
 
   const FALLBACK_IMAGE = '/logo.svg';
 
@@ -97,8 +98,9 @@
             srcset={imageSet.srcset}
             sizes="(min-width: 768px) 280px, 90vw"
             alt={title}
-            loading="lazy"
-            decoding="async"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchpriority={priority ? 'high' : 'auto'}
+            decoding={priority ? 'sync' : 'async'}
             width={Math.round(dimensions.width)}
             height={Math.round(dimensions.height)}
           />

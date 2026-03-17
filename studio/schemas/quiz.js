@@ -305,7 +305,9 @@ export default defineType({
       to: [{ type: 'author' }],
       weak: false,
       group: 'content',
-      initialValue: async ({getClient}) => {
+      initialValue: async (context) => {
+        const getClient = context?.getClient
+        if (typeof getClient !== 'function') return undefined
         const client = getClient({apiVersion: '2024-01-01'})
         const found = await client.fetch(
           `*[_type == "author" && slug.current == "editorial-team"][0]{_id}`
@@ -324,6 +326,15 @@ export default defineType({
       weak: false,
       group: 'content',
       validation: (Rule) => Rule.required()
+    }),
+
+    // ── 再公開フラグ ──────────────────────
+    defineField({
+      name: 'isRepublished',
+      title: '再公開記事',
+      type: 'boolean',
+      group: 'publish',
+      initialValue: false,
     }),
 
     // ── 難易度・所要時間 ─────────────────
@@ -348,7 +359,11 @@ export default defineType({
       description: '未設定の場合は問題文の文字数から自動算出されます（文字数÷600）。',
       type: 'number',
       group: 'content',
-      validation: (Rule) => Rule.min(1).max(60).integer().warning('1〜60分の範囲で入力してください。')
+      // 配列で返すことで integer(エラー) と範囲チェック(警告) を独立させる
+      validation: (Rule) => [
+        Rule.integer(),
+        Rule.min(1).max(60).warning('1〜60分の範囲で入力してください。')
+      ]
     })
   ],
 
