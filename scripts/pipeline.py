@@ -146,7 +146,15 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
     else:
         print("⚠️ 検証JSONが見つかりません。元のリストをそのまま使用します。")
         return quizzes
-    result = json.loads(raw)
+    if not raw.strip():
+        print("⚠️ 検証JSONが空です。元のリストをそのまま使用します。")
+        return quizzes
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(f"⚠️ 検証JSONのパースに失敗しました: {e}")
+        print(f"[DEBUG] raw={repr(raw[:300])}")
+        return quizzes
     if isinstance(result, list):
         ok_list = result
         ng_list = []
