@@ -42,8 +42,8 @@
     <section class="home-section" aria-labelledby="newest-heading" id="newest-quizzes">
       <h2 class="section-title" id="newest-heading">新着クイズ</h2>
       <ArticleGrid minWidth={240} gap={20}>
-        {#each newestQuizzes as quiz (quiz.slug)}
-          <ArticleCard {quiz} />
+        {#each newestQuizzes as quiz, i (quiz.slug)}
+          <ArticleCard {quiz} priority={i === 0} />
         {/each}
       </ArticleGrid>
 
