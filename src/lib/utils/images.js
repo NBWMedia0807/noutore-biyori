@@ -48,13 +48,21 @@ const buildSources = (image, { width, height, quality }) => {
  * Sanityの画像参照からレスポンシブ画像情報を生成する。
  * asset._refが存在しない場合はfallbackUrlのみを返す。
  */
+const addCdnParams = (url, width, quality) => {
+  if (!url || !url.includes('cdn.sanity.io')) return url;
+  const base = url.split('?')[0];
+  const params = [`w=${width}`, 'auto=format', `q=${quality}`].join('&');
+  return `${base}?${params}`;
+};
+
 export function createSanityImageSet(image, { width = 800, height, quality = 80, fallbackUrl } = {}) {
   const hasBuilder = Boolean(image && typeof image === 'object' && image.asset && image.asset._ref);
   const fallback = fallbackUrl ?? (typeof image === 'string' ? image : image?.asset?.url ?? '');
 
   if (!hasBuilder) {
+    const optimized = addCdnParams(fallback, width, quality);
     return {
-      src: fallback,
+      src: optimized || fallback,
       fallback
     };
   }
