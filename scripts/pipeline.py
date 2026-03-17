@@ -120,32 +120,49 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
     if not quizzes:
         return []
 
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    payload = json.dumps(quizzes, ensure_ascii=False)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=8192,
-        system=VERIFY_SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"以下のクイズリストを検証してください。\n\n{payload}"
-            }
-        ]
-    )
-    raw = message.content[0].text.strip()
-    raw = re.sub(r"^```[a-z]*\n?", "", raw)
-    raw = re.sub(r"\n?```$", "", raw)
-    result = json.loads(raw)
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        payload = json.dumps(quizzes, ensure_ascii=False)
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8192,
+            system=VERIFY_SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"以下のクイズリストを検証してください。\n\n{payload}"
+                }
+            ]
+        )
+        raw = message.content[0].text.strip()
+        raw = re.sub(r"^```[a-z]*\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw)
+        start = raw.find("[")
+        end = raw.rfind("]")
+        if start == -1 or end == -1:
+            print("⚠️ 検証JSONが見つかりません。元のリストをそのまま使用します。")
+            return quizzes
+        raw = raw[start:end + 1]
+        if not raw.strip():
+            print("⚠️ 検証JSONが空です。元のリストをそのまま使用します。")
+            return quizzes
+        result = json.loads(raw)
+        if isinstance(result, list):
+            ok_list = result
+            ng_list = []
+        else:
+            ok_list = result.get("ok", [])
+            ng_list = result.get("ng", [])
 
-    ok_list = result.get("ok", [])
-    ng_list = result.get("ng", [])
+        for ng in ng_list:
+            print(f"❌ 除外: {ng.get('problemEquation', '?')} → {ng.get('reason', '')}")
 
-    for ng in ng_list:
-        print(f"❌ 除外: {ng.get('problemEquation', '?')} → {ng.get('reason', '')}")
+        print(f"✅ 検証通過: {len(ok_list)} 件 / 除外: {len(ng_list)} 件")
+        return ok_list if ok_list else quizzes
 
-    print(f"✅ 検証通過: {len(ok_list)} 件 / 除外: {len(ng_list)} 件")
-    return ok_list
+    except Exception as e:
+        print(f"⚠️ 検証中にエラーが発生しました: {e}。元のリストをそのまま使用します。")
+        return quizzes
 
 
 def make_slug(title: str, uid: str) -> str:
