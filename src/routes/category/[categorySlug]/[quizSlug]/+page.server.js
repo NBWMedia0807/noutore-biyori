@@ -39,19 +39,19 @@ const Q = /* groq */ `*[
     defined(questionImage) => questionImage,
     defined(mainImage) => mainImage,
     null
-  ){ asset->{ url, metadata } },
+  ){ asset->{ "_ref": _id, url, metadata } },
   "mainImage": select(
     defined(mainImage) => mainImage,
     defined(problemImage) => problemImage,
     defined(questionImage) => questionImage,
     null
-  ){ asset->{ url, metadata } },
+  ){ asset->{ "_ref": _id, url, metadata } },
   hint,
   hints,
   body,
   problemDescription,
   closingMessage,
-  answerImage{ asset->{ url, metadata } },
+  answerImage{ asset->{ "_ref": _id, url, metadata } },
   answerExplanation,
   publishedAt,
   _createdAt,
