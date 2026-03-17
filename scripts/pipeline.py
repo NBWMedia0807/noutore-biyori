@@ -136,12 +136,16 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
     raw = message.content[0].text.strip()
     raw = re.sub(r"^```[a-z]*\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw)
-    start = raw.find("[")
-    end = raw.rfind("]")
-    if start == -1 or end == -1:
+    # オブジェクト形式 {"ok":...,"ng":...} を優先、なければ配列形式 [...] を試みる
+    start_obj, end_obj = raw.find("{"), raw.rfind("}")
+    start_arr, end_arr = raw.find("["), raw.rfind("]")
+    if start_obj != -1 and end_obj != -1:
+        raw = raw[start_obj:end_obj + 1]
+    elif start_arr != -1 and end_arr != -1:
+        raw = raw[start_arr:end_arr + 1]
+    else:
         print("⚠️ 検証JSONが見つかりません。元のリストをそのまま使用します。")
         return quizzes
-    raw = raw[start:end+1]
     result = json.loads(raw)
     if isinstance(result, list):
         ok_list = result
