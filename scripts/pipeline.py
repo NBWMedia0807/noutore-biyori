@@ -143,9 +143,12 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
         return quizzes
     raw = raw[start:end+1]
     result = json.loads(raw)
-
-    ok_list = result.get("ok", [])
-    ng_list = result.get("ng", [])
+    if isinstance(result, list):
+        ok_list = result
+        ng_list = []
+    else:
+        ok_list = result.get("ok", [])
+        ng_list = result.get("ng", [])
 
     for ng in ng_list:
         print(f"❌ 除外: {ng.get('problemEquation', '?')} → {ng.get('reason', '')}")
