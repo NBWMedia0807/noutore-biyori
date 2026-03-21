@@ -137,16 +137,24 @@ def verify_quizzes(quizzes: list[dict]) -> list[dict]:
         raw = message.content[0].text.strip()
         raw = re.sub(r"^```[a-z]*\n?", "", raw)
         raw = re.sub(r"\n?```$", "", raw)
-        start = raw.find("[")
-        end = raw.rfind("]")
-        if start == -1 or end == -1:
+        # オブジェクト {"ok": [...], "ng": [...]} またはリスト [...] を直接パース
+        result = None
+        for extractor in [
+            lambda s: s,
+            lambda s: s[s.find("{"):s.rfind("}") + 1] if s.find("{") != -1 else "",
+            lambda s: s[s.find("["):s.rfind("]") + 1] if s.find("[") != -1 else "",
+        ]:
+            candidate = extractor(raw)
+            if not candidate.strip():
+                continue
+            try:
+                result = json.loads(candidate)
+                break
+            except json.JSONDecodeError:
+                continue
+        if result is None:
             print("⚠️ 検証JSONが見つかりません。元のリストをそのまま使用します。")
             return quizzes
-        raw = raw[start:end + 1]
-        if not raw.strip():
-            print("⚠️ 検証JSONが空です。元のリストをそのまま使用します。")
-            return quizzes
-        result = json.loads(raw)
         if isinstance(result, list):
             ok_list = result
             ng_list = []
@@ -225,6 +233,12 @@ def post_to_sanity(quizzes: list[dict]) -> None:
         "Authorization": f"Bearer {SANITY_TOKEN}"
     }
     response = requests.post(url, headers=headers, json={"mutations": mutations})
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Sanity API 認証エラー (401)。"
+            "GitHubシークレット SANITY_EDITOR_TOKEN が正しく設定されているか確認してください。"
+            f"(project={SANITY_PROJECT_ID}, dataset={SANITY_DATASET})"
+        )
     response.raise_for_status()
     result = response.json()
     print(f"✅ Sanity に {len(result.get('results', []))} 件のドラフトを入稿しました")

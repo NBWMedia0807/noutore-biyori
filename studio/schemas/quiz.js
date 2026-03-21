@@ -337,6 +337,36 @@ export default defineType({
       initialValue: false,
     }),
 
+    // ── クイズ種別 ───────────────────────
+    defineField({
+      name: 'quizType',
+      title: 'クイズ種別',
+      description: 'クイズの種類を選択してください。',
+      type: 'string',
+      group: 'content',
+      options: {
+        list: [
+          { title: 'マッチ棒', value: 'matchstick' },
+          { title: '算数・数学', value: 'arithmetic' },
+          { title: '漢字', value: 'kanji' },
+          { title: '四字熟語・ことわざ', value: 'idiom' },
+          { title: 'PCスキル', value: 'pc-skill' },
+          { title: 'AIクイズ', value: 'ai-quiz' }
+        ],
+        layout: 'radio'
+      }
+    }),
+
+    // ── 選択肢 ───────────────────────────
+    defineField({
+      name: 'choices',
+      title: '選択肢',
+      description: '選択肢形式のクイズの場合に入力してください。',
+      type: 'array',
+      group: 'content',
+      of: [{ type: 'string' }]
+    }),
+
     // ── 難易度・所要時間 ─────────────────
     defineField({
       name: 'difficulty',
