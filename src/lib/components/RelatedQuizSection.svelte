@@ -5,7 +5,7 @@
   export let quizzes = [];
   export let headingId = 'related-heading';
 
-  const MAX_ITEMS = 4;
+  const MAX_ITEMS = 6;
   const headingText = '関連記事';
 
   $: items = Array.isArray(quizzes)
