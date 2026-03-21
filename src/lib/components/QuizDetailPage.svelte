@@ -283,6 +283,9 @@
     </a>
   </nav>
 
+  <!-- 記事下: 関連記事上の広告 -->
+  <AdSense slot="1724332823" />
+
   <a
     class="x-banner"
     href="https://x.com/noutorebiyori"
@@ -300,11 +303,17 @@
     />
   </a>
 
-  <!-- 記事下: 関連記事上の広告 -->
-  <AdSense slot="1724332823" />
-
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
+  {/if}
+
+  {#if categoryUrl}
+    <nav class="category-nav">
+      <a class="action-button secondary" href={categoryUrl}>
+        {category.title}の問題一覧へ
+        <span aria-hidden="true">→</span>
+      </a>
+    </nav>
   {/if}
 </main>
 
@@ -439,13 +448,15 @@
   }
 
   .hints-toggle,
-  .to-answer {
+  .to-answer,
+  .category-nav {
     display: flex;
     justify-content: center;
   }
 
   .hints-toggle .action-button,
-  .to-answer .action-button {
+  .to-answer .action-button,
+  .category-nav .action-button {
     width: min(100%, 320px);
   }
 
@@ -563,7 +574,8 @@
     }
 
     .hints-toggle .action-button,
-    .to-answer .action-button {
+    .to-answer .action-button,
+    .category-nav .action-button {
       width: 100%;
     }
 
