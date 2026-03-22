@@ -93,7 +93,7 @@
       sendPageView(`${window.location.pathname}${window.location.search}`);
     }
     afterNavigate((navigation) => {
-      if (!navigation?.to?.url?.hash) {
+      if (navigation?.type !== 'popstate' && !navigation?.to?.url?.hash) {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       }
       if (shouldSkipNextPageView) {
