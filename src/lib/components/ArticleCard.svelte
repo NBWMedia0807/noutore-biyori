@@ -63,6 +63,23 @@
   $: publishedDate = resolvePublishedDate(quiz, publishContext) ?? '';
   $: formattedDate = formatPublishedDateLabel(publishedDate, { context: publishContext });
 
+  const CATEGORY_COLORS = {
+    'マッチ棒クイズ': { bg: '#F5C4B3', text: '#712B13' },
+    '漢字間違い探し': { bg: '#B5D4F4', text: '#0C447C' },
+    '読解クイズ':     { bg: '#C0DD97', text: '#27500A' },
+    'ビジネスマナー': { bg: '#EEEDFE', text: '#3C3489' },
+    '数字クイズ':     { bg: '#FAC775', text: '#633806' },
+    'AIクイズ':       { bg: '#9FE1CB', text: '#085041' },
+  };
+  const DEFAULT_CATEGORY_COLOR = { bg: '#D3D1C7', text: '#444441' };
+
+  $: isNew = (() => {
+    if (!publishedDate) return false;
+    const diff = Date.now() - new Date(publishedDate).getTime();
+    return diff >= 0 && diff <= 3 * 24 * 60 * 60 * 1000;
+  })();
+  $: categoryColor = CATEGORY_COLORS[categoryTitle] ?? DEFAULT_CATEGORY_COLOR;
+
   const DIFFICULTY_LABELS = { easy: 'やさしい', normal: 'ふつう', hard: 'むずかしい' };
   const DIFFICULTY_STARS = { easy: '⭐', normal: '⭐⭐', hard: '⭐⭐⭐' };
   $: difficultyLabel = quiz?.difficulty ? DIFFICULTY_LABELS[quiz.difficulty] : null;
@@ -105,6 +122,11 @@
             height={Math.round(dimensions.height)}
           />
         </picture>
+      {#if isNew}
+        <span class="thumb-badge thumb-badge--new">NEW</span>
+      {:else if categoryTitle}
+        <span class="thumb-badge" style="background:{categoryColor.bg};color:{categoryColor.text}">{categoryTitle}</span>
+      {/if}
       </div>
     {/if}
     <div class="article-card__content">
@@ -242,6 +264,27 @@
   .badge--time {
     background: #eff6ff;
     color: #1e40af;
+  }
+
+  .thumb-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .thumb-badge--new {
+    background: #e24b4a;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 10px;
+    box-shadow: 0 1px 4px rgba(226, 75, 74, 0.3);
   }
 
   @media (max-width: 520px) {
