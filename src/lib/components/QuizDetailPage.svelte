@@ -188,6 +188,18 @@
       return;
     }
 
+    // 前回の残滓をクリア
+    clearTimeout(window.__rewardedFallbackTimer);
+    if (window.__rewardedSlot) {
+      googletag.destroySlots([window.__rewardedSlot]);
+      window.__rewardedSlot = null;
+    }
+
+    // 報酬付与時のコールバックをセット
+    window.__rewardedGrantedCb = () => {
+      window.location.href = answerPath;
+    };
+
     googletag.cmd.push(() => {
       const slot = googletag
         .defineOutOfPageSlot(
@@ -201,26 +213,17 @@
         return;
       }
 
-      // 広告が一定時間内に表示されない場合のフォールバック
-      const fallbackTimer = setTimeout(() => {
-        googletag.destroySlots([slot]);
+      window.__rewardedSlot = slot;
+
+      // rewardedSlotReady が一定時間内に発火しない場合のフォールバック
+      window.__rewardedFallbackTimer = setTimeout(() => {
+        if (window.__rewardedSlot) {
+          googletag.destroySlots([window.__rewardedSlot]);
+          window.__rewardedSlot = null;
+        }
+        window.__rewardedGrantedCb = null;
         window.location.href = answerPath;
-      }, 3000);
-
-      googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
-        clearTimeout(fallbackTimer);
-        event.makeRewardedVisible();
-      });
-
-      googletag.pubads().addEventListener('rewardedSlotGranted', () => {
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      googletag.pubads().addEventListener('rewardedSlotClosed', () => {
-        clearTimeout(fallbackTimer);
-        googletag.destroySlots([slot]);
-      });
+      }, 5000);
 
       googletag.display(slot);
     });

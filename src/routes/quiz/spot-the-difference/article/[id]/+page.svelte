@@ -56,6 +56,16 @@
       return;
     }
 
+    clearTimeout(window.__rewardedFallbackTimer);
+    if (window.__rewardedSlot) {
+      googletag.destroySlots([window.__rewardedSlot]);
+      window.__rewardedSlot = null;
+    }
+
+    window.__rewardedGrantedCb = () => {
+      window.location.href = answerPath;
+    };
+
     googletag.cmd.push(() => {
       const slot = googletag
         .defineOutOfPageSlot(
@@ -69,25 +79,16 @@
         return;
       }
 
-      const fallbackTimer = setTimeout(() => {
-        googletag.destroySlots([slot]);
+      window.__rewardedSlot = slot;
+
+      window.__rewardedFallbackTimer = setTimeout(() => {
+        if (window.__rewardedSlot) {
+          googletag.destroySlots([window.__rewardedSlot]);
+          window.__rewardedSlot = null;
+        }
+        window.__rewardedGrantedCb = null;
         window.location.href = answerPath;
-      }, 3000);
-
-      googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
-        clearTimeout(fallbackTimer);
-        event.makeRewardedVisible();
-      });
-
-      googletag.pubads().addEventListener('rewardedSlotGranted', () => {
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      googletag.pubads().addEventListener('rewardedSlotClosed', () => {
-        clearTimeout(fallbackTimer);
-        googletag.destroySlots([slot]);
-      });
+      }, 5000);
 
       googletag.display(slot);
     });

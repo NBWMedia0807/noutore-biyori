@@ -213,6 +213,29 @@
   <script>
     window.googletag = window.googletag || { cmd: [] };
     googletag.cmd.push(() => {
+      // rewardedSlotReady: 広告準備完了 → 表示。フォールバックタイマーもここでキャンセル
+      googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(window.__rewardedFallbackTimer);
+        event.makeRewardedVisible();
+      });
+      // rewardedSlotGranted: 報酬付与 → コールバック経由で正解ページへ遷移
+      googletag.pubads().addEventListener('rewardedSlotGranted', () => {
+        if (window.__rewardedSlot) {
+          googletag.destroySlots([window.__rewardedSlot]);
+          window.__rewardedSlot = null;
+        }
+        if (typeof window.__rewardedGrantedCb === 'function') {
+          window.__rewardedGrantedCb();
+        }
+      });
+      // rewardedSlotClosed: 広告を閉じた → スロット破棄のみ（遷移しない）
+      googletag.pubads().addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(window.__rewardedFallbackTimer);
+        if (window.__rewardedSlot) {
+          googletag.destroySlots([window.__rewardedSlot]);
+          window.__rewardedSlot = null;
+        }
+      });
       googletag.enableServices();
     });
   </script>
