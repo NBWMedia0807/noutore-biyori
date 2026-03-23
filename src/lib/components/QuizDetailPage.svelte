@@ -201,6 +201,10 @@
         return;
       }
 
+      googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
+        event.makeRewardedVisible();
+      });
+
       googletag.pubads().addEventListener('rewardedSlotGranted', () => {
         googletag.destroySlots([slot]);
         window.location.href = answerPath;
