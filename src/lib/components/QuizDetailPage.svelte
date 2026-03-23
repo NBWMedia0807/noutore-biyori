@@ -182,58 +182,6 @@
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 
-  function showRewardedAd() {
-    if (typeof googletag === 'undefined' || typeof googletag.enums === 'undefined') {
-      window.location.href = answerPath;
-      return;
-    }
-
-    googletag.cmd.push(() => {
-      googletag.enableServices();
-
-      const pubads = googletag.pubads();
-
-      // addService より前にリスナーを登録する
-      // （GPT はスロットが pubads に追加される時点でリスナーの存在を確認する）
-      let slot;
-      let fallbackTimer;
-
-      pubads.addEventListener('rewardedSlotReady', (event) => {
-        clearTimeout(fallbackTimer);
-        event.makeRewardedVisible();
-      });
-
-      pubads.addEventListener('rewardedSlotGranted', () => {
-        clearTimeout(fallbackTimer);
-        if (slot) googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      pubads.addEventListener('rewardedSlotClosed', () => {
-        clearTimeout(fallbackTimer);
-        if (slot) googletag.destroySlots([slot]);
-      });
-
-      slot = googletag
-        .defineOutOfPageSlot(
-          '/23345812008/noutorebiyori-rewarded',
-          googletag.enums.OutOfPageFormat.REWARDED
-        )
-        ?.addService(pubads);
-
-      if (!slot) {
-        window.location.href = answerPath;
-        return;
-      }
-
-      fallbackTimer = setTimeout(() => {
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      }, 5000);
-
-      googletag.display(slot);
-    });
-  }
 </script>
 
 <main class="quiz-detail hide-chrome">
@@ -329,11 +277,11 @@
   {/if}
 
   <nav class="to-answer">
-    <button class="action-button primary" on:click={showRewardedAd}>
+    <a class="action-button primary" href={answerPath}>
       正解ページへ進む
       <span class="sr-only">次のページへ</span>
       <span aria-hidden="true">→</span>
-    </button>
+    </a>
   </nav>
 
   <!-- 記事下: 関連記事上の広告 -->

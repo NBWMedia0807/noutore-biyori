@@ -48,59 +48,6 @@
     renderPortableText(quiz?.hints) ||
     (typeof quiz?.hints === 'string' ? quiz.hints : '');
 
-  $: answerPath = `/quiz/spot-the-difference/article/${quiz?._id ?? ''}/answer`;
-
-  function showRewardedAd() {
-    if (typeof googletag === 'undefined' || typeof googletag.enums === 'undefined') {
-      window.location.href = answerPath;
-      return;
-    }
-
-    googletag.cmd.push(() => {
-      googletag.enableServices();
-
-      const pubads = googletag.pubads();
-
-      let slot;
-      let fallbackTimer;
-
-      pubads.addEventListener('rewardedSlotReady', (event) => {
-        clearTimeout(fallbackTimer);
-        event.makeRewardedVisible();
-      });
-
-      pubads.addEventListener('rewardedSlotGranted', () => {
-        clearTimeout(fallbackTimer);
-        if (slot) googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      pubads.addEventListener('rewardedSlotClosed', () => {
-        clearTimeout(fallbackTimer);
-        if (slot) googletag.destroySlots([slot]);
-      });
-
-      slot = googletag
-        .defineOutOfPageSlot(
-          '/23345812008/noutorebiyori-rewarded',
-          googletag.enums.OutOfPageFormat.REWARDED
-        )
-        ?.addService(pubads);
-
-      if (!slot) {
-        window.location.href = answerPath;
-        return;
-      }
-
-      fallbackTimer = setTimeout(() => {
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      }, 5000);
-
-      googletag.display(slot);
-    });
-  }
-
   $: mainFallback =
     quiz?.problemImage?.asset?.url || quiz?.mainImage?.asset?.url || quiz?.answerImage?.asset?.url || '';
   $: mainSource =
@@ -180,7 +127,7 @@
 
       <!-- 正解ページへのナビゲーション -->
       <section class="answer-navigation">
-        <button class="answer-link" on:click={showRewardedAd}>正解ページへ進む →</button>
+        <a href="/quiz/spot-the-difference/article/{quiz._id}/answer" class="answer-link">正解ページへ進む →</a>
       </section>
 
 
