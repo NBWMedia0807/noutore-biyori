@@ -183,7 +183,7 @@
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 
   function showRewardedAd() {
-    if (typeof googletag === 'undefined') {
+    if (typeof googletag === 'undefined' || typeof googletag.enums === 'undefined') {
       window.location.href = answerPath;
       return;
     }

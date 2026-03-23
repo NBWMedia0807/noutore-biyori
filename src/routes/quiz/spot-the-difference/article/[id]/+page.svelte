@@ -51,7 +51,7 @@
   $: answerPath = `/quiz/spot-the-difference/article/${quiz?._id ?? ''}/answer`;
 
   function showRewardedAd() {
-    if (typeof googletag === 'undefined') {
+    if (typeof googletag === 'undefined' || typeof googletag.enums === 'undefined') {
       window.location.href = answerPath;
       return;
     }
