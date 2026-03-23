@@ -222,7 +222,6 @@
         googletag.destroySlots([slot]);
       });
 
-      googletag.enableServices();
       googletag.display(slot);
     });
   }
