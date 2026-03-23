@@ -61,7 +61,26 @@
 
       const pubads = googletag.pubads();
 
-      const slot = googletag
+      let slot;
+      let fallbackTimer;
+
+      pubads.addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(fallbackTimer);
+        event.makeRewardedVisible();
+      });
+
+      pubads.addEventListener('rewardedSlotGranted', () => {
+        clearTimeout(fallbackTimer);
+        if (slot) googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      });
+
+      pubads.addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(fallbackTimer);
+        if (slot) googletag.destroySlots([slot]);
+      });
+
+      slot = googletag
         .defineOutOfPageSlot(
           '/23345812008/noutorebiyori-rewarded',
           googletag.enums.OutOfPageFormat.REWARDED
@@ -73,26 +92,10 @@
         return;
       }
 
-      const fallbackTimer = setTimeout(() => {
+      fallbackTimer = setTimeout(() => {
         googletag.destroySlots([slot]);
         window.location.href = answerPath;
       }, 5000);
-
-      pubads.addEventListener('rewardedSlotReady', (event) => {
-        clearTimeout(fallbackTimer);
-        event.makeRewardedVisible();
-      });
-
-      pubads.addEventListener('rewardedSlotGranted', () => {
-        clearTimeout(fallbackTimer);
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      pubads.addEventListener('rewardedSlotClosed', () => {
-        clearTimeout(fallbackTimer);
-        googletag.destroySlots([slot]);
-      });
 
       googletag.display(slot);
     });
