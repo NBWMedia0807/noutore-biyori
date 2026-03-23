@@ -182,37 +182,6 @@
   let answerPath;
   $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
 
-  function showRewardedAd() {
-    if (typeof googletag === 'undefined') {
-      window.location.href = answerPath;
-      return;
-    }
-
-    googletag.cmd.push(() => {
-      const slot = googletag
-        .defineOutOfPageSlot(
-          '/23345812008/noutorebiyori-rewarded',
-          googletag.enums.OutOfPageFormat.REWARDED
-        )
-        ?.addService(googletag.pubads());
-
-      if (!slot) {
-        window.location.href = answerPath;
-        return;
-      }
-
-      googletag.pubads().addEventListener('rewardedSlotGranted', () => {
-        googletag.destroySlots([slot]);
-        window.location.href = answerPath;
-      });
-
-      googletag.pubads().addEventListener('rewardedSlotClosed', () => {
-        googletag.destroySlots([slot]);
-      });
-
-      googletag.display(slot);
-    });
-  }
 </script>
 
 <main class="quiz-detail hide-chrome">
@@ -308,11 +277,11 @@
   {/if}
 
   <nav class="to-answer">
-    <button class="action-button primary" on:click={showRewardedAd}>
+    <a class="action-button primary" href={answerPath}>
       正解ページへ進む
       <span class="sr-only">次のページへ</span>
       <span aria-hidden="true">→</span>
-    </button>
+    </a>
   </nav>
 
   <!-- 記事下: 関連記事上の広告 -->
