@@ -188,42 +188,46 @@
       return;
     }
 
-    // 前回の残滓をクリア
-    clearTimeout(window.__rewardedFallbackTimer);
-    if (window.__rewardedSlot) {
-      googletag.destroySlots([window.__rewardedSlot]);
-      window.__rewardedSlot = null;
-    }
-
-    // 報酬付与時のコールバックをセット
-    window.__rewardedGrantedCb = () => {
-      window.location.href = answerPath;
-    };
-
     googletag.cmd.push(() => {
+      // enableServices を先に呼ぶことで pubads_impl.js のロードを確定させ、
+      // 以降の addEventListener が実装済み pubads に登録されることを保証する
+      googletag.enableServices();
+
+      const pubads = googletag.pubads();
+
       const slot = googletag
         .defineOutOfPageSlot(
           '/23345812008/noutorebiyori-rewarded',
           googletag.enums.OutOfPageFormat.REWARDED
         )
-        ?.addService(googletag.pubads());
+        ?.addService(pubads);
 
       if (!slot) {
         window.location.href = answerPath;
         return;
       }
 
-      window.__rewardedSlot = slot;
-
       // rewardedSlotReady が一定時間内に発火しない場合のフォールバック
-      window.__rewardedFallbackTimer = setTimeout(() => {
-        if (window.__rewardedSlot) {
-          googletag.destroySlots([window.__rewardedSlot]);
-          window.__rewardedSlot = null;
-        }
-        window.__rewardedGrantedCb = null;
+      const fallbackTimer = setTimeout(() => {
+        googletag.destroySlots([slot]);
         window.location.href = answerPath;
       }, 5000);
+
+      pubads.addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(fallbackTimer);
+        event.makeRewardedVisible();
+      });
+
+      pubads.addEventListener('rewardedSlotGranted', () => {
+        clearTimeout(fallbackTimer);
+        googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      });
+
+      pubads.addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(fallbackTimer);
+        googletag.destroySlots([slot]);
+      });
 
       googletag.display(slot);
     });

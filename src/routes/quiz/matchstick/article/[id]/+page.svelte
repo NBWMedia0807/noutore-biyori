@@ -51,39 +51,43 @@
       return;
     }
 
-    clearTimeout(window.__rewardedFallbackTimer);
-    if (window.__rewardedSlot) {
-      googletag.destroySlots([window.__rewardedSlot]);
-      window.__rewardedSlot = null;
-    }
-
-    window.__rewardedGrantedCb = () => {
-      window.location.href = answerPath;
-    };
-
     googletag.cmd.push(() => {
+      googletag.enableServices();
+
+      const pubads = googletag.pubads();
+
       const slot = googletag
         .defineOutOfPageSlot(
           '/23345812008/noutorebiyori-rewarded',
           googletag.enums.OutOfPageFormat.REWARDED
         )
-        ?.addService(googletag.pubads());
+        ?.addService(pubads);
 
       if (!slot) {
         window.location.href = answerPath;
         return;
       }
 
-      window.__rewardedSlot = slot;
-
-      window.__rewardedFallbackTimer = setTimeout(() => {
-        if (window.__rewardedSlot) {
-          googletag.destroySlots([window.__rewardedSlot]);
-          window.__rewardedSlot = null;
-        }
-        window.__rewardedGrantedCb = null;
+      const fallbackTimer = setTimeout(() => {
+        googletag.destroySlots([slot]);
         window.location.href = answerPath;
       }, 5000);
+
+      pubads.addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(fallbackTimer);
+        event.makeRewardedVisible();
+      });
+
+      pubads.addEventListener('rewardedSlotGranted', () => {
+        clearTimeout(fallbackTimer);
+        googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      });
+
+      pubads.addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(fallbackTimer);
+        googletag.destroySlots([slot]);
+      });
 
       googletag.display(slot);
     });
