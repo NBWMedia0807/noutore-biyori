@@ -69,7 +69,13 @@
         return;
       }
 
+      const fallbackTimer = setTimeout(() => {
+        googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      }, 3000);
+
       googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(fallbackTimer);
         event.makeRewardedVisible();
       });
 
@@ -79,9 +85,11 @@
       });
 
       googletag.pubads().addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(fallbackTimer);
         googletag.destroySlots([slot]);
       });
 
+      googletag.enableServices();
       googletag.display(slot);
     });
   }

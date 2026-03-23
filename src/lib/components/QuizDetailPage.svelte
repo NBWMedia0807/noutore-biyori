@@ -201,7 +201,14 @@
         return;
       }
 
+      // 広告が一定時間内に表示されない場合のフォールバック
+      const fallbackTimer = setTimeout(() => {
+        googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      }, 3000);
+
       googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
+        clearTimeout(fallbackTimer);
         event.makeRewardedVisible();
       });
 
@@ -211,9 +218,11 @@
       });
 
       googletag.pubads().addEventListener('rewardedSlotClosed', () => {
+        clearTimeout(fallbackTimer);
         googletag.destroySlots([slot]);
       });
 
+      googletag.enableServices();
       googletag.display(slot);
     });
   }
