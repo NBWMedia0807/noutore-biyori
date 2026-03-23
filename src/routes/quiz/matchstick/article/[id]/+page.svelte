@@ -43,6 +43,44 @@
     renderPortableText(quiz?.hints) ||
     (typeof quiz?.hints === 'string' ? quiz.hints : '');
 
+  $: answerPath = `/quiz/matchstick/article/${quiz?._id ?? ''}/answer`;
+
+  function showRewardedAd() {
+    if (typeof googletag === 'undefined') {
+      window.location.href = answerPath;
+      return;
+    }
+
+    googletag.cmd.push(() => {
+      const slot = googletag
+        .defineOutOfPageSlot(
+          '/23345812008/noutorebiyori-rewarded',
+          googletag.enums.OutOfPageFormat.REWARDED
+        )
+        ?.addService(googletag.pubads());
+
+      if (!slot) {
+        window.location.href = answerPath;
+        return;
+      }
+
+      googletag.pubads().addEventListener('rewardedSlotReady', (event) => {
+        event.makeRewardedVisible();
+      });
+
+      googletag.pubads().addEventListener('rewardedSlotGranted', () => {
+        googletag.destroySlots([slot]);
+        window.location.href = answerPath;
+      });
+
+      googletag.pubads().addEventListener('rewardedSlotClosed', () => {
+        googletag.destroySlots([slot]);
+      });
+
+      googletag.display(slot);
+    });
+  }
+
   $: mainFallback =
     quiz?.problemImage?.asset?.url || quiz?.mainImage?.asset?.url || quiz?.answerImage?.asset?.url || '';
   $: mainSource =
@@ -122,7 +160,7 @@
 
       <!-- 正解ページへのナビゲーション -->
       <section class="answer-navigation">
-        <a href="/quiz/matchstick/article/{quiz._id}/answer" class="answer-link">正解ページへ進む →</a>
+        <button class="answer-link" on:click={showRewardedAd}>正解ページへ進む →</button>
       </section>
 
 
