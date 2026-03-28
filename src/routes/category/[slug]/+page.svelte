@@ -117,7 +117,7 @@
 
   .quiz-list-section {
     width: 100%;
-    margin: 0 0 3rem;
+    margin: 1.5rem 0 3rem; /* 上に余白を追加: 広告との間隔を確保 */
     display: grid;
     gap: 1.5rem;
   }

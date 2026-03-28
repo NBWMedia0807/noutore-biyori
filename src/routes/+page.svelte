@@ -97,7 +97,7 @@
 
 <style>
   .home-section {
-    margin-bottom: 3rem;
+    /* margin-bottom は不要: 親 .home-page の gap: 3rem がセクション間余白を管理 */
     display: grid;
     gap: 1.5rem;
   }

@@ -149,16 +149,10 @@
     box-sizing: border-box;
 
     /*
-     * 広告ロード前は非表示（JSで高さ確定後に reveal() で表示）
-     * → ユーザーが空白の「ガタ」を見ない
+     * 広告ロード前は非表示（AdSense側が ins に visibility:visible を設定するまで非表示）
+     * min-height は設定しない：ロード前の不可視空白（レイアウトズレ）を防ぐ
      */
     visibility: hidden;
-    /*
-     * min-height を 250px に引き上げ。
-     * AdSenseのレスポンシブ広告は最低250px程度を確保すると
-     * より大きなフォーマット（300x250など）が配信されやすくなりCPM向上に貢献。
-     */
-    min-height: 250px;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
