@@ -4,7 +4,6 @@ import { client } from '$lib/sanity/client';
 // グロナビに表示したい項目の定義
 const MENU_ITEMS = [
   { title: 'マッチ棒クイズ', slug: 'matchstick-quiz' },
-  { title: '漢字間違い探し', slug: 'kanji-mistake' },
   { title: '読解クイズ', slug: 'reading-quiz' }
 ];
 
