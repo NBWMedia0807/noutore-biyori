@@ -76,7 +76,7 @@
 
       {#if pagination?.totalPages > 1}
         <Pagination
-          basePath={pagination?.basePath ?? `/nandoku-kanji`}
+          basePath={pagination?.basePath ?? `/category/nandoku-kanji`}
           currentPage={pagination?.currentPage ?? 1}
           totalPages={pagination?.totalPages ?? 1}
           totalCount={pagination?.totalCount ?? totalCount}
