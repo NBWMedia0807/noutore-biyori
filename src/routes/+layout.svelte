@@ -169,13 +169,13 @@
           {/each}
         {/if}
         <li>
-          <a href="/kanji-quiz" class="nav-link" data-sveltekit-preload-data>難読漢字</a>
+          <a href="/category/kanji-quiz" class="nav-link" data-sveltekit-preload-data>難読漢字</a>
         </li>
         <li>
-          <a href="/business-manner" class="nav-link" data-sveltekit-preload-data>ビジネスマナー</a>
+          <a href="/category/business-manner" class="nav-link" data-sveltekit-preload-data>ビジネスマナー</a>
         </li>
         <li>
-          <a href="/number-quiz" class="nav-link" data-sveltekit-preload-data>数字クイズ</a>
+          <a href="/category/number-quiz" class="nav-link" data-sveltekit-preload-data>数字クイズ</a>
         </li>
       </ul>
     </div>
@@ -209,8 +209,8 @@
           {#each data.categories as c}
             <li><a href="/category/{c.slug}">{c.title}</a></li>
           {/each}
-          <li><a href="/business-manner">ビジネスマナー</a></li>
-          <li><a href="/number-quiz">数字クイズ</a></li>
+          <li><a href="/category/business-manner">ビジネスマナー</a></li>
+          <li><a href="/category/number-quiz">数字クイズ</a></li>
         </ul>
       </nav>
     {/if}

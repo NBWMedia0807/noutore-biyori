@@ -76,7 +76,7 @@
 
       {#if pagination?.totalPages > 1}
         <Pagination
-          basePath={pagination?.basePath ?? `/kanji-quiz`}
+          basePath={pagination?.basePath ?? `/category/kanji-quiz`}
           currentPage={pagination?.currentPage ?? 1}
           totalPages={pagination?.totalPages ?? 1}
           totalCount={pagination?.totalCount ?? totalCount}
