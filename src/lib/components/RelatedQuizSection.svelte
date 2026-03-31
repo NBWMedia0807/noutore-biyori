@@ -1,11 +1,10 @@
 <script>
   import ArticleCard from '$lib/components/ArticleCard.svelte';
-  import ArticleGrid from '$lib/components/ArticleGrid.svelte';
 
   export let quizzes = [];
   export let headingId = 'related-heading';
 
-  const MAX_ITEMS = 6;
+  const MAX_ITEMS = 12;
   const headingText = '関連記事';
 
   $: items = Array.isArray(quizzes)
@@ -19,11 +18,11 @@
     <div class="related-header">
       <h2 id={headingId}>{headingText}</h2>
     </div>
-    <ArticleGrid>
+    <div class="related-grid">
       {#each items as quiz (quiz.slug)}
         <ArticleCard {quiz} />
       {/each}
-    </ArticleGrid>
+    </div>
   </section>
 {/if}
 
@@ -48,6 +47,28 @@
     font-size: 1.35rem;
     color: #9a3412;
     font-weight: 800;
+  }
+
+  /* PC: 4列 */
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  /* タブレット: 3列 */
+  @media (max-width: 1023px) {
+    .related-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* スマホ: 2列 */
+  @media (max-width: 639px) {
+    .related-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
   }
 
   @media (max-width: 768px) {
