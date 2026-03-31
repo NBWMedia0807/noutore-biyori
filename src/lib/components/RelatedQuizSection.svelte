@@ -49,24 +49,24 @@
     font-weight: 800;
   }
 
-  /* PC: 4列 */
+  /* PC: 3列 */
   .related-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
   }
 
-  /* タブレット: 3列 */
+  /* タブレット: 2列 */
   @media (max-width: 1023px) {
     .related-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
-  /* スマホ: 2列 */
+  /* スマホ: 1列 */
   @media (max-width: 639px) {
     .related-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
       gap: 12px;
     }
   }
