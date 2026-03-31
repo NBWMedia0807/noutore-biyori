@@ -169,6 +169,9 @@
           {/each}
         {/if}
         <li>
+          <a href="/nandoku-kanji" class="nav-link" data-sveltekit-preload-data>難読漢字</a>
+        </li>
+        <li>
           <a href="/business-manner" class="nav-link" data-sveltekit-preload-data>ビジネスマナー</a>
         </li>
         <li>
