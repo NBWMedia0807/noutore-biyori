@@ -60,7 +60,9 @@
   </section>
 
   <!-- 難読漢字ページ: クイズ一覧上の広告 -->
-  <AdSense slot="5756190566" />
+  <div class="ad-wrapper">
+    <AdSense slot="5756190566" />
+  </div>
 
   <section class="quiz-list-section">
     {#if !sortedNewest.length}
@@ -113,6 +115,10 @@
     border-radius: 999px;
     font-weight: 700;
     font-size: 0.9rem;
+  }
+
+  .ad-wrapper {
+    margin-bottom: 2rem;
   }
 
   .quiz-list-section {
