@@ -59,8 +59,10 @@
     <div class="quiz-count" aria-live="polite">公開中 {totalCount}問</div>
   </section>
 
-  <!-- カテゴリページ: クイズ一覧上の広告 -->
-  <AdSense slot="5756190566" />
+  <!-- 難読漢字ページ: クイズ一覧上の広告 -->
+  <div class="ad-wrapper">
+    <AdSense slot="5756190566" />
+  </div>
 
   <section class="quiz-list-section">
     {#if !sortedNewest.length}
@@ -74,7 +76,7 @@
 
       {#if pagination?.totalPages > 1}
         <Pagination
-          basePath={pagination?.basePath ?? `/category/${slug}`}
+          basePath={pagination?.basePath ?? `/nandoku-kanji`}
           currentPage={pagination?.currentPage ?? 1}
           totalPages={pagination?.totalPages ?? 1}
           totalCount={pagination?.totalCount ?? totalCount}
@@ -115,9 +117,13 @@
     font-size: 0.9rem;
   }
 
+  .ad-wrapper {
+    margin-bottom: 2rem;
+  }
+
   .quiz-list-section {
     width: 100%;
-    margin: 1.5rem 0 3rem; /* 上に余白を追加: 広告との間隔を確保 */
+    margin: 1.5rem 0 3rem;
     display: grid;
     gap: 1.5rem;
   }
@@ -135,6 +141,5 @@
     .category-header {
       padding: 1.4rem 1.15rem;
     }
-
   }
 </style>
