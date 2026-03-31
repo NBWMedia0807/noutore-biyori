@@ -8,24 +8,37 @@ import {
 } from '$lib/queries/quizVisibility.js';
 
 const RELATED_QUERY = /* groq */ `{
-  "sameCategory": *[
+  "matchstick": *[
     _type == "quiz"
     && defined(slug.current)
     && slug.current != $slug
     ${QUIZ_PUBLISHED_FILTER}
     && isRepublished != true
     && defined(category._ref)
-    && category->slug.current == $categorySlug
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
+    && category->slug.current == "matchstick-quiz"
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
-  "latest": *[
+  "kanji": *[
     _type == "quiz"
     && defined(slug.current)
     && slug.current != $slug
     ${QUIZ_PUBLISHED_FILTER}
     && isRepublished != true
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...24]{
+    && defined(category._ref)
+    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
+    ${QUIZ_PREVIEW_PROJECTION}
+  },
+  "number": *[
+    _type == "quiz"
+    && defined(slug.current)
+    && slug.current != $slug
+    ${QUIZ_PUBLISHED_FILTER}
+    && isRepublished != true
+    && defined(category._ref)
+    && category->slug.current == "number-quiz"
+  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
     ${QUIZ_PREVIEW_PROJECTION}
   }
 }`;
@@ -80,29 +93,41 @@ export async function fetchRelatedQuizzes({ slug, categorySlug }) {
   if (shouldSkipSanityFetch()) return [];
 
   try {
-    const payload = await client.fetch(RELATED_QUERY, {
-      slug,
-      categorySlug: categorySlug ?? null
-    });
+    const payload = await client.fetch(RELATED_QUERY, { slug });
 
-    const sameCategory = filterVisibleQuizzes(payload?.sameCategory).map(toPreview).filter(Boolean);
-    const latest = filterVisibleQuizzes(payload?.latest).map(toPreview).filter(Boolean);
+    const matchstick = filterVisibleQuizzes(payload?.matchstick).map(toPreview).filter(Boolean);
+    const kanji = filterVisibleQuizzes(payload?.kanji).map(toPreview).filter(Boolean);
+    const number = filterVisibleQuizzes(payload?.number).map(toPreview).filter(Boolean);
 
     const seen = new Set();
-    const limit = 4;
     const result = [];
 
-    const appendItems = (source) => {
+    // 各カテゴリから最大4件ずつ取得
+    const appendItems = (source, perCategory) => {
+      let added = 0;
       for (const item of source) {
-        if (!item?.slug || seen.has(item.slug) || result.length >= limit) continue;
+        if (!item?.slug || seen.has(item.slug) || added >= perCategory) continue;
         seen.add(item.slug);
         result.push(item);
-        if (result.length >= limit) break;
+        added++;
       }
     };
 
-    appendItems(sameCategory);
-    appendItems(latest);
+    appendItems(matchstick, 4);
+    appendItems(kanji, 4);
+    appendItems(number, 4);
+
+    // 12件に満たない場合は各カテゴリから追加補充
+    const TOTAL = 12;
+    if (result.length < TOTAL) {
+      const all = [...matchstick, ...kanji, ...number];
+      for (const item of all) {
+        if (result.length >= TOTAL) break;
+        if (!item?.slug || seen.has(item.slug)) continue;
+        seen.add(item.slug);
+        result.push(item);
+      }
+    }
 
     return result;
   } catch (error) {
