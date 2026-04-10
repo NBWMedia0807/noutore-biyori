@@ -203,18 +203,6 @@
 
 <footer data-review-mode={reviewMode}>
   <div class="footer-content">
-    {#if data?.categories?.length}
-      <nav class="footer-categories" aria-label="カテゴリ一覧">
-        <p class="footer-categories__heading">カテゴリ</p>
-        <ul class="footer-categories__list">
-          {#each data.categories as c}
-            <li><a href="/category/{c.slug}">{c.title}</a></li>
-          {/each}
-          <li><a href="/category/business-manner">ビジネスマナー</a></li>
-          <li><a href="/category/number-quiz">数字クイズ</a></li>
-        </ul>
-      </nav>
-    {/if}
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
     <nav aria-label="法務および運営情報">
@@ -235,41 +223,6 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
-  }
-
-  /* ── フッター カテゴリナビ ────────────── */
-  .footer-categories {
-    margin-bottom: 1.5rem;
-  }
-
-  .footer-categories__heading {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #9ca3af;
-    margin: 0 0 0.6rem;
-  }
-
-  .footer-categories__list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem 1rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .footer-categories__list a {
-    font-size: 0.88rem;
-    color: #d1d5db;
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-
-  .footer-categories__list a:hover {
-    color: #fbbf24;
   }
 
   .footer-copy,
