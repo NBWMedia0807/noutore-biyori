@@ -122,11 +122,16 @@
             height={Math.round(dimensions.height)}
           />
         </picture>
-      {#if isNew}
-        <span class="thumb-badge thumb-badge--new">NEW</span>
-      {:else if categoryTitle}
-        <span class="thumb-badge" style="background:{categoryColor.bg};color:{categoryColor.text}">{categoryTitle}</span>
-      {/if}
+      <div class="thumb-badges">
+        {#if isNew}
+          <span class="thumb-badge thumb-badge--new">NEW</span>
+        {:else if categoryTitle}
+          <span class="thumb-badge" style="background:{categoryColor.bg};color:{categoryColor.text}">{categoryTitle}</span>
+        {/if}
+        {#if readingMinutes}
+          <span class="thumb-badge thumb-badge--time">⏱ {readingMinutes}分</span>
+        {/if}
+      </div>
       </div>
     {/if}
     <div class="article-card__content">
@@ -134,16 +139,11 @@
         <div class="article-card__date">{formattedDate}</div>
       {/if}
       <h3 class="article-card__title">{title}</h3>
-      {#if difficultyLabel || readingMinutes}
+      {#if difficultyLabel}
         <div class="article-card__badges">
-          {#if difficultyLabel}
-            <span class="badge badge--difficulty badge--{quiz.difficulty}">
-              {difficultyStars} {difficultyLabel}
-            </span>
-          {/if}
-          {#if readingMinutes}
-            <span class="badge badge--time">⏱ {readingMinutes}分</span>
-          {/if}
+          <span class="badge badge--difficulty badge--{quiz.difficulty}">
+            {difficultyStars} {difficultyLabel}
+          </span>
         </div>
       {/if}
     </div>
@@ -204,9 +204,9 @@
   }
 
   .article-card__content {
-    padding: 0.6rem 1.1rem 1.1rem;
+    padding: 0.4rem 1rem 0.8rem;
     display: grid;
-    gap: 0.25rem;
+    gap: 0.2rem;
     flex: 1;
   }
 
@@ -230,15 +230,15 @@
   .article-card__badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.35rem;
+    gap: 0.25rem;
+    margin-top: 0.2rem;
   }
 
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 0.2rem;
-    padding: 0.2rem 0.55rem;
+    padding: 0.15rem 0.45rem;
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
@@ -266,11 +266,17 @@
     color: #1e40af;
   }
 
-  .thumb-badge {
+  .thumb-badges {
     position: absolute;
     top: 8px;
     left: 8px;
     z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .thumb-badge {
     padding: 3px 8px;
     border-radius: 5px;
     font-size: 11px;
@@ -285,6 +291,13 @@
     font-size: 12px;
     padding: 4px 10px;
     box-shadow: 0 1px 4px rgba(226, 75, 74, 0.3);
+  }
+
+  .thumb-badge--time {
+    background: rgba(239, 246, 255, 0.92);
+    color: #1e40af;
+    font-size: 11px;
+    padding: 3px 8px;
   }
 
   @media (max-width: 520px) {
