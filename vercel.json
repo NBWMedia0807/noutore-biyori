@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.noutorebiyori.com" }],
+      "destination": "https://noutorebiyori.com/:path*",
+      "permanent": true
+    }
+  ]
+}
