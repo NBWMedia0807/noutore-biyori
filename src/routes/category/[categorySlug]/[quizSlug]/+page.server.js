@@ -100,7 +100,9 @@ const buildSeo = ({ doc, path }) => {
       authorName: SITE.authorName,
       category: doc?.category?.title,
       relatedLinks
-    }
+    },
+    faqQuestion: portableTextToPlain(doc?.problemDescription),
+    faqAnswer: portableTextToPlain(doc?.answerExplanation)
   });
 };
 

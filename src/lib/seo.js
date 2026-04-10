@@ -202,6 +202,20 @@ const buildArticleSchema = ({
   };
 };
 
+const buildFaqSchema = (questionText, answerText) => ({
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: questionText,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: answerText
+      }
+    }
+  ]
+});
+
 const normalizeJsonLd = (schemas) => {
   if (!schemas) return [];
   if (!Array.isArray(schemas)) return [schemas];
@@ -220,7 +234,9 @@ export const createPageSeo = ({
   article,
   appendSiteName = true,
   additionalJsonLd = [],
-  descriptionFallbacks = []
+  descriptionFallbacks = [],
+  faqQuestion = '',
+  faqAnswer = ''
 } = {}) => {
   const canonical = toAbsoluteUrl(path);
   const sanitizedDescription = composeDescription(description, [
@@ -248,6 +264,9 @@ export const createPageSeo = ({
     ? article.relatedLinks.map((u) => toAbsoluteUrl(u)).filter(Boolean)
     : [];
 
+  const faqQuestionText = typeof faqQuestion === 'string' ? faqQuestion.trim() : '';
+  const faqAnswerText = typeof faqAnswer === 'string' ? faqAnswer.trim() : '';
+
   const jsonld = [
     buildWebSiteSchema(),
     buildOrganizationSchema(),
@@ -267,7 +286,10 @@ export const createPageSeo = ({
             authorUrl: articleAuthorUrl,
             category: articleSection,
             relatedLinks: articleRelatedLinks
-          })
+          }),
+          ...(faqQuestionText && faqAnswerText
+            ? [buildFaqSchema(faqQuestionText, faqAnswerText)]
+            : [])
         ]
       : []),
     ...normalizeJsonLd(additionalJsonLd)
