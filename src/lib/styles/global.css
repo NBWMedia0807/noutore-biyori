@@ -55,7 +55,7 @@ img {
 
 header {
   background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--primary-amber) 100%);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   box-shadow: 0 8px 24px rgba(255, 193, 7, 0.25);
   color: var(--dark-gray);
   position: relative; /* ハンバーガーの absolute 基準を header 全幅にする */
