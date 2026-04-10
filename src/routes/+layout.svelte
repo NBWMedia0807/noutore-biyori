@@ -154,7 +154,6 @@
         />
         <div class="title-section">
           <h1>脳トレ日和</h1>
-          <p class="subtitle">楽しく脳を鍛えましょう</p>
         </div>
       </a>
       <button
@@ -281,7 +280,10 @@
 
   /* ── ハンバーガーボタン ────────────── */
   .hamburger-btn {
-    flex-shrink: 0;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     justify-content: center;
