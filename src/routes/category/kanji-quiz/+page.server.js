@@ -17,7 +17,8 @@ import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
 
-const CATEGORY_SLUG = 'nandoku-kanji';
+// Sanity上に 'kanji-quiz' と 'nandoku-kanji' の2スラッグが混在しているため両方を対象にする
+const CATEGORY_SLUG = 'nandoku-kanji'; // カテゴリメタデータ取得用（正規スラッグ）
 const CATEGORY_TITLE = '難読漢字';
 
 const CATEGORY_QUERY = /* groq */ `
@@ -37,12 +38,13 @@ const parsePageParam = (value) => {
   return integer >= 1 ? integer : 1;
 };
 
+// クイズは 'kanji-quiz' と 'nandoku-kanji' 両スラッグを in 演算子で拾う
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
     && defined(slug.current)
     && defined(category._ref)
-    && category->slug.current == $slug
+    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -51,7 +53,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     && defined(category._ref)
-    && category->slug.current == $slug
+    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -60,7 +62,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     _type == "quiz"
     && defined(slug.current)
     && defined(category._ref)
-    && category->slug.current == $slug
+    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
     ${QUIZ_PUBLISHED_FILTER}
   ]),
 }`;
@@ -165,7 +167,6 @@ export const load = async (event) => {
     const pageCategory = category || { title: CATEGORY_TITLE, slug: CATEGORY_SLUG };
 
     const quizzesResult = await client.fetch(QUIZZES_BY_CATEGORY_QUERY, {
-      slug: CATEGORY_SLUG,
       offset,
       limit: CATEGORY_PAGE_SIZE
     });
