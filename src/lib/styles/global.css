@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 :root {
   --primary-yellow: #ffc107;
   --primary-amber: #f59e0b;
@@ -26,6 +31,8 @@ body {
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
   /* AdSense Offer Wall が padding を body に注入するのを無効化 */
   padding-top: 0 !important;
   padding-bottom: 0 !important;
@@ -249,7 +256,7 @@ footer {
 @media (min-width: 769px) {
   .nav-container {
     justify-content: center;
-    overflow-x: visible;  /* PCはスクロール不要 */
+    overflow-x: hidden;  /* PCはスクロール不要・はみ出しを隠す */
     touch-action: auto;
   }
 
