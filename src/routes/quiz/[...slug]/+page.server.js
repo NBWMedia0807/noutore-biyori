@@ -79,7 +79,9 @@ const buildSeo = ({ doc, path }) => {
       dateModified: modifiedAt,
       authorName: SITE.organization.name,
       category: doc?.category?.title
-    }
+    },
+    faqQuestion: portableTextToPlain(doc?.problemDescription),
+    faqAnswer: portableTextToPlain(doc?.answerExplanation)
   });
 };
 
