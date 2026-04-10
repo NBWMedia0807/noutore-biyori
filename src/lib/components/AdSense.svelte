@@ -136,14 +136,16 @@
   .adsense-container {
     position: relative;
     width: 100%;
+    max-width: 100%;
     display: block;
     text-align: center;
     /*
-     * overflow: hidden → visible に変更
-     * 「hidden」だとAdSenseが描画するiframeやバナー画像が
-     * コンテナ境界でクロップされる原因になるため削除。
+     * overflow-x: clip で横方向のはみ出しを防止しつつ、
+     * overflow-y: visible で縦方向の広告描画は許容する。
+     * hidden だとiframeがクロップされる原因になるため clip を使用。
      */
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
