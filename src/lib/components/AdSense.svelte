@@ -139,13 +139,7 @@
     max-width: 100%;
     display: block;
     text-align: center;
-    /*
-     * overflow-x: clip で横方向のはみ出しを防止しつつ、
-     * overflow-y: visible で縦方向の広告描画は許容する。
-     * hidden だとiframeがクロップされる原因になるため clip を使用。
-     */
-    overflow-x: clip;
-    overflow-y: visible;
+    overflow: hidden;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
@@ -160,6 +154,7 @@
   .adsense-container :global(ins.adsbygoogle) {
     display: block !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
