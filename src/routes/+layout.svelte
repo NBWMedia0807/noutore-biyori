@@ -345,6 +345,8 @@
     box-shadow: -4px 0 32px rgba(15, 23, 42, 0.2);
     overflow-y: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     padding: 1.5rem 1.25rem 2rem;
     display: flex;
     flex-direction: column;
