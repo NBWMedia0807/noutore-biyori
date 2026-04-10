@@ -157,19 +157,19 @@
           <p class="subtitle">楽しく脳を鍛えましょう</p>
         </div>
       </a>
+      <button
+        class="hamburger-btn"
+        type="button"
+        aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+        aria-expanded={menuOpen}
+        aria-controls="site-menu"
+        on:click={toggleMenu}
+      >
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+      </button>
     </div>
-    <button
-      class="hamburger-btn"
-      type="button"
-      aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
-      aria-expanded={menuOpen}
-      aria-controls="site-menu"
-      on:click={toggleMenu}
-    >
-      <span class="hamburger-bar" class:open={menuOpen}></span>
-      <span class="hamburger-bar" class:open={menuOpen}></span>
-      <span class="hamburger-bar" class:open={menuOpen}></span>
-    </button>
   </header>
 {/if}
 
@@ -274,12 +274,14 @@
     margin: 0.25rem 0;
   }
 
+  /* ── サイト名フォントサイズ ────────────── */
+  :global(.title-section h1) {
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+  }
+
   /* ── ハンバーガーボタン ────────────── */
   .hamburger-btn {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
