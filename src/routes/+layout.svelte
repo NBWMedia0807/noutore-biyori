@@ -46,6 +46,11 @@
   $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
   $: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
   let shouldSkipNextPageView = true;
+  let menuOpen = false;
+  const toggleMenu = () => { menuOpen = !menuOpen; };
+  const closeMenu = () => { menuOpen = false; };
+
+  afterNavigate(() => { menuOpen = false; });
 
   $: isErrorPage = !!currentPage.error;
 
@@ -137,23 +142,58 @@
 {#if ui.showHeader !== false}
   <header data-review-mode={reviewMode}>
     <div class="header-content">
-      <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
-        <img
-          src="/logo.svg"
-          alt="脳トレ日和"
-          class="logo-image"
-          width="80"
-          height="80"
-          decoding="async"
-          fetchpriority="high"
-        />
-        <div class="title-section">
-          <h1>脳トレ日和</h1>
-          <p class="subtitle">楽しく脳を鍛えましょう</p>
-        </div>
-      </a>
+      <p class="header-brand">© 2025年9月 脳トレ日和 / 毎日の脳トレで健康な生活を</p>
+      <button
+        class="hamburger-btn"
+        type="button"
+        aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+        aria-expanded={menuOpen}
+        aria-controls="site-menu"
+        on:click={toggleMenu}
+      >
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+        <span class="hamburger-bar" class:open={menuOpen}></span>
+      </button>
     </div>
   </header>
+{/if}
+
+{#if menuOpen}
+  <div class="menu-overlay" role="dialog" aria-modal="true" aria-label="サイトメニュー" id="site-menu">
+    <div class="menu-panel">
+      <button class="menu-close" type="button" aria-label="メニューを閉じる" on:click={closeMenu}>
+        <span aria-hidden="true">✕</span>
+      </button>
+
+      <nav class="menu-section" aria-label="カテゴリ">
+        <p class="menu-section-heading">カテゴリ</p>
+        <ul class="menu-list">
+          {#if data?.categories?.length}
+            {#each data.categories as c}
+              <li><a href="/category/{c.slug}" on:click={closeMenu}>{c.title}</a></li>
+            {/each}
+          {/if}
+          <li><a href="/category/kanji-quiz" on:click={closeMenu}>難読漢字</a></li>
+          <li><a href="/category/business-manner" on:click={closeMenu}>ビジネスマナー</a></li>
+          <li><a href="/category/number-quiz" on:click={closeMenu}>数字クイズ</a></li>
+        </ul>
+      </nav>
+
+      <nav class="menu-section" aria-label="メニュー">
+        <p class="menu-section-heading">メニュー</p>
+        <ul class="menu-list">
+          <li><a href="/privacy-policy" on:click={closeMenu}>プライバシーポリシー</a></li>
+          <li><a href="/about" on:click={closeMenu}>運営者情報</a></li>
+          <li><a href="/contact" on:click={closeMenu}>お問い合わせ</a></li>
+          <li><a href="/terms" on:click={closeMenu}>利用規約</a></li>
+          <li><a href="/disclaimer" on:click={closeMenu}>免責事項</a></li>
+          <li><a href="/about#author-info" on:click={closeMenu}>著者情報</a></li>
+        </ul>
+      </nav>
+    </div>
+    <button class="menu-backdrop" type="button" aria-label="メニューを閉じる" on:click={closeMenu}></button>
+  </div>
 {/if}
 
 {#if !ui.hideGlobalNavTabs}
@@ -230,11 +270,170 @@
     margin: 0.25rem 0;
   }
 
+  /* ── ヘッダー ────────────── */
+  .header-brand {
+    font-size: 0.85rem;
+    color: #78350f;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+  }
+
+  /* ── ハンバーガーボタン ────────────── */
+  .hamburger-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1.5px solid rgba(120, 53, 15, 0.25);
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+
+  .hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.75);
+  }
+
+  .hamburger-bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #78350f;
+    border-radius: 2px;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    transform-origin: center;
+  }
+
+  .hamburger-bar:nth-child(1).open {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .hamburger-bar:nth-child(2).open {
+    opacity: 0;
+  }
+  .hamburger-bar:nth-child(3).open {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* ── オーバーレイ ────────────── */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .menu-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .menu-panel {
+    position: relative;
+    z-index: 1;
+    width: min(320px, 88vw);
+    height: 100%;
+    background: #fff;
+    box-shadow: -4px 0 32px rgba(15, 23, 42, 0.2);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.5rem 1.25rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    animation: slideInRight 0.25s ease;
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .menu-close {
+    align-self: flex-end;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--light-amber);
+    border: 1.5px solid rgba(245, 158, 11, 0.4);
+    border-radius: 50%;
+    font-size: 1rem;
+    color: #78350f;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .menu-close:hover {
+    background: var(--light-orange);
+  }
+
+  .menu-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .menu-section-heading {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--medium-gray);
+    margin: 0 0 0.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--light-amber);
+  }
+
+  .menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-list li {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .menu-list li:last-child {
+    border-bottom: none;
+  }
+
+  .menu-list a {
+    display: flex;
+    align-items: center;
+    padding: 0.7rem 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark-gray);
+    text-decoration: none;
+    transition: color 0.15s ease, padding-left 0.15s ease;
+  }
+
+  .menu-list a:hover {
+    color: var(--primary-amber);
+    padding-left: 0.5rem;
+  }
+
   /* ── サイドレール広告 ────────────── */
   .side-rail {
     display: none;
     position: fixed;
-    top: 140px; /* header + sticky nav の高さ分だけ下げる */
+    top: 100px; /* slim header + sticky nav の高さ分 */
     width: 160px;
     z-index: 10; /* sticky nav (z-index:100) より下、コンテンツより上 */
   }
