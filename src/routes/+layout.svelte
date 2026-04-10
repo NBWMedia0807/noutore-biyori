@@ -281,7 +281,7 @@
   /* ── ハンバーガーボタン ────────────── */
   .hamburger-btn {
     position: absolute;
-    right: 0;
+    right: 1rem; /* header の padding と揃えて画面右端に寄せる */
     top: 50%;
     transform: translateY(-50%);
     display: flex;

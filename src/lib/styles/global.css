@@ -5,7 +5,7 @@
 }
 
 html {
-  overflow-x: clip; /* スマホでの横はみ出し防止（sticky要素に影響しない）*/
+  overflow-x: hidden;
 }
 
 :root {
@@ -30,6 +30,7 @@ body {
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* スマホ横余白防止（html と二重指定で確実に封じる） */
   /* AdSense Offer Wall が padding を body に注入するのを無効化 */
   padding-top: 0 !important;
   padding-bottom: 0 !important;
@@ -57,6 +58,7 @@ header {
   padding: 1rem;
   box-shadow: 0 8px 24px rgba(255, 193, 7, 0.25);
   color: var(--dark-gray);
+  position: relative; /* ハンバーガーの absolute 基準を header 全幅にする */
 }
 
 .header-content {
@@ -65,7 +67,6 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 
 .logo-section {
