@@ -17,8 +17,8 @@ import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
 
-const CATEGORY_SLUG = 'kanji-quiz';
-const CATEGORY_TITLE = '難読クイズ';
+const CATEGORY_SLUG = 'nandoku-kanji';
+const CATEGORY_TITLE = '難読漢字';
 
 const CATEGORY_QUERY = /* groq */ `
 *[_type == "category" && slug.current == $slug][0]{
