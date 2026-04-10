@@ -245,16 +245,6 @@
   <div class="footer-content">
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
-    <nav aria-label="法務および運営情報">
-      <ul class="footer-links">
-        <li><a href="/privacy-policy">プライバシーポリシー</a></li>
-        <li><a href="/about">運営者情報</a></li>
-        <li><a href="/contact">お問い合わせ</a></li>
-        <li><a href="/terms">利用規約</a></li>
-        <li><a href="/disclaimer">免責事項</a></li>
-        <li><a href="/about#author-info">著者情報</a></li>
-      </ul>
-    </nav>
   </div>
 </footer>
 
@@ -433,9 +423,12 @@
   .side-rail {
     display: none;
     position: fixed;
-    top: 100px; /* slim header + sticky nav の高さ分 */
+    top: 60px; /* slim header + sticky nav の高さ分 */
     width: 160px;
+    height: 0; /* flex コンテナに高さを与えない */
     z-index: 10; /* sticky nav (z-index:100) より下、コンテンツより上 */
+    flex: none;
+    overflow: visible;
   }
 
   .side-rail--left {
