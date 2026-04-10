@@ -275,7 +275,7 @@
 
   /* ── サイト名フォントサイズ ────────────── */
   :global(.title-section h1) {
-    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-size: clamp(1.45rem, 4.5vw, 2.1rem);
   }
 
   /* ── ハンバーガーボタン ────────────── */
