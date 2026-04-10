@@ -71,7 +71,8 @@
   };
 
   // noindex判定
-  $: noindexPage = isErrorPage || hasQuery || seo.noindex === true;
+  $: isAnswerPage = (currentPage?.url?.pathname ?? '').endsWith('/answer');
+  $: noindexPage = isErrorPage || hasQuery || isAnswerPage || seo.noindex === true;
 
   const SITE_NAME = '脳トレ日和';
 
