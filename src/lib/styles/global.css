@@ -23,6 +23,8 @@ body {
   background: var(--light-yellow);
   color: var(--dark-gray);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -158,6 +160,7 @@ header {
 }
 
 main {
+  flex: 1;
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 1rem 2rem;
