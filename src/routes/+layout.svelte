@@ -142,20 +142,34 @@
 {#if ui.showHeader !== false}
   <header data-review-mode={reviewMode}>
     <div class="header-content">
-      <p class="header-brand">© 2025年9月 脳トレ日和 / 毎日の脳トレで健康な生活を</p>
-      <button
-        class="hamburger-btn"
-        type="button"
-        aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
-        aria-expanded={menuOpen}
-        aria-controls="site-menu"
-        on:click={toggleMenu}
-      >
-        <span class="hamburger-bar" class:open={menuOpen}></span>
-        <span class="hamburger-bar" class:open={menuOpen}></span>
-        <span class="hamburger-bar" class:open={menuOpen}></span>
-      </button>
+      <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
+        <img
+          src="/logo.svg"
+          alt="脳トレ日和"
+          class="logo-image"
+          width="80"
+          height="80"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <div class="title-section">
+          <h1>脳トレ日和</h1>
+          <p class="subtitle">楽しく脳を鍛えましょう</p>
+        </div>
+      </a>
     </div>
+    <button
+      class="hamburger-btn"
+      type="button"
+      aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+      aria-expanded={menuOpen}
+      aria-controls="site-menu"
+      on:click={toggleMenu}
+    >
+      <span class="hamburger-bar" class:open={menuOpen}></span>
+      <span class="hamburger-bar" class:open={menuOpen}></span>
+      <span class="hamburger-bar" class:open={menuOpen}></span>
+    </button>
   </header>
 {/if}
 
@@ -260,17 +274,12 @@
     margin: 0.25rem 0;
   }
 
-  /* ── ヘッダー ────────────── */
-  .header-brand {
-    font-size: 0.85rem;
-    color: #78350f;
-    font-weight: 600;
-    margin: 0;
-    flex: 1;
-  }
-
   /* ── ハンバーガーボタン ────────────── */
   .hamburger-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -282,7 +291,6 @@
     border: 1.5px solid rgba(120, 53, 15, 0.25);
     border-radius: 8px;
     cursor: pointer;
-    flex-shrink: 0;
     transition: background 0.2s ease;
   }
 
@@ -423,7 +431,7 @@
   .side-rail {
     display: none;
     position: fixed;
-    top: 60px; /* slim header + sticky nav の高さ分 */
+    top: 140px; /* header + sticky nav の高さ分 */
     width: 160px;
     height: 0; /* flex コンテナに高さを与えない */
     z-index: 10; /* sticky nav (z-index:100) より下、コンテンツより上 */
