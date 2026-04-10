@@ -139,7 +139,7 @@
     max-width: 100%;
     display: block;
     text-align: center;
-    overflow: hidden;
+    overflow: visible; /* hidden だと広告左端がクリップされる。親の overflow-x:clip が横スクロールを防ぐ */
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
