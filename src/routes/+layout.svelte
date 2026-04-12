@@ -197,12 +197,11 @@
       <nav class="menu-section" aria-label="メニュー">
         <p class="menu-section-heading">メニュー</p>
         <ul class="menu-list">
+          <li><a href="/about" on:click={closeMenu}>会社概要</a></li>
           <li><a href="/privacy-policy" on:click={closeMenu}>プライバシーポリシー</a></li>
-          <li><a href="/about" on:click={closeMenu}>運営者情報</a></li>
-          <li><a href="/contact" on:click={closeMenu}>お問い合わせ</a></li>
           <li><a href="/terms" on:click={closeMenu}>利用規約</a></li>
           <li><a href="/disclaimer" on:click={closeMenu}>免責事項</a></li>
-          <li><a href="/about#author-info" on:click={closeMenu}>著者情報</a></li>
+          <li><a href="/contact" on:click={closeMenu}>お問い合わせ</a></li>
         </ul>
       </nav>
     </div>
