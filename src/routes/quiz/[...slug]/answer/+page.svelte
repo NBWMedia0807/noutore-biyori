@@ -1,52 +1,18 @@
 <script>
-  import { onMount } from 'svelte';
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
 
   export let data;
-  const { quiz, nextChallengePosts = [] } = data;
+  const { quiz } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
-  // 次の問題（スティッキーバー用）
-  const nextPost = nextChallengePosts[0] ?? null;
-  const nextPostHref = nextPost?.slug ? `/quiz/${nextPost.slug}` : null;
-
   // カテゴリリンク
   const categorySlug = quiz?.category?.slug ?? null;
   const categoryTitle = quiz?.category?.title ?? null;
   const categoryHref = categorySlug ? `/category/${categorySlug}` : null;
-
-  // 「さらにもう一問」セクションが画面内に入ったらスティッキーバーを非表示にする
-  let showStickyBar = false;
-  let nextChallengeEl;
-
-  onMount(() => {
-    if (!nextPostHref) return;
-
-    let delayPassed = false;
-    let sectionOffScreen = true; // 初期値: セクションはまだ画面外と仮定
-
-    const update = () => { showStickyBar = delayPassed && sectionOffScreen; };
-
-    const timer = setTimeout(() => {
-      delayPassed = true;
-      update();
-    }, 1200);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        sectionOffScreen = !entry.isIntersecting;
-        update();
-      },
-      { threshold: 0.2 }
-    );
-    if (nextChallengeEl) observer.observe(nextChallengeEl);
-
-    return () => { clearTimeout(timer); observer.disconnect(); };
-  });
 
   const escapeHtml = (value) =>
     value
@@ -173,7 +139,7 @@
   <AdSense slot="5428887502" />
 
   {#if nextChallengePosts.length > 0}
-    <section class="next-challenge" bind:this={nextChallengeEl}>
+    <section class="next-challenge">
       <h2 class="next-challenge__title">さらにもう一問！</h2>
       <div class="next-challenge__grid">
         {#each nextChallengePosts as post}
@@ -206,13 +172,6 @@
     headingId="related-answer-heading"
   />
 </main>
-
-{#if nextPostHref && showStickyBar}
-  <div class="sticky-next" role="complementary" aria-label="次の問題へ">
-    <span class="sticky-next__label">{nextPost.title}</span>
-    <a class="sticky-next__btn" href={nextPostHref}>次の問題へ <span aria-hidden="true">→</span></a>
-  </div>
-{/if}
 
 <style>
   .answer-page {
@@ -343,7 +302,12 @@
   }
 
   .back-nav {
-    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+
+  .back-nav .action-button {
+    width: 100%;
   }
 
   .closing {
@@ -467,59 +431,6 @@
     flex-shrink: 0;
   }
 
-  /* ── スティッキー「次の問題へ」バー ───── */
-  :global(.sticky-next) {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #1f2937ee, #111827f5);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    animation: slideUp 0.3s ease;
-  }
-
-  :global(.sticky-next__label) {
-    flex: 1;
-    font-size: 0.88rem;
-    color: #fef3c7;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-  }
-
-  :global(.sticky-next__btn) {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.6rem 1.4rem;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #78350f;
-    font-weight: 800;
-    font-size: 0.9rem;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: filter 0.2s ease, transform 0.2s ease;
-  }
-
-  :global(.sticky-next__btn:hover) {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
 
   @media (max-width: 640px) {
     .answer-page {
