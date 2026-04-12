@@ -3,7 +3,7 @@
   import AdSense from '$lib/components/AdSense.svelte';
 
   export let data;
-  const { quiz } = data;
+  const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
   const closingDefault =
