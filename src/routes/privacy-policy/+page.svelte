@@ -1,286 +1,219 @@
-<script>
-  import SectionIcon from '$lib/components/SectionIcon.svelte';
-</script>
+<div class="static-page">
+  <h1 class="page-title">プライバシーポリシー</h1>
 
-<div class="content-page">
-  <section class="page-content">
-    <h2 class="page-title">プライバシーポリシー</h2>
-    
-    <div class="policy-intro">
-      <p>脳トレ日和（以下「当サイト」）は、ユーザーの皆様の個人情報保護を重要視し、以下のプライバシーポリシーに従って適切に取り扱います。</p>
-      <p class="last-updated">最終更新日：2025年9月1日</p>
-    </div>
+  <div class="intro">
+    <p>合同会社NBWMedia（以下「当社」）が運営する脳トレ日和（以下「当サイト」）は、ユーザーの皆様の個人情報保護を重要視し、以下のプライバシーポリシーに従って適切に取り扱います。</p>
+    <p class="last-updated">最終更新日：2026年4月1日</p>
+  </div>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="text-icon" className="section-icon" /> 1. 収集する情報</h3>
-      <div class="policy-content">
-        <h4>1.1 自動的に収集される情報</h4>
-        <ul>
-          <li>IPアドレス</li>
-          <li>ブラウザの種類とバージョン</li>
-          <li>オペレーティングシステム</li>
-          <li>アクセス日時</li>
-          <li>参照元URL</li>
-          <li>利用されたページ</li>
-        </ul>
+  <section class="section">
+    <h2>1. 収集する情報</h2>
+    <h3>1.1 自動的に収集される情報</h3>
+    <ul>
+      <li>IPアドレス</li>
+      <li>ブラウザの種類とバージョン</li>
+      <li>オペレーティングシステム</li>
+      <li>アクセス日時</li>
+      <li>参照元URL</li>
+      <li>利用されたページ</li>
+    </ul>
 
-        <h4>1.2 お問い合わせフォームで収集する情報</h4>
-        <ul>
-          <li>お名前</li>
-          <li>メールアドレス</li>
-          <li>お問い合わせ内容</li>
-        </ul>
-      </div>
-    </div>
+    <h3>1.2 お問い合わせフォームで収集する情報</h3>
+    <ul>
+      <li>お名前</li>
+      <li>メールアドレス</li>
+      <li>お問い合わせ内容</li>
+    </ul>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="clock-icon" className="section-icon" /> 2. 情報の利用目的</h3>
-      <div class="policy-content">
-        <p>収集した情報は以下の目的で利用いたします：</p>
-        <ul>
-          <li>サイトの運営・改善</li>
-          <li>お問い合わせへの対応</li>
-          <li>サイトの利用状況の分析</li>
-          <li>セキュリティの確保</li>
-          <li>法的義務の履行</li>
-        </ul>
-      </div>
-    </div>
+  <section class="section">
+    <h2>2. 情報の利用目的</h2>
+    <p>収集した情報は以下の目的で利用いたします：</p>
+    <ul>
+      <li>サイトの運営・改善</li>
+      <li>お問い合わせへの対応</li>
+      <li>サイトの利用状況の分析</li>
+      <li>セキュリティの確保</li>
+      <li>法的義務の履行</li>
+    </ul>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="features-icon" className="section-icon" /> 3. 第三者への情報提供</h3>
-      <div class="policy-content">
-        <p>当サイトは、以下の場合を除き、収集した個人情報を第三者に提供することはありません：</p>
-        <ul>
-          <li>ユーザーの同意がある場合</li>
-          <li>法令に基づく場合</li>
-          <li>人の生命、身体または財産の保護のために必要がある場合</li>
-          <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合</li>
-        </ul>
-      </div>
-    </div>
+  <section class="section">
+    <h2>3. 第三者への情報提供</h2>
+    <p>当サイトは、以下の場合を除き、収集した個人情報を第三者に提供することはありません：</p>
+    <ul>
+      <li>ユーザーの同意がある場合</li>
+      <li>法令に基づく場合</li>
+      <li>人の生命、身体または財産の保護のために必要がある場合</li>
+      <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合</li>
+    </ul>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="trophy-icon" className="section-icon" /> 4. Cookieについて</h3>
-      <div class="policy-content">
-        <p>当サイトでは、サービスの向上のためにCookieを使用する場合があります。</p>
-        <h4>4.1 Cookieとは</h4>
-        <p>Cookieとは、ウェブサイトがユーザーのコンピュータに送信する小さなデータファイルです。</p>
-        
-        <h4>4.2 Cookieの利用目的</h4>
-        <ul>
-          <li>サイトの利用状況の分析</li>
-          <li>ユーザーの利便性向上</li>
-          <li>サイトの改善</li>
-        </ul>
+  <section class="section">
+    <h2>4. Cookieについて</h2>
+    <p>当サイトでは、サービスの向上のためにCookieを使用する場合があります。</p>
+    <h3>4.1 Cookieとは</h3>
+    <p>Cookieとは、ウェブサイトがユーザーのコンピュータに送信する小さなデータファイルです。</p>
+    <h3>4.2 Cookieの利用目的</h3>
+    <ul>
+      <li>サイトの利用状況の分析</li>
+      <li>ユーザーの利便性向上</li>
+      <li>サイトの改善</li>
+    </ul>
+    <h3>4.3 Cookieの無効化</h3>
+    <p>ブラウザの設定によりCookieを無効にすることができますが、一部機能が制限される場合があります。</p>
+  </section>
 
-        <h4>4.3 Cookieの無効化</h4>
-        <p>ブラウザの設定によりCookieを無効にすることができますが、一部機能が制限される場合があります。</p>
-      </div>
-    </div>
+  <section class="section">
+    <h2>5. 広告配信について</h2>
+    <p>当サイトでは、Google AdSenseなどの第三者配信による広告サービスを利用する場合があります。これらの広告配信事業者は、ユーザーの興味・関心に応じた広告を表示するため、Cookieを使用してアクセス情報を収集することがあります。</p>
+    <h3>5.1 パーソナライズ広告の無効化</h3>
+    <p>Googleによる広告パーソナライズを無効にしたい場合は、<a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">広告設定ページ</a>から設定を変更できます。</p>
+    <h3>5.2 Cookieの利用と第三者への情報提供</h3>
+    <p>Cookieによって取得される情報には、個人を特定できる情報は含まれません。Googleの広告サービスによるデータの取扱いについては、<a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Googleのポリシーと規約</a>をご確認ください。</p>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="game-icon" className="section-icon" /> 5. 広告配信について</h3>
-      <div class="policy-content">
-        <p>当サイトでは、ユーザーに有益な情報を提供し続けるための収益確保を目的として、Google AdSenseなどの第三者配信による広告サービスを利用する場合があります。これらの広告配信事業者は、ユーザーの興味・関心に応じた広告を表示するため、Cookieを使用してアクセス情報を収集することがあります。</p>
-        <h4>5.1 パーソナライズ広告の無効化</h4>
-        <p>Googleによる広告パーソナライズを無効にしたい場合は、<a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">広告設定ページ</a>から設定を変更できます。</p>
-        <h4>5.2 Cookieの利用と第三者への情報提供</h4>
-        <p>Cookieによって取得される情報には、氏名・住所・メールアドレス・電話番号など個人を特定できる情報は含まれません。また、Googleの広告サービスによるデータの取扱いについては、<a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Googleのポリシーと規約</a>をご確認ください。</p>
-      </div>
-    </div>
+  <section class="section">
+    <h2>6. セキュリティ</h2>
+    <p>当サイトは、収集した個人情報の安全性を確保するため、SSL暗号化通信の使用および適切なアクセス制御を実施しています。</p>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="brain-icon" className="section-icon" /> 6. セキュリティ</h3>
-      <div class="policy-content">
-        <p>当サイトは、収集した個人情報の安全性を確保するため、以下の対策を講じています：</p>
-        <ul>
-          <li>SSL暗号化通信の使用</li>
-          <li>適切なアクセス制御</li>
-          <li>定期的なセキュリティ監査</li>
-          <li>従業員への教育・研修</li>
-        </ul>
-      </div>
-    </div>
+  <section class="section">
+    <h2>7. 個人情報の開示・訂正・削除</h2>
+    <p>ユーザーは、当サイトが保有する自己の個人情報について、開示・訂正・削除・利用停止を求める権利を有します。ご希望の場合は、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="home-icon" className="section-icon" /> 7. 個人情報の開示・訂正・削除</h3>
-      <div class="policy-content">
-        <p>ユーザーは、当サイトが保有する自己の個人情報について、以下の権利を有します：</p>
-        <ul>
-          <li>開示を求める権利</li>
-          <li>訂正・追加・削除を求める権利</li>
-          <li>利用停止・消去を求める権利</li>
-        </ul>
-        <p>これらの権利を行使される場合は、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
-      </div>
-    </div>
+  <section class="section">
+    <h2>8. 外部サービスの利用</h2>
+    <h3>8.1 Google Analytics</h3>
+    <p>サイトの利用状況を分析するためにGoogle Analyticsを使用しています。詳細は<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googleのプライバシーポリシー</a>をご確認ください。</p>
+    <h3>8.2 Google AdSense</h3>
+    <p>広告配信の最適化や効果測定のためにGoogle AdSenseを利用する場合があります。詳細はGoogleの<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>をご確認ください。</p>
+  </section>
 
-    <div class="policy-section">
-      <h3><SectionIcon name="news-icon" className="section-icon" /> 8. 外部サービスの利用</h3>
-      <div class="policy-content">
-        <p>当サイトでは、以下の外部サービスを利用する場合があります：</p>
+  <section class="section">
+    <h2>9. 未成年者の個人情報</h2>
+    <p>当サイトは、13歳未満の児童から個人情報を意図的に収集することはありません。13歳未満の児童が個人情報を提供した場合は、保護者の方は<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
+  </section>
 
-        <h4>8.1 Google Analytics</h4>
-        <p>サイトの利用状況を分析するためにGoogle Analyticsを使用しています。Google Analyticsは、Cookieを使用してユーザーの情報を収集します。詳細は<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googleのプライバシーポリシー</a>をご確認ください。</p>
+  <section class="section">
+    <h2>10. プライバシーポリシーの変更</h2>
+    <p>当サイトは、必要に応じてプライバシーポリシーを変更する場合があります。重要な変更については、サイト上で通知いたします。</p>
+  </section>
 
-        <h4>8.2 Google AdSense</h4>
-        <p>広告配信の最適化や効果測定のためにGoogle AdSenseを利用する場合があります。Google AdSenseは、ユーザーの過去のアクセス情報に基づき広告を表示します。収集された情報の利用方法については、Googleの<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>をご確認ください。</p>
-      </div>
-    </div>
-
-    <div class="policy-section">
-      <h3><SectionIcon name="game-icon" className="section-icon" /> 9. 未成年者の個人情報</h3>
-      <div class="policy-content">
-        <p>当サイトは、13歳未満の児童から個人情報を意図的に収集することはありません。13歳未満の児童が個人情報を提供した場合は、保護者の方は<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
-      </div>
-    </div>
-
-    <div class="policy-section">
-      <h3><SectionIcon name="text-icon" className="section-icon" /> 10. プライバシーポリシーの変更</h3>
-      <div class="policy-content">
-        <p>当サイトは、必要に応じてプライバシーポリシーを変更する場合があります。重要な変更については、サイト上で通知いたします。</p>
-      </div>
-    </div>
-
-    <div class="policy-section">
-      <h3><SectionIcon name="clock-icon" className="section-icon" /> 11. お問い合わせ</h3>
-      <div class="policy-content">
-        <p>プライバシーポリシーに関するご質問やご意見がございましたら、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
-        
-        <div class="contact-info">
-          <h4>運営者情報</h4>
-          <table class="info-table">
-            <tbody>
-            <tr>
-              <th>サイト名</th>
-              <td>脳トレ日和</td>
-            </tr>
-            <tr>
-              <th>運営者</th>
-              <td>脳トレ日和運営チーム</td>
-            </tr>
-            <tr>
-              <th>運用開始月</th>
-              <td>2025年9月</td>
-            </tr>
-            <tr>
-              <th>連絡先</th>
-              <td><a href="/contact">お問い合わせフォーム</a></td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="back-to-home">
-      <a href="/" class="back-button">ホームに戻る</a>
-    </div>
+  <section class="section">
+    <h2>11. お問い合わせ</h2>
+    <p>プライバシーポリシーに関するご質問は、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <th>会社名</th>
+          <td>合同会社NBWMedia</td>
+        </tr>
+        <tr>
+          <th>運営メディア</th>
+          <td>脳トレ日和</td>
+        </tr>
+        <tr>
+          <th>運営者</th>
+          <td>脳トレ日和編集部</td>
+        </tr>
+        <tr>
+          <th>所在地</th>
+          <td>東京都中央区銀座1丁目12番4号</td>
+        </tr>
+        <tr>
+          <th>連絡先</th>
+          <td><a href="/contact">お問い合わせフォーム</a></td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 </div>
 
 <style>
-  .content-page {
-    max-width: 800px;
+  .static-page {
+    max-width: 760px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1rem 3rem;
   }
 
   .page-title {
-    font-size: 2.5rem;
-    color: #2d3436;
-    text-align: center;
-    margin-bottom: 2rem;
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    padding: 1.5rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(255, 235, 59, 0.1);
-  }
-
-  .policy-intro {
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-
-  .policy-intro p {
-    color: #636e72;
-    line-height: 1.8;
-    margin-bottom: 1rem;
-  }
-
-  .last-updated {
-    font-size: 0.9rem;
-    color: #a08000;
-    font-weight: 600;
-  }
-
-  .policy-section {
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-  }
-
-  .policy-section h3 {
-    font-size: 1.5rem;
-    color: #2d3436;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
     margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-bottom: 2px solid #fffacd;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #ffc107;
   }
 
-  :global(.section-icon) {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+  .intro {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
   }
 
-  .policy-content h4 {
-    color: #2d3436;
-    margin: 1.5rem 0 1rem 0;
-    font-size: 1.2rem;
-  }
-
-  .policy-content p {
-    color: #636e72;
+  .intro p {
+    color: #4b5563;
     line-height: 1.8;
-    margin-bottom: 1rem;
-  }
-
-  .policy-content ul {
-    color: #636e72;
-    line-height: 1.8;
-    margin-bottom: 1rem;
-    padding-left: 1.5rem;
-  }
-
-  .policy-content li {
     margin-bottom: 0.5rem;
   }
 
-  .policy-content a {
-    color: #a08000;
+  .last-updated {
+    font-size: 0.85rem;
+    color: #9ca3af;
+  }
+
+  .section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .section:last-child {
+    border-bottom: none;
+  }
+
+  .section h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid #ffc107;
+  }
+
+  .section h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 1rem 0 0.4rem;
+  }
+
+  .section p {
+    color: #4b5563;
+    line-height: 1.8;
+    margin-bottom: 0.75rem;
+  }
+
+  .section ul {
+    color: #4b5563;
+    line-height: 1.8;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .section li {
+    margin-bottom: 0.25rem;
+  }
+
+  .section a {
+    color: #d97706;
     text-decoration: none;
   }
 
-  .policy-content a:hover {
+  .section a:hover {
     text-decoration: underline;
-  }
-
-  .contact-info {
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin-top: 1.5rem;
   }
 
   .info-table {
@@ -289,25 +222,28 @@
     margin-top: 1rem;
   }
 
-  .info-table th, .info-table td {
-    padding: 0.8rem;
+  .info-table th,
+  .info-table td {
+    padding: 0.65rem 1rem;
     text-align: left;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.9rem;
+    vertical-align: top;
   }
 
   .info-table th {
-    background: rgba(255, 250, 205, 0.5);
-    color: #2d3436;
+    color: #1f2937;
     font-weight: 600;
-    width: 30%;
+    width: 35%;
+    background: #fafafa;
   }
 
   .info-table td {
-    color: #636e72;
+    color: #4b5563;
   }
 
   .info-table a {
-    color: #a08000;
+    color: #d97706;
     text-decoration: none;
   }
 
@@ -315,48 +251,15 @@
     text-decoration: underline;
   }
 
-  .back-to-home {
-    text-align: center;
-  }
-
-  .back-button {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffe082 0%, #fffacd 100%);
-    color: #a08000;
-    text-decoration: none;
-    padding: 1rem 2rem;
-    border-radius: 25px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
-  }
-
-  .back-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 235, 59, 0.4);
-  }
-
-  @media (max-width: 768px) {
-    .content-page {
-      padding: 1rem;
+  @media (max-width: 600px) {
+    .info-table th {
+      width: 40%;
     }
 
-    .page-title {
-      font-size: 2rem;
-      padding: 1rem;
-    }
-
-    .policy-section {
-      padding: 1.5rem;
-    }
-
-    .policy-section h3 {
-      font-size: 1.3rem;
-    }
-
-    .info-table th, .info-table td {
-      padding: 0.6rem;
+    .info-table th,
+    .info-table td {
+      padding: 0.5rem 0.6rem;
+      font-size: 0.85rem;
     }
   }
 </style>
-
