@@ -198,6 +198,7 @@
         <p class="menu-section-heading">メニュー</p>
         <ul class="menu-list">
           <li><a href="/about" on:click={closeMenu}>会社概要</a></li>
+          <li><a href="/author/editorial-team" on:click={closeMenu}>著者情報</a></li>
           <li><a href="/privacy-policy" on:click={closeMenu}>プライバシーポリシー</a></li>
           <li><a href="/terms" on:click={closeMenu}>利用規約</a></li>
           <li><a href="/disclaimer" on:click={closeMenu}>免責事項</a></li>
