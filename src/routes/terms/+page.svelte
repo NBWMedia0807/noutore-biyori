@@ -71,30 +71,6 @@
   <section class="section">
     <h2>第10条（お問い合わせ）</h2>
     <p>本規約に関するお問い合わせは、<a href="/contact">お問い合わせフォーム</a>よりご連絡ください。</p>
-    <table class="info-table">
-      <tbody>
-        <tr>
-          <th>会社名</th>
-          <td>合同会社NBWMedia</td>
-        </tr>
-        <tr>
-          <th>運営メディア</th>
-          <td>脳トレ日和</td>
-        </tr>
-        <tr>
-          <th>運営者</th>
-          <td>脳トレ日和編集部</td>
-        </tr>
-        <tr>
-          <th>所在地</th>
-          <td>東京都中央区銀座1丁目12番4号</td>
-        </tr>
-        <tr>
-          <th>連絡先</th>
-          <td><a href="/contact">お問い合わせフォーム</a></td>
-        </tr>
-      </tbody>
-    </table>
   </section>
 </div>
 
