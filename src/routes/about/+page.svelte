@@ -41,6 +41,10 @@
       </tbody>
     </table>
   </section>
+
+  <div class="back-to-home">
+    <a href="/" class="back-button">TOPページに戻る</a>
+  </div>
 </div>
 
 <style>
@@ -109,6 +113,28 @@
 
   .info-table a:hover {
     text-decoration: underline;
+  }
+
+  .back-to-home {
+    margin-top: 2.5rem;
+    text-align: center;
+  }
+
+  .back-button {
+    display: inline-block;
+    padding: 0.65rem 2rem;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #fcd34d;
+    transition: background 0.2s ease;
+  }
+
+  .back-button:hover {
+    background: #fde68a;
   }
 
   @media (max-width: 600px) {

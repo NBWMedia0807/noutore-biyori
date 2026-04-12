@@ -76,6 +76,8 @@ header {
   text-decoration: none;
   color: inherit;
   transition: transform 0.2s ease;
+  /* ロゴ(80px)+gap(1rem)分を右に足してサイト名テキストを中央に揃える */
+  padding-right: calc(80px + 1rem);
 }
 
 .logo-section:hover {
@@ -212,6 +214,8 @@ footer {
 @media (max-width: 768px) {
   .logo-section {
     flex-direction: row;
+    /* モバイルはロゴ64px+gap(1rem)分で補正 */
+    padding-right: calc(64px + 1rem);
   }
 
   .logo-image {
