@@ -12,6 +12,8 @@
   let adRef = null;
   /** @type {HTMLDivElement|null} */
   let containerRef = null;
+  /** @type {HTMLDivElement|null} */
+  let sentinelRef = null;
   let currentPath = '';
   /** @type {ReturnType<typeof setInterval>|null} */
   let pollTimer = null;
@@ -24,18 +26,20 @@
     currentPath = $page.url.pathname;
     if (initialized) {
       adPushed = false;
+      // containerを再度非表示に戻してから再観測
+      if (containerRef) containerRef.style.display = 'none';
       observeViewport();
     }
   }
 
   /**
-   * IntersectionObserver でコンテナがビューポートに近づいたらプッシュ。
-   * rootMargin を 400px に拡大してより早めにロードし、
-   * ビューアビリティ率・CPM を向上させる。
+   * センチネル要素（常にDOMに存在、0高さ）をIntersectionObserverで監視。
+   * containerRef（display:none）は非表示のためIO対象にできないため
+   * sentinelRefを代わりに監視する。
    */
   function observeViewport() {
     intersectionObs?.disconnect();
-    if (!containerRef) return;
+    if (!sentinelRef) return;
 
     intersectionObs = new IntersectionObserver(
       (entries) => {
@@ -45,9 +49,9 @@
           intersectionObs?.disconnect();
         }
       },
-      { rootMargin: '400px 0px' } // 200px → 400px に拡大してプリロードを早める
+      { rootMargin: '400px 0px' }
     );
-    intersectionObs.observe(containerRef);
+    intersectionObs.observe(sentinelRef);
   }
 
   function pushAd() {
@@ -79,11 +83,10 @@
     }
   }
 
-  /** 広告確定後にコンテナを表示・最小高さをリセット */
+  /** 広告確定後にコンテナを表示 */
   function reveal() {
     if (containerRef) {
-      containerRef.style.removeProperty('min-height');
-      containerRef.style.removeProperty('visibility');
+      containerRef.style.display = 'block';
     }
   }
 
@@ -120,6 +123,8 @@
   });
 </script>
 
+<!-- sentinelRef: 常にDOMに存在し高さ0。IntersectionObserver用ターゲット -->
+<div bind:this={sentinelRef} style="height:0;overflow:hidden;" aria-hidden="true"></div>
 <div class="adsense-container" bind:this={containerRef}>
   <ins
     bind:this={adRef}
@@ -137,18 +142,13 @@
     position: relative;
     width: 100%;
     max-width: 100%;
-    display: block;
+    /* display:none でスタート → フレックスgapへの影響ゼロ */
+    display: none;
     text-align: center;
-    overflow: visible; /* hidden だと広告左端がクリップされる。親の overflow-x:clip が横スクロールを防ぐ */
+    overflow: visible;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
-
-    /*
-     * 広告ロード前は非表示（AdSense側が ins に visibility:visible を設定するまで非表示）
-     * min-height は設定しない：ロード前の不可視空白（レイアウトズレ）を防ぐ
-     */
-    visibility: hidden;
   }
 
   .adsense-container :global(ins.adsbygoogle) {

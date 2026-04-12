@@ -458,7 +458,7 @@
   .hints-toggle .action-button,
   .to-answer .action-button,
   .category-nav .action-button {
-    width: min(100%, 320px);
+    width: 100%;
   }
 
   .action-button {
