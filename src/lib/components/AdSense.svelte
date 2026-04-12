@@ -12,8 +12,6 @@
   let adRef = null;
   /** @type {HTMLDivElement|null} */
   let containerRef = null;
-  /** @type {HTMLDivElement|null} */
-  let sentinelRef = null;
   let currentPath = '';
   /** @type {ReturnType<typeof setInterval>|null} */
   let pollTimer = null;
@@ -26,20 +24,22 @@
     currentPath = $page.url.pathname;
     if (initialized) {
       adPushed = false;
-      // containerを再度非表示に戻してから再観測
-      if (containerRef) containerRef.style.display = 'none';
+      // ナビゲーション後は折りたたみ状態に戻してから再観測
+      if (containerRef) {
+        containerRef.style.removeProperty('display');
+        containerRef.classList.remove('revealed');
+      }
       observeViewport();
     }
   }
 
   /**
-   * センチネル要素（常にDOMに存在、0高さ）をIntersectionObserverで監視。
-   * containerRef（display:none）は非表示のためIO対象にできないため
-   * sentinelRefを代わりに監視する。
+   * IntersectionObserver でコンテナがビューポートに近づいたらプッシュ。
+   * visibility:hidden なら IO は機能するのでコンテナ自身を観測する。
    */
   function observeViewport() {
     intersectionObs?.disconnect();
-    if (!sentinelRef) return;
+    if (!containerRef) return;
 
     intersectionObs = new IntersectionObserver(
       (entries) => {
@@ -51,7 +51,7 @@
       },
       { rootMargin: '400px 0px' }
     );
-    intersectionObs.observe(sentinelRef);
+    intersectionObs.observe(containerRef);
   }
 
   function pushAd() {
@@ -83,10 +83,10 @@
     }
   }
 
-  /** 広告確定後にコンテナを表示 */
+  /** 広告確定後: 折りたたみ解除して表示 */
   function reveal() {
     if (containerRef) {
-      containerRef.style.display = 'block';
+      containerRef.classList.add('revealed');
     }
   }
 
@@ -123,8 +123,6 @@
   });
 </script>
 
-<!-- sentinelRef: 常にDOMに存在し高さ0。IntersectionObserver用ターゲット -->
-<div bind:this={sentinelRef} style="height:0;overflow:hidden;" aria-hidden="true"></div>
 <div class="adsense-container" bind:this={containerRef}>
   <ins
     bind:this={adRef}
@@ -142,13 +140,28 @@
     position: relative;
     width: 100%;
     max-width: 100%;
-    /* display:none でスタート → フレックスgapへの影響ゼロ */
-    display: none;
+    display: block;
     text-align: center;
     overflow: visible;
     line-height: 0;
     font-size: 0;
     box-sizing: border-box;
+
+    /*
+     * ロード前: visibility:hidden + overflow:hidden + max-height:0 で
+     * 視覚的に非表示かつ flex gap の影響をゼロにする。
+     * display:block を維持することで Google AdSense が広告を描画できる。
+     */
+    visibility: hidden;
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  /* 広告ロード完了後に revealed クラスで解放 */
+  .adsense-container.revealed {
+    visibility: visible;
+    max-height: none;
+    overflow: visible;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
