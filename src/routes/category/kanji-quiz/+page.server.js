@@ -38,13 +38,17 @@ const parsePageParam = (value) => {
   return integer >= 1 ? integer : 1;
 };
 
-// クイズは 'kanji-quiz' と 'nandoku-kanji' 両スラッグを in 演算子で拾う
+// カテゴリ参照あり（旧形式）とスラッグプレフィックス（新形式: kanji-quiz/71）の両方を拾う
+const KANJI_CATEGORY_FILTER = `(
+    category->slug.current in ["kanji-quiz", "nandoku-kanji"]
+    || string::split(slug.current, "/")[0] in ["kanji-quiz", "nandoku-kanji"]
+  )`;
+
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
+    && ${KANJI_CATEGORY_FILTER}
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -52,8 +56,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "popular": *[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
+    && ${KANJI_CATEGORY_FILTER}
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
@@ -61,8 +64,7 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "total": count(*[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
+    && ${KANJI_CATEGORY_FILTER}
     ${QUIZ_PUBLISHED_FILTER}
   ]),
 }`;
