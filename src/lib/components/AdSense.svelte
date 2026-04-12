@@ -24,19 +24,11 @@
     currentPath = $page.url.pathname;
     if (initialized) {
       adPushed = false;
-      // ナビゲーション後は折りたたみ状態に戻してから再観測
-      if (containerRef) {
-        containerRef.style.removeProperty('display');
-        containerRef.classList.remove('revealed');
-      }
+      if (containerRef) containerRef.classList.remove('revealed');
       observeViewport();
     }
   }
 
-  /**
-   * IntersectionObserver でコンテナがビューポートに近づいたらプッシュ。
-   * visibility:hidden なら IO は機能するのでコンテナ自身を観測する。
-   */
   function observeViewport() {
     intersectionObs?.disconnect();
     if (!containerRef) return;
@@ -83,7 +75,6 @@
     }
   }
 
-  /** 広告確定後: 折りたたみ解除して表示 */
   function reveal() {
     if (containerRef) {
       containerRef.classList.add('revealed');
@@ -148,20 +139,16 @@
     box-sizing: border-box;
 
     /*
-     * ロード前: visibility:hidden + overflow:hidden + max-height:0 で
-     * 視覚的に非表示かつ flex gap の影響をゼロにする。
-     * display:block を維持することで Google AdSense が広告を描画できる。
+     * visibility:hidden で非表示スタート。
+     * display:block を維持することで Google が広告を描画できる。
+     * revealed クラス付与時に表示切替。
      */
     visibility: hidden;
-    max-height: 0;
-    overflow: hidden;
   }
 
-  /* 広告ロード完了後に revealed クラスで解放 */
+  /* 広告ロード完了後に表示 */
   .adsense-container.revealed {
     visibility: visible;
-    max-height: none;
-    overflow: visible;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
@@ -170,6 +157,7 @@
     max-width: 100% !important;
   }
 
+  /* unfilled 時は非表示 */
   .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
     display: none !important;
   }
