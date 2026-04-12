@@ -1,192 +1,109 @@
-<script>
-  import SectionIcon from '$lib/components/SectionIcon.svelte';
-</script>
+<div class="static-page">
+  <h1 class="page-title">会社概要</h1>
 
-<div class="content-page">
-  <section class="page-content">
-    <h2 class="page-title">脳トレ日和について</h2>
+  <section class="section">
+    <h2>サイトについて</h2>
+    <p>脳トレ日和は、日常の中で楽しく脳を鍛えられる脳トレ・クイズコンテンツを提供するWebメディアです。難読漢字・マッチ棒クイズ・数字クイズなど、幅広い問題を無料でご利用いただけます。</p>
+  </section>
 
-    <div class="about-section">
-      <h3><SectionIcon name="brain-icon" className="section-icon" /> サイトの目的</h3>
-      <p>脳トレ日和は、日常生活の中で楽しく脳を鍛えることを目的とした無料の脳トレーニングサイトです。特に高齢者の方々が気軽に楽しめるよう、シンプルで分かりやすいデザインと操作性を重視して作られています。</p>
-    </div>
-
-    <div class="about-section">
-      <h3><SectionIcon name="features-icon" className="section-icon" /> サイトの特徴</h3>
-      <ul class="features-list">
-        <li><strong>シンプルな操作</strong> - 誰でも迷わず使える直感的なインターフェース</li>
-        <li><strong>見やすいデザイン</strong> - 大きな文字と温かみのある色合いで目に優しい</li>
-        <li><strong>段階的な難易度</strong> - レベルシステムで徐々にステップアップ</li>
-        <li><strong>無料でご利用</strong> - 登録不要で完全無料でお楽しみいただけます</li>
-        <li><strong>レスポンシブ対応</strong> - スマートフォンやタブレットでも快適に利用可能</li>
-      </ul>
-    </div>
-
-    <div class="about-section">
-      <h3><SectionIcon name="home-icon" className="section-icon" /> こんな方におすすめ</h3>
-      <ul class="target-users">
-        <li>日々の脳トレーニングを習慣にしたい方</li>
-        <li>記憶力や計算力の維持・向上を図りたい方</li>
-        <li>空いた時間に手軽に楽しめる娯楽をお探しの方</li>
-        <li>スマートフォンやパソコンで気軽にゲームを楽しみたい方</li>
-        <li>家族みんなで一緒に楽しめるコンテンツをお探しの方</li>
-      </ul>
-    </div>
-
-    <div class="about-section" id="author-info">
-      <h3><SectionIcon name="news-icon" className="section-icon" /> 著者情報</h3>
-      <div class="author-link-wrap">
-        <a href="/author/editorial-team" class="author-link-button">著者・編集部について詳しくはこちら →</a>
-      </div>
-    </div>
-
-    <div class="about-section" id="operator-info">
-      <h3><SectionIcon name="news-icon" className="section-icon" /> 運営者情報</h3>
-      <div class="operator-info">
-        <table class="info-table">
-          <tbody>
-          <tr>
-            <th>サイト名</th>
-            <td>脳トレ日和</td>
-          </tr>
-          <tr>
-            <th>運営者</th>
-            <td>脳トレ日和運営チーム</td>
-          </tr>
-          <tr>
-            <th>運用開始月</th>
-            <td>2025年9月</td>
-          </tr>
-          <tr>
-            <th>所在地</th>
-            <td>日本</td>
-          </tr>
-          <tr>
-            <th>連絡先</th>
-            <td><a href="/contact">お問い合わせフォーム</a></td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="about-section">
-      <h3><SectionIcon name="clock-icon" className="section-icon" /> プライバシーと安全性</h3>
-      <p>当サイトでは、ユーザーの皆様の個人情報保護を最優先に考えています。</p>
-      <ul>
-        <li>個人情報の収集は最小限に留めています</li>
-        <li>SSL暗号化通信によりデータの安全性を確保</li>
-        <li>第三者への個人情報提供は行いません</li>
-        <li>詳細は<a href="/privacy-policy">プライバシーポリシー</a>をご確認ください</li>
-      </ul>
-    </div>
-
-    <div class="about-section">
-      <h3><SectionIcon name="trophy-icon" className="section-icon" /> 今後の展開</h3>
-      <p>脳トレ日和では、ユーザーの皆様からのフィードバックを基に、継続的にサイトの改善と新機能の追加を行っています。今後も更なる脳トレーニングコンテンツの充実を図り、より多くの方に愛されるサイトを目指します。</p>
-    </div>
-
-    <div class="cta-section">
-      <h3><SectionIcon name="game-icon" className="section-icon" /> さあ、始めましょう！</h3>
-      <p>脳トレ日和で楽しく脳を鍛えて、健康的な毎日を過ごしましょう。</p>
-      <a href="/" class="cta-button">ゲームを始める</a>
-    </div>
+  <section class="section">
+    <h2>会社概要</h2>
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <th>会社名</th>
+          <td>合同会社NBWMedia</td>
+        </tr>
+        <tr>
+          <th>運営メディア</th>
+          <td>脳トレ日和</td>
+        </tr>
+        <tr>
+          <th>運営者</th>
+          <td>脳トレ日和編集部</td>
+        </tr>
+        <tr>
+          <th>所在地</th>
+          <td>東京都中央区銀座1丁目12番4号</td>
+        </tr>
+        <tr>
+          <th>設立</th>
+          <td>2026年4月</td>
+        </tr>
+        <tr>
+          <th>事業内容</th>
+          <td>Webメディア運営・コンテンツ制作</td>
+        </tr>
+        <tr>
+          <th>連絡先</th>
+          <td><a href="/contact">お問い合わせフォーム</a></td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 </div>
 
 <style>
-  .content-page {
-    max-width: 800px;
+  .static-page {
+    max-width: 760px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1rem 3rem;
   }
 
   .page-title {
-    font-size: 2.5rem;
-    color: #2d3436;
-    text-align: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
     margin-bottom: 2rem;
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    padding: 1.5rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(255, 235, 59, 0.1);
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #ffc107;
   }
 
-  .about-section {
-    margin-bottom: 3rem;
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  .section {
+    margin-bottom: 2.5rem;
   }
 
-  .about-section h3 {
-    font-size: 1.5rem;
-    color: #2d3436;
+  .section h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1f2937;
     margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid #ffc107;
   }
 
-  :global(.section-icon) {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-  }
-
-  .about-section p {
-    color: #636e72;
+  .section p {
+    color: #4b5563;
     line-height: 1.8;
-    margin-bottom: 1rem;
-  }
-
-  .features-list, .target-users {
-    list-style: none;
-    padding: 0;
-  }
-
-  .features-list li, .target-users li {
-    color: #636e72;
-    line-height: 1.8;
-    margin-bottom: 0.8rem;
-    padding-left: 1.5rem;
-    position: relative;
-  }
-
-  .features-list li::before, .target-users li::before {
-    content: "✓";
-    position: absolute;
-    left: 0;
-    color: #a08000;
-    font-weight: bold;
   }
 
   .info-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1rem;
   }
 
-  .info-table th, .info-table td {
-    padding: 1rem;
+  .info-table th,
+  .info-table td {
+    padding: 0.75rem 1rem;
     text-align: left;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.95rem;
+    vertical-align: top;
   }
 
   .info-table th {
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    color: #2d3436;
+    color: #1f2937;
     font-weight: 600;
-    width: 30%;
+    width: 35%;
+    background: #fafafa;
   }
 
   .info-table td {
-    color: #636e72;
+    color: #4b5563;
   }
 
   .info-table a {
-    color: #a08000;
+    color: #d97706;
     text-decoration: none;
   }
 
@@ -194,71 +111,15 @@
     text-decoration: underline;
   }
 
-  .author-link-wrap {
-    text-align: center;
-    margin-top: 1rem;
-  }
-
-  .author-link-button {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffe082 0%, #fffacd 100%);
-    color: #a08000;
-    text-decoration: none;
-    padding: 1rem 2rem;
-    border-radius: 25px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
-  }
-
-  .author-link-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 235, 59, 0.4);
-  }
-
-  .cta-section {
-    text-align: center;
-    background: linear-gradient(135deg, #fffacd 0%, #fff0b3 100%);
-    padding: 2rem;
-    border-radius: 15px;
-    border: 2px solid rgba(255, 235, 59, 0.2);
-  }
-
-  .cta-button {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffe082 0%, #fffacd 100%);
-    color: #a08000;
-    text-decoration: none;
-    padding: 1rem 2rem;
-    border-radius: 25px;
-    font-weight: 600;
-    margin-top: 1rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
-  }
-
-  .cta-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 235, 59, 0.4);
-  }
-
-  @media (max-width: 768px) {
-    .content-page {
-      padding: 1rem;
+  @media (max-width: 600px) {
+    .info-table th {
+      width: 40%;
     }
 
-    .page-title {
-      font-size: 2rem;
-      padding: 1rem;
-    }
-
-    .about-section {
-      padding: 1.5rem;
-    }
-
-    .info-table th, .info-table td {
-      padding: 0.8rem;
+    .info-table th,
+    .info-table td {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.9rem;
     }
   }
 </style>
-
