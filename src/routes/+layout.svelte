@@ -4,7 +4,7 @@
   import { createPageSeo } from '$lib/seo.js';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { onMount } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
   import { env } from '$env/dynamic/public';
@@ -50,7 +50,22 @@
   const toggleMenu = () => { menuOpen = !menuOpen; };
   const closeMenu = () => { menuOpen = false; };
 
-  afterNavigate(() => { menuOpen = false; });
+  // vignette広告などでページが非表示→再表示された時にTOPへ戻すためのフラグ
+  let navigatingPending = false;
+
+  beforeNavigate(() => {
+    navigatingPending = true;
+  });
+
+  afterNavigate(({ type, to }) => {
+    navigatingPending = false;
+    menuOpen = false;
+    if (type !== 'popstate' && !to?.url?.hash) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+    }
+  });
 
   $: isErrorPage = !!currentPage.error;
 
@@ -86,6 +101,17 @@
     document.body.dataset.reviewMode = reviewMode ? 'true' : 'false';
   }
 
+  // ページ遷移後のGA計測
+  afterNavigate((navigation) => {
+    if (shouldSkipNextPageView) {
+      shouldSkipNextPageView = false;
+      return;
+    }
+    const path = navigation?.to?.url?.pathname ?? window.location.pathname;
+    const search = navigation?.to?.url?.search ?? window.location.search;
+    sendPageView(`${path}${search}`);
+  });
+
   onMount(() => {
     // サイドレール広告を初期化（十分な画面幅がある場合のみ）
     if (window.innerWidth >= 1540) {
@@ -95,21 +121,20 @@
 
     // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
     loadGtagOnce();
-    if (typeof window !== 'undefined') {
-      sendPageView(`${window.location.pathname}${window.location.search}`);
-    }
-    afterNavigate((navigation) => {
-      if (navigation?.type !== 'popstate' && !navigation?.to?.url?.hash) {
+    sendPageView(`${window.location.pathname}${window.location.search}`);
+
+    // vignette広告などの全画面広告を閉じた後にTOPへ戻す
+    // ナビゲーション中にページが非表示→再表示されたケースを補完
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && navigatingPending) {
+        navigatingPending = false;
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       }
-      if (shouldSkipNextPageView) {
-        shouldSkipNextPageView = false;
-        return;
-      }
-      const path = navigation?.to?.url?.pathname ?? window.location.pathname;
-      const search = navigation?.to?.url?.search ?? window.location.search;
-      sendPageView(`${path}${search}`);
-    });
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   });
 </script>
 
