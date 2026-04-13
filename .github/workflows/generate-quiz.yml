@@ -1,8 +1,6 @@
 name: マッチ棒クイズ 自動生成
 
 on:
-  schedule:
-    - cron: "0 0 * * 1"
   workflow_dispatch:
     inputs:
       num_quizzes:
