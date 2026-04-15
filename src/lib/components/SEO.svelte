@@ -31,7 +31,10 @@
 
   $: titleText = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
   $: descriptionText = description || SITE_DESCRIPTION;
-  $: imageUrl = image || `${SITE_URL}/logo.svg`;
+  // SVGはBingなど一部クローラーがOGP画像として認識しないためPNGを使用
+  $: imageUrl = image || `${SITE_URL}/logo.png`;
+  $: ogImageWidth = image ? imageWidth : 1024;
+  $: ogImageHeight = image ? imageHeight : 1024;
 
   $: jsonldScript = (() => {
     try {
@@ -108,11 +111,11 @@
   <meta property="og:title" content={titleText} />
   <meta property="og:description" content={descriptionText} />
   <meta property="og:image" content={imageUrl} />
-  {#if imageWidth}
-    <meta property="og:image:width" content={String(imageWidth)} />
+  {#if ogImageWidth}
+    <meta property="og:image:width" content={String(ogImageWidth)} />
   {/if}
-  {#if imageHeight}
-    <meta property="og:image:height" content={String(imageHeight)} />
+  {#if ogImageHeight}
+    <meta property="og:image:height" content={String(ogImageHeight)} />
   {/if}
   <meta property="og:image:alt" content={titleText} />
   <meta property="og:site_name" content={SITE_TITLE} />
