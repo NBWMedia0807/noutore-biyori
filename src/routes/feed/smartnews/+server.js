@@ -218,7 +218,7 @@ export async function GET() {
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
 			${advertisementXml}
 			${relatedLinksXml}
-			<snf:analytics><![CDATA[<script async src="https://www.googletagmanager.com/gtag/js?id=G-855Y7S6M95"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-855Y7S6M95');</script>]]></snf:analytics>
+			<snf:analytics><![CDATA[<script>(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-855Y7S6M95';document.head.appendChild(s);window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-855Y7S6M95');})();</script>]]></snf:analytics>
 		</item>
 		`.trim();
 		};
