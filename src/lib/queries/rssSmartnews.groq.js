@@ -14,7 +14,8 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   _createdAt,
   title,
   "slug": slug.current,
-  
+  seoDescription,
+
   // --- Post用フィールド ---
   body,
 

@@ -49,6 +49,18 @@ const convertNewlinesToBr = (html) => {
 	return html.replace(/\n/g, '<br>');
 };
 
+// PortableTextブロックからプレーンテキストを抽出
+const portableTextToPlainText = (blocks) => {
+	if (!Array.isArray(blocks)) return '';
+	return blocks
+		.map((block) => {
+			if (block._type !== 'block' || !Array.isArray(block.children)) return '';
+			return block.children.map((child) => child.text || '').join('');
+		})
+		.join(' ')
+		.trim();
+};
+
 // PortableTextを安全に変換するラッパー（null対策）
 const safePortableTextToHtml = (blocks) => {
 	if (!blocks) return '';
@@ -199,7 +211,7 @@ export async function GET() {
 			<link>${articleLink}</link>
 			<guid isPermaLink="true">${articleLink}</guid>
 			<pubDate>${pubDate}</pubDate>
-			<description><![CDATA[]]></description>
+			<description><![CDATA[${escapeXml(article.seoDescription || portableTextToPlainText(article.problemDescription).slice(0, 120))}]]></description>
 			<content:encoded><![CDATA[${safeContentHtml}]]></content:encoded>
 			<media:thumbnail url="${thumbnail}"/>
 			<dc:creator>脳トレ日和</dc:creator>
