@@ -218,7 +218,7 @@ export async function GET() {
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
 			${advertisementXml}
 			${relatedLinksXml}
-			<snf:analytics><![CDATA[<snf:AnalyticsCode type="GoogleAnalytics4">G-855Y7S6M95</snf:AnalyticsCode>]]></snf:analytics>
+			<snf:analytics><![CDATA[<snf:AnalyticsCode type="GoogleAnalytics">G-855Y7S6M95</snf:AnalyticsCode>]]></snf:analytics>
 		</item>
 		`.trim();
 		};
