@@ -218,6 +218,9 @@ export async function GET() {
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
 			${advertisementXml}
 			${relatedLinksXml}
+			<snf:analytics>
+				<snf:AnalyticsCode type="GoogleAnalytics4">G-855Y7S6M95</snf:AnalyticsCode>
+			</snf:analytics>
 		</item>
 		`.trim();
 		};
@@ -242,7 +245,7 @@ export async function GET() {
 	<snf:logo>
 		<url>${siteLogo}</url>
 	</snf:logo>
-	<ttl>60</ttl>
+	<ttl>15</ttl>
 	${items}
 </channel>
 </rss>`.trim();
