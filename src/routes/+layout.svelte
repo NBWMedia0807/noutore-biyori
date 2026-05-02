@@ -287,6 +287,7 @@
   <div class="footer-content">
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
+    <p class="footer-rights">合同会社NBWMedia All Rights Reserved.</p>
   </div>
 </footer>
 
@@ -300,6 +301,12 @@
   .footer-copy,
   .footer-tagline {
     margin: 0.25rem 0;
+  }
+
+  .footer-rights {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
   }
 
   /* ── サイト名フォントサイズ ────────────── */
