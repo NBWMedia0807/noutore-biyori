@@ -176,7 +176,7 @@ export async function GET() {
 					const title = escapeXml(quiz.title);
 					return `<snf:sponsoredLink link="${link}" thumbnail="${thumbnailUrl}" title="${title}" advertiser="${siteTitle}"/>`;
 				})
-				.join('\n\t\t\t');
+				.join('\n\t\t\t\t');
 
 			const advertisementXml = advertisementLinks
 				? `
