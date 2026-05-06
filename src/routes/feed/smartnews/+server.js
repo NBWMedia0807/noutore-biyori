@@ -7,7 +7,7 @@ const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
 const siteDescription =
 	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
-const siteLogo = 'https://noutorebiyori.com/logo.png';
+const siteLogo = 'https://noutorebiyori.com/logo-rss.png';
 
 // 最新クイズリスト（広告枠用）
 const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
@@ -85,13 +85,15 @@ export async function GET() {
 		}
 
 		const buildItem = async (article, globalLatestQuizzes) => {
-			// 記事URL
+			// 記事URL（guidは正規URL、linkはUTMパラメータ付き）
+			let articleGuid;
 			let articleLink;
 			if (article._type === 'quiz') {
-				articleLink = `${siteLink}quiz/${article.slug}`;
+				articleGuid = `${siteLink}quiz/${article.slug}`;
 			} else {
-				articleLink = `${siteLink}${article.slug}`;
+				articleGuid = `${siteLink}${article.slug}`;
 			}
+			articleLink = `${articleGuid}?utm_source=smartnews&utm_medium=feed&utm_campaign=smartnews`;
 
 			// 画像設定
 			const problemImageUrl = getImageUrl(article.problemImage);
@@ -209,7 +211,7 @@ export async function GET() {
 		<item>
 			<title>${escapeXml(article.title)}</title>
 			<link>${articleLink}</link>
-			<guid isPermaLink="true">${articleLink}</guid>
+			<guid isPermaLink="true">${articleGuid}</guid>
 			<pubDate>${pubDate}</pubDate>
 			<description><![CDATA[${escapeXml(article.seoDescription || portableTextToPlainText(article.problemDescription).slice(0, 120))}]]></description>
 			<content:encoded><![CDATA[${safeContentHtml}]]></content:encoded>
