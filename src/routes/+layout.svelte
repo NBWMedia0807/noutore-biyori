@@ -178,7 +178,11 @@
           fetchpriority="high"
         />
         <div class="title-section">
-          <h1>脳トレ日和</h1>
+          {#if $page.url.pathname === '/'}
+            <h1 class="site-title-text">脳トレ日和</h1>
+          {:else}
+            <span class="site-title-text">脳トレ日和</span>
+          {/if}
         </div>
       </a>
       <button
@@ -310,8 +314,11 @@
   }
 
   /* ── サイト名フォントサイズ ────────────── */
-  :global(.title-section h1) {
+  :global(.title-section .site-title-text) {
+    display: block;
     font-size: clamp(1.8rem, 5.5vw, 2.6rem);
+    font-weight: 800;
+    margin: 0;
   }
 
   /* ── ハンバーガーボタン ────────────── */
