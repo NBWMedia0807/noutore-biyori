@@ -410,6 +410,7 @@ export default defineType({
           ? title
           : '（無題のクイズ）'
 
+
       let dateLabel = '公開日未設定'
       if (publishedAt) {
         const date = new Date(publishedAt)
