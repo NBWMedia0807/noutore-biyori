@@ -4,7 +4,6 @@ import {visionTool} from '@sanity/vision'
 
 import {deskStructure} from './structure/index.js'
 import {schemaTypes} from './schemas'
-import {MobileScrollFix} from './components/MobileScrollFix.js'
 
 const projectId = process.env.SANITY_STUDIO_PROJECT_ID ?? 'quljge22'
 const dataset = process.env.SANITY_STUDIO_DATASET ?? 'production'
@@ -22,11 +21,6 @@ export default defineConfig({
       structure: (S) => deskStructure(S)
     })
   ],
-  studio: {
-    components: {
-      layout: MobileScrollFix
-    }
-  },
   schema: {
     types: schemaTypes
   }
