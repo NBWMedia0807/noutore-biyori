@@ -1,6 +1,5 @@
 // studio/schemas/quiz.js
 import {defineArrayMember, defineField, defineType} from 'sanity'
-import {QuizIcon} from '../icons.js'
 
 export default defineType({
   name: 'quiz',
@@ -401,15 +400,20 @@ export default defineType({
   preview: {
     select: {
       title: 'title',
+      media: 'problemImage',
+      fallbackMedia: 'questionImage',
       publishedAt: 'publishedAt',
       slug: 'slug.current'
     },
-    prepare({title, publishedAt, slug}) {
+    prepare({title, media, fallbackMedia, publishedAt, slug}) {
       const safeTitle =
         typeof title === 'string' && title.trim().length > 0
           ? title
           : '（無題のクイズ）'
 
+      const primaryMedia = media?.asset?._ref ? media : undefined
+      const legacyMedia = fallbackMedia?.asset?._ref ? fallbackMedia : undefined
+      const safeMedia = primaryMedia ?? legacyMedia
 
       let dateLabel = '公開日未設定'
       if (publishedAt) {
@@ -428,7 +432,7 @@ export default defineType({
       return {
         title: safeTitle,
         subtitle,
-        media: QuizIcon
+        media: safeMedia
       }
     }
   }

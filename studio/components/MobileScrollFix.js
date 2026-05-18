@@ -10,6 +10,7 @@ const CSS = `
 
 export function MobileScrollFix(props) {
   const {renderDefault} = props
+
   React.useEffect(() => {
     const style = document.createElement('style')
     style.id = 'mobile-scroll-fix'
