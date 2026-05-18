@@ -401,16 +401,19 @@ export default defineType({
     select: {
       title: 'title',
       media: 'problemImage',
+      fallbackMedia: 'questionImage',
       publishedAt: 'publishedAt',
       slug: 'slug.current'
     },
-    prepare({title, media, publishedAt, slug}) {
+    prepare({title, media, fallbackMedia, publishedAt, slug}) {
       const safeTitle =
         typeof title === 'string' && title.trim().length > 0
           ? title
           : '（無題のクイズ）'
 
-      const safeMedia = media?.asset?._ref ? media : undefined
+      const primaryMedia = media?.asset?._ref ? media : undefined
+      const legacyMedia = fallbackMedia?.asset?._ref ? fallbackMedia : undefined
+      const safeMedia = primaryMedia ?? legacyMedia
 
       let dateLabel = '公開日未設定'
       if (publishedAt) {
