@@ -1,6 +1,6 @@
 // src/lib/queries/rssTrill.groq.js
 
-const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
+const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
 
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
