@@ -1,21 +1,13 @@
 // src/lib/queries/rssTrill.groq.js
+// rssMerkystyle.groq.js と同じ構造で記述（動作確認済み構文を踏襲）
 
-const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
+const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
 
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
   !(_id in path("drafts.**")) &&
   ${PUBLISHED_DATETIME_FIELD} <= now()
 `;
-
-// select()の結果に{}プロジェクションは不可のため、各ブランチ内で展開する
-const ASSET_PROJECTION = /* groq */ `asset->{
-    _id,
-    url,
-    mimeType,
-    extension,
-    metadata{ dimensions{ width, height } }
-  }`;
 
 export const RSS_TRILL_QUERY = /* groq */ `
 *[
@@ -35,14 +27,43 @@ export const RSS_TRILL_QUERY = /* groq */ `
   answerExplanation,
   closingMessage,
 
-  "problemImage": problemImage{ alt, ${ASSET_PROJECTION} },
-  "answerImage": answerImage{ alt, ${ASSET_PROJECTION} },
   "mainImage": select(
-    defined(mainImage) => mainImage{ alt, ${ASSET_PROJECTION} },
-    defined(problemImage) => problemImage{ alt, ${ASSET_PROJECTION} },
-    defined(questionImage) => questionImage{ alt, ${ASSET_PROJECTION} },
+    defined(mainImage) => mainImage,
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
     null
-  ),
+  ){
+    alt,
+    asset->{
+      _id,
+      url,
+      mimeType,
+      extension,
+      metadata{ dimensions{ width, height } }
+    }
+  },
+
+  "problemImage": problemImage{
+    alt,
+    asset->{
+      _id,
+      url,
+      mimeType,
+      extension,
+      metadata{ dimensions{ width, height } }
+    }
+  },
+
+  "answerImage": answerImage{
+    alt,
+    asset->{
+      _id,
+      url,
+      mimeType,
+      extension,
+      metadata{ dimensions{ width, height } }
+    }
+  },
 
   "category": category->{ _id, title, name },
 
@@ -52,14 +73,24 @@ export const RSS_TRILL_QUERY = /* groq */ `
       ${PUBLISHED_FILTER} &&
       references(^.category._ref) &&
       slug.current != ^.slug.current
-    ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
+    ]
+    | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
       title,
       "slug": slug.current,
       "image": select(
-        defined(problemImage) => problemImage{ alt, ${ASSET_PROJECTION} },
-        defined(mainImage) => mainImage{ alt, ${ASSET_PROJECTION} },
+        defined(problemImage) => problemImage,
+        defined(mainImage) => mainImage,
         null
-      )
+      ){
+        alt,
+        asset->{
+          _id,
+          url,
+          mimeType,
+          extension,
+          metadata{ dimensions{ width, height } }
+        }
+      }
     }
   ) : []
 }
