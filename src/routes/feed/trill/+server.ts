@@ -1,6 +1,9 @@
 // src/routes/feed/trill/+server.ts
 import type { RequestHandler } from './$types';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+
+export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { buildImageUrl } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
