@@ -1,15 +1,24 @@
 // src/routes/feed/trill/+server.ts
 import type { RequestHandler } from './$types';
-import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
-
-export const prerender = false;
-export const config = { runtime: 'nodejs22.x' };
+import { createClient } from '@sanity/client';
+import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { buildImageUrl } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { portableTextToPlain } from '$lib/rss/portableText';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_TRILL_QUERY } from '$lib/queries/rssTrill.groq.js';
+
+export const prerender = false;
+export const config = { runtime: 'nodejs22.x' };
+
+// useCdn:false で api.sanity.io に直接接続（CDNのホスト許可リスト制限を回避）
+const sanityClient = createClient({
+	projectId: import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId,
+	dataset: import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset,
+	apiVersion: import.meta.env?.VITE_SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion,
+	useCdn: false
+});
 
 const SITE_NAME = '脳トレ日和'; // 脳トレ日和
 const SITE_URL = 'https://noutorebiyori.com';
@@ -357,7 +366,7 @@ const buildItemXml = (item: NonNullable<ReturnType<typeof toItem>>): string => {
 	return lines.join('\n');
 };
 
-const buildFeed = (docs: any[]): string => {
+const buildFeed = (docs: any[], debugError?: string): string => {
 	const now = toRfc822(new Date());
 	const feedUrl = `${SITE_URL}${FEED_PATH}`;
 	const itemsXml = docs
@@ -365,6 +374,9 @@ const buildFeed = (docs: any[]): string => {
 		.filter(Boolean)
 		.map((item) => buildItemXml(item!))
 		.join('\n');
+	const desc = debugError
+		? `[DEBUG ERROR] ${debugError}`
+		: CHANNEL.description;
 
 	return [
 		'<?xml version="1.0" encoding="UTF-8"?>',
@@ -375,7 +387,7 @@ const buildFeed = (docs: any[]): string => {
 		'<channel>',
 		`  <title>${escapeXml(CHANNEL.title)}</title>`,
 		`  <link>${escapeXml(CHANNEL.link)}</link>`,
-		`  <description>${escapeXml(CHANNEL.description)}</description>`,
+		`  <description>${escapeXml(desc)}</description>`,
 		`  <language>${escapeXml(CHANNEL.language)}</language>`,
 		`  <pubDate>${escapeXml(now)}</pubDate>`,
 		`  <lastBuildDate>${escapeXml(now)}</lastBuildDate>`,
@@ -393,17 +405,14 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 	};
 	setHeaders(headers);
 
-	if (shouldSkipSanityFetch()) {
-		return new Response(buildFeed([]), { status: 200, headers });
-	}
-
 	try {
-		const docs: any[] = await client.fetch(RSS_TRILL_QUERY);
+		const docs: any[] = await sanityClient.fetch(RSS_TRILL_QUERY);
 		const feed = buildFeed(Array.isArray(docs) ? docs : []);
 		return new Response(feed, { status: 200, headers });
 	} catch (err: any) {
-		console.error('[feed/trill] fetch error:', err?.message);
-		return new Response(buildFeed([]), {
+		const msg = err?.message ?? String(err);
+		console.error('[feed/trill] fetch error:', msg);
+		return new Response(buildFeed([], msg), {
 			status: 503,
 			headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' }
 		});
