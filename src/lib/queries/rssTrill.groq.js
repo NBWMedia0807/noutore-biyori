@@ -8,16 +8,14 @@ const PUBLISHED_FILTER = `
   ${PUBLISHED_DATETIME_FIELD} <= now()
 `;
 
-const IMAGE_FRAGMENT = /* groq */ `{
-  alt,
-  asset->{
+// select()の結果に{}プロジェクションは不可のため、各ブランチ内で展開する
+const ASSET_PROJECTION = /* groq */ `asset->{
     _id,
     url,
     mimeType,
     extension,
     metadata{ dimensions{ width, height } }
-  }
-}`;
+  }`;
 
 export const RSS_TRILL_QUERY = /* groq */ `
 *[
@@ -37,14 +35,14 @@ export const RSS_TRILL_QUERY = /* groq */ `
   answerExplanation,
   closingMessage,
 
-  "problemImage": problemImage${IMAGE_FRAGMENT},
-  "answerImage": answerImage${IMAGE_FRAGMENT},
+  "problemImage": problemImage{ alt, ${ASSET_PROJECTION} },
+  "answerImage": answerImage{ alt, ${ASSET_PROJECTION} },
   "mainImage": select(
-    defined(mainImage) => mainImage,
-    defined(problemImage) => problemImage,
-    defined(questionImage) => questionImage,
+    defined(mainImage) => mainImage{ alt, ${ASSET_PROJECTION} },
+    defined(problemImage) => problemImage{ alt, ${ASSET_PROJECTION} },
+    defined(questionImage) => questionImage{ alt, ${ASSET_PROJECTION} },
     null
-  )${IMAGE_FRAGMENT},
+  ),
 
   "category": category->{ _id, title, name },
 
@@ -58,10 +56,10 @@ export const RSS_TRILL_QUERY = /* groq */ `
       title,
       "slug": slug.current,
       "image": select(
-        defined(problemImage) => problemImage,
-        defined(mainImage) => mainImage,
+        defined(problemImage) => problemImage{ alt, ${ASSET_PROJECTION} },
+        defined(mainImage) => mainImage{ alt, ${ASSET_PROJECTION} },
         null
-      )${IMAGE_FRAGMENT}
+      )
     }
   ) : []
 }
