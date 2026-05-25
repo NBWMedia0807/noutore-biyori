@@ -1,21 +1,12 @@
 // src/routes/rss/merkystyle.xml/+server.ts
 import type { RequestHandler } from './$types';
-import { createClient } from '@sanity/client';
-import { shouldSkipSanityFetch } from '$lib/sanity.server.js';
-import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
 import { resolveImage } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
-
-const sanityClient = createClient({
-  projectId: import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId,
-  dataset: import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset,
-  apiVersion: import.meta.env?.VITE_SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion,
-  useCdn: false
-});
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
@@ -313,7 +304,7 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 
   try {
     console.log('[rss] groq >>\n', RSS_MERKYSTYLE_QUERY);
-    const docs: any[] = await sanityClient.fetch(RSS_MERKYSTYLE_QUERY);
+    const docs: any[] = await client.fetch(RSS_MERKYSTYLE_QUERY);
     console.log('[rss] fetched docs:', docs.length);
     const items = Array.isArray(docs) ? docs.map(toItem).filter(Boolean).slice(0, 30) : [];
     console.info('[rss] converted items:', items?.length ?? 0);
@@ -324,7 +315,7 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
     const fallbackFeed = buildFeed([]);
     return new Response(fallbackFeed, {
       status: 503,
-      headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' }
+      headers
     });
   }
 };

@@ -1,6 +1,6 @@
 // src/lib/queries/rssMerkystyle.groq.js
 
-const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
+const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
 
 // 公開判定（ドラフト除外＆公開日時チェック）
 const PUBLISHED_FILTER = `
@@ -30,7 +30,7 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata
+      metadata{ dimensions{ width, height } }
     }
   },
 
@@ -41,7 +41,7 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata
+      metadata{ dimensions{ width, height } }
     }
   },
 
@@ -52,19 +52,19 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata
+      metadata{ dimensions{ width, height } }
     }
   },
 
   thumbnailUrl,
 
   // ==== 関連クイズ ====
-  "related": select(
-    defined(category._ref) => *[
+  "related": defined(category._ref) ? (
+    *[
       _type == "quiz" &&
       ${PUBLISHED_FILTER} &&
       references(^.category._ref) &&
-      slug.current != ^.slug.current
+      slug.current != ^.slug
     ]
     | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
       title,
@@ -81,12 +81,11 @@ export const RSS_MERKYSTYLE_QUERY = /* groq */ `
           url,
           mimeType,
           extension,
-          metadata
+          metadata{ dimensions{ width, height } }
         }
       },
       thumbnailUrl
-    },
-    []
-  )
+    }
+  ) : []
 }
 `;
