@@ -67,8 +67,8 @@ export const RSS_TRILL_QUERY = /* groq */ `
 
   "category": category->{ _id, title, name },
 
-  "related": defined(category._ref) ? (
-    *[
+  "related": select(
+    defined(category._ref) => *[
       _type == "quiz" &&
       ${PUBLISHED_FILTER} &&
       references(^.category._ref) &&
@@ -91,7 +91,8 @@ export const RSS_TRILL_QUERY = /* groq */ `
           metadata
         }
       }
-    }
-  ) : []
+    },
+    []
+  )
 }
 `;
