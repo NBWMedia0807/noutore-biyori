@@ -53,7 +53,7 @@ export const RSS_TRILL_QUERY = /* groq */ `
       _type == "quiz" &&
       ${PUBLISHED_FILTER} &&
       references(^.category._ref) &&
-      slug.current != ^.slug
+      slug.current != ^.slug.current
     ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...3]{
       title,
       "slug": slug.current,

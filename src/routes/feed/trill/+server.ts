@@ -400,6 +400,9 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 		return new Response(feed, { status: 200, headers });
 	} catch (err: any) {
 		console.error('[feed/trill] fetch error:', err?.message);
-		return new Response(buildFeed([]), { status: 503, headers });
+		return new Response(buildFeed([]), {
+			status: 503,
+			headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' }
+		});
 	}
 };
