@@ -1,7 +1,7 @@
 // src/lib/queries/rssTrill.groq.js
 // rssMerkystyle.groq.js と同じ構造で記述（動作確認済み構文を踏襲）
 
-const PUBLISHED_DATETIME_FIELD = 'dateTime(coalesce(publishedAt, _createdAt))';
+const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
 
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
