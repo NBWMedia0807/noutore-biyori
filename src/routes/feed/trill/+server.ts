@@ -366,16 +366,14 @@ const buildItemXml = (item: NonNullable<ReturnType<typeof toItem>>): string => {
 	return lines.join('\n');
 };
 
-const buildFeed = (docs: any[], debugError?: string): string => {
+const buildFeed = (docs: any[]): string => {
 	const now = toRfc822(new Date());
 	const feedUrl = `${SITE_URL}${FEED_PATH}`;
-	const items = docs.map(toItem).filter(Boolean);
-	const itemsXml = items.map((item) => buildItemXml(item!)).join('\n');
-	const desc = debugError
-		? `[DEBUG ERROR] ${debugError}`
-		: items.length === 0
-			? `[DEBUG] docs=${docs.length} items=${items.length}`
-			: CHANNEL.description;
+	const itemsXml = docs
+		.map(toItem)
+		.filter(Boolean)
+		.map((item) => buildItemXml(item!))
+		.join('\n');
 
 	return [
 		'<?xml version="1.0" encoding="UTF-8"?>',
@@ -386,7 +384,7 @@ const buildFeed = (docs: any[], debugError?: string): string => {
 		'<channel>',
 		`  <title>${escapeXml(CHANNEL.title)}</title>`,
 		`  <link>${escapeXml(CHANNEL.link)}</link>`,
-		`  <description>${escapeXml(desc)}</description>`,
+		`  <description>${escapeXml(CHANNEL.description)}</description>`,
 		`  <language>${escapeXml(CHANNEL.language)}</language>`,
 		`  <pubDate>${escapeXml(now)}</pubDate>`,
 		`  <lastBuildDate>${escapeXml(now)}</lastBuildDate>`,
@@ -409,9 +407,8 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 		const feed = buildFeed(Array.isArray(docs) ? docs : []);
 		return new Response(feed, { status: 200, headers });
 	} catch (err: any) {
-		const msg = err?.message ?? String(err);
-		console.error('[feed/trill] fetch error:', msg);
-		return new Response(buildFeed([], msg), {
+		console.error('[feed/trill] fetch error:', err?.message ?? String(err));
+		return new Response(buildFeed([]), {
 			status: 503,
 			headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' }
 		});
