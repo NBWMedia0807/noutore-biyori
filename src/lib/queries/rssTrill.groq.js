@@ -39,7 +39,7 @@ export const RSS_TRILL_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata{ dimensions{ width, height } }
+      metadata
     }
   },
 
@@ -50,7 +50,7 @@ export const RSS_TRILL_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata{ dimensions{ width, height } }
+      metadata
     }
   },
 
@@ -61,7 +61,7 @@ export const RSS_TRILL_QUERY = /* groq */ `
       url,
       mimeType,
       extension,
-      metadata{ dimensions{ width, height } }
+      metadata
     }
   },
 
@@ -88,7 +88,7 @@ export const RSS_TRILL_QUERY = /* groq */ `
           url,
           mimeType,
           extension,
-          metadata{ dimensions{ width, height } }
+          metadata
         }
       }
     }
