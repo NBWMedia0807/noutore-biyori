@@ -369,14 +369,13 @@ const buildItemXml = (item: NonNullable<ReturnType<typeof toItem>>): string => {
 const buildFeed = (docs: any[], debugError?: string): string => {
 	const now = toRfc822(new Date());
 	const feedUrl = `${SITE_URL}${FEED_PATH}`;
-	const itemsXml = docs
-		.map(toItem)
-		.filter(Boolean)
-		.map((item) => buildItemXml(item!))
-		.join('\n');
+	const items = docs.map(toItem).filter(Boolean);
+	const itemsXml = items.map((item) => buildItemXml(item!)).join('\n');
 	const desc = debugError
 		? `[DEBUG ERROR] ${debugError}`
-		: CHANNEL.description;
+		: items.length === 0
+			? `[DEBUG] docs=${docs.length} items=${items.length}`
+			: CHANNEL.description;
 
 	return [
 		'<?xml version="1.0" encoding="UTF-8"?>',
