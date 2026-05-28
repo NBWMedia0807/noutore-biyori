@@ -105,6 +105,8 @@
     </section>
   {/if}
 
+  <p class="answer-note">※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>
+
   <nav class="back-nav">
     <a class="action-button secondary" href={questionPath}>
       <span aria-hidden="true">←</span>
@@ -261,6 +263,14 @@
 
   .section-body :global(p:last-child) {
     margin-bottom: 0;
+  }
+
+  .answer-note {
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.7;
+    text-align: center;
+    margin: 0;
   }
 
   .action-button {

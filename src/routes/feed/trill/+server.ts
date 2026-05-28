@@ -268,22 +268,6 @@ const buildContentHtml = (doc: any): string => {
 		if (closingHtml) parts.push(closingHtml);
 	}
 
-	// 「さらにもう一問！」セクション
-	// TRILL仕様: 画像は <figure> で独立、リンクは <p><a>、画像を <a> で囲まない
-	const related: any[] = Array.isArray(doc?.related) ? doc.related : [];
-	if (related.length > 0) {
-		parts.push('<h3>さらにもう一問！</h3>');
-		for (const entry of related) {
-			const slug = typeof entry?.slug === 'string' ? entry.slug.trim() : '';
-			const entryTitle = typeof entry?.title === 'string' ? entry.title.trim() : '';
-			if (!slug || !entryTitle) continue;
-			const link = getAbsoluteUrl(`/quiz/${slug}`);
-			const figure = renderTrillFigure(entry?.image, entryTitle);
-			if (figure) parts.push(figure);
-			parts.push(`<p><a href="${escapeAttr(link)}">▶ ${escapeXml(entryTitle)}</a></p>`);
-		}
-	}
-
 	return parts.join('');
 };
 
