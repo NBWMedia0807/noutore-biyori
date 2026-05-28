@@ -66,6 +66,8 @@
         </section>
       {/if}
 
+      <p class="answer-note">※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>
+
       <nav class="back-nav">
         <a href={`/quiz/spot-the-difference/article/${quiz._id}`}>問題ページに戻る</a>
       </nav>
@@ -125,6 +127,15 @@
   .answer-explanation p {
     white-space: pre-line;
     line-height: 1.8;
+    margin: 0;
+  }
+
+  .answer-note {
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.7;
+    text-align: center;
+    padding: 0 16px;
     margin: 0;
   }
 
