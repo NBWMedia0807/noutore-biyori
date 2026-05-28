@@ -72,7 +72,8 @@ const safePortableTextToHtml = (blocks) => {
 	}
 };
 
-export async function GET() {
+export async function GET({ request }) {
+	console.log(`[SmartNews Feed] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
 	try {
 		// 並列でデータを取得
 		const [articles, globalLatestQuizzes] = await Promise.all([
