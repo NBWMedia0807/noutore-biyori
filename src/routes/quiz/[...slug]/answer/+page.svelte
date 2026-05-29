@@ -1,6 +1,7 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
+  import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
 
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
@@ -114,22 +115,7 @@
     </a>
   </nav>
 
-  <a
-    class="x-banner"
-    href="https://x.com/noutorebiyori"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="脳トレ日和 公式Xアカウントをフォロー"
-  >
-    <img
-      src="/x-banner.jpg"
-      alt="脳トレ日和 公式Xはじめました！最新クイズやアハ体験をお届け フォローする"
-      loading="lazy"
-      decoding="async"
-      width="1024"
-      height="318"
-    />
-  </a>
+  <SnsFollowCard />
 
   <section class="closing">
     <div class="closing-card">
@@ -462,24 +448,4 @@
     }
   }
 
-  .x-banner {
-    display: block;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease;
-  }
-
-  .x-banner:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-  }
-
-  .x-banner img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
 </style>
