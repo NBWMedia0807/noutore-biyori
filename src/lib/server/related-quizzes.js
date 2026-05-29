@@ -4,44 +4,32 @@ import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 import {
   QUIZ_ORDER_BY_PUBLISHED,
   QUIZ_PUBLISHED_FILTER,
-  filterVisibleQuizzes
+  filterVisibleQuizzes,
 } from '$lib/queries/quizVisibility.js';
 
-const RELATED_QUERY = /* groq */ `{
-  "matchstick": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && slug.current != $slug
-    ${QUIZ_PUBLISHED_FILTER}
-    && isRepublished != true
-    && defined(category._ref)
-    && category->slug.current == "matchstick-quiz"
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "kanji": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && slug.current != $slug
-    ${QUIZ_PUBLISHED_FILTER}
-    && isRepublished != true
-    && defined(category._ref)
-    && category->slug.current in ["kanji-quiz", "nandoku-kanji"]
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "number": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && slug.current != $slug
-    ${QUIZ_PUBLISHED_FILTER}
-    && isRepublished != true
-    && defined(category._ref)
-    && category->slug.current == "number-quiz"
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...6]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  }
+// 関連記事は特定カテゴリに限定せず、全カテゴリの公開済み記事を新着順に取得する。
+// 取得後、JS側でカテゴリごとにグルーピングし「直近更新があるカテゴリ」のみを対象に
+// ラウンドロビンで詰めることで、いろいろなカテゴリをバランス良く掲載する。
+const RELATED_QUERY = /* groq */ `*[
+  _type == "quiz"
+  && defined(slug.current)
+  && slug.current != $slug
+  ${QUIZ_PUBLISHED_FILTER}
+  && isRepublished != true
+  && defined(category._ref)
+  && defined(category->slug.current)
+] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...150]{
+  ${QUIZ_PREVIEW_PROJECTION}
 }`;
+
+// このカテゴリの最新記事がこの日数より古い場合は「直近更新なし」とみなし掲載しない。
+const RECENT_CATEGORY_WINDOW_DAYS = 90;
+
+// 1カテゴリあたり最終的に掲載する最大件数（特定カテゴリ偏重を防ぐ）。
+const MAX_PER_CATEGORY = 4;
+
+// 関連記事として返す総件数。
+const TOTAL_RELATED = 12;
 
 const pickImage = (quiz) =>
   quiz?.problemImage?.asset?.url
@@ -85,8 +73,14 @@ const toPreview = (quiz) => {
     popularityScore: toMetric(quiz?.popularityScore),
     difficulty: quiz?.difficulty ?? null,
     readingTime: quiz?.readingTime ?? null,
-    textLength: toMetric(quiz?.textLength)
+    textLength: toMetric(quiz?.textLength),
   };
+};
+
+const toTimestamp = (value) => {
+  if (!value) return 0;
+  const ts = Date.parse(value);
+  return Number.isNaN(ts) ? 0 : ts;
 };
 
 export async function fetchRelatedQuizzes({ slug, categorySlug }) {
@@ -95,34 +89,52 @@ export async function fetchRelatedQuizzes({ slug, categorySlug }) {
   try {
     const payload = await client.fetch(RELATED_QUERY, { slug });
 
-    const matchstick = filterVisibleQuizzes(payload?.matchstick).map(toPreview).filter(Boolean);
-    const kanji = filterVisibleQuizzes(payload?.kanji).map(toPreview).filter(Boolean);
-    const number = filterVisibleQuizzes(payload?.number).map(toPreview).filter(Boolean);
+    // 公開済みのみ＆新着順（クエリで order 済み）の記事一覧
+    const quizzes = filterVisibleQuizzes(payload).map(toPreview).filter(Boolean);
 
+    // カテゴリごとにグルーピング（各グループ内は新着順を維持）
+    const groups = new Map();
+    for (const quiz of quizzes) {
+      const cslug = quiz.category?.slug;
+      if (!cslug) continue;
+      let group = groups.get(cslug);
+      if (!group) {
+        group = { slug: cslug, latest: 0, items: [] };
+        groups.set(cslug, group);
+      }
+      group.items.push(quiz);
+      const ts = toTimestamp(quiz.publishedAt);
+      if (ts > group.latest) group.latest = ts;
+    }
+
+    // 「直近更新があるカテゴリ」だけに絞り込む（更新が止まったカテゴリは掲載しない）
+    const now = Date.now();
+    const recentThreshold = now - RECENT_CATEGORY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    let activeGroups = [...groups.values()].filter((group) => group.latest >= recentThreshold);
+
+    // 全カテゴリが閾値外の場合でも関連記事が空にならないようフォールバック
+    if (activeGroups.length === 0) {
+      activeGroups = [...groups.values()];
+    }
+
+    // 更新が新しいカテゴリ順に並べ、現在の記事と同じカテゴリは先頭に寄せる
+    activeGroups.sort((a, b) => b.latest - a.latest);
+    if (categorySlug) {
+      const idx = activeGroups.findIndex((group) => group.slug === categorySlug);
+      if (idx > 0) {
+        const [current] = activeGroups.splice(idx, 1);
+        activeGroups.unshift(current);
+      }
+    }
+
+    // 各カテゴリから1件ずつ順番に取り出すラウンドロビンで、
+    // 多様なカテゴリをバランス良く TOTAL_RELATED 件まで詰める
     const seen = new Set();
     const result = [];
-
-    // 各カテゴリから最大4件ずつ取得
-    const appendItems = (source, perCategory) => {
-      let added = 0;
-      for (const item of source) {
-        if (!item?.slug || seen.has(item.slug) || added >= perCategory) continue;
-        seen.add(item.slug);
-        result.push(item);
-        added++;
-      }
-    };
-
-    appendItems(matchstick, 4);
-    appendItems(kanji, 4);
-    appendItems(number, 4);
-
-    // 12件に満たない場合は各カテゴリから追加補充
-    const TOTAL = 12;
-    if (result.length < TOTAL) {
-      const all = [...matchstick, ...kanji, ...number];
-      for (const item of all) {
-        if (result.length >= TOTAL) break;
+    for (let round = 0; round < MAX_PER_CATEGORY && result.length < TOTAL_RELATED; round++) {
+      for (const group of activeGroups) {
+        if (result.length >= TOTAL_RELATED) break;
+        const item = group.items[round];
         if (!item?.slug || seen.has(item.slug)) continue;
         seen.add(item.slug);
         result.push(item);

@@ -10,11 +10,6 @@
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
-  // カテゴリリンク
-  const categorySlug = quiz?.category?.slug ?? null;
-  const categoryTitle = quiz?.category?.title ?? null;
-  const categoryHref = categorySlug ? `/category/${categorySlug}` : null;
-
   const escapeHtml = (value) =>
     value
       .replace(/&/g, '&amp;')
@@ -78,8 +73,11 @@
   <header class="quiz-header">
     <p class="quiz-meta" aria-hidden="true">答え合わせ</p>
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
-    <p class="quiz-subtitle">なぜそうなるかを知ると、次の挑戦がもっと楽しくなります。</p>
   </header>
+
+  <!-- タイトル直下: レクタングルバナー広告（必須配信） -->
+  <!-- TODO: AdSense管理画面で新規発行したレクタングル広告ユニットのスロットIDに差し替え -->
+  <AdSense slot="0000000000" />
 
   {#if quiz.answerImage?.asset?.url}
     <div class="answer-image">
@@ -144,13 +142,6 @@
     </section>
   {/if}
 
-  {#if categoryHref && categoryTitle}
-    <a class="category-cta" href={categoryHref}>
-      <span class="category-cta__label">📂 {categoryTitle}の問題をもっと見る</span>
-      <span class="category-cta__arrow" aria-hidden="true">→</span>
-    </a>
-  {/if}
-
   <!-- 正解ページ: 関連記事上の広告 -->
   <AdSense slot="1724332823" />
 
@@ -196,12 +187,6 @@
     margin-bottom: 12px;
     color: #7c2d12;
     font-weight: 800;
-  }
-
-  .quiz-subtitle {
-    font-size: 1rem;
-    color: #9a3412;
-    opacity: 0.9;
   }
 
   .answer-image {
@@ -395,43 +380,20 @@
     overflow: hidden;
   }
 
-  /* ── カテゴリCTA ─────────────────────── */
-  .category-cta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 18px 24px;
-    background: linear-gradient(135deg, rgba(253, 224, 71, 0.4), rgba(251, 191, 36, 0.3));
-    border: 1.5px solid rgba(245, 158, 11, 0.45);
-    border-radius: 16px;
-    text-decoration: none;
-    color: #78350f;
-    font-weight: 700;
-    font-size: 1rem;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+  /* 広告がまだ表示されていない（読み込み中／未配信）枠が
+     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ） */
+  .answer-page :global(.adsense-container:not(.revealed)) {
+    margin-top: -24px;
   }
-
-  .category-cta:hover {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.55), rgba(245, 158, 11, 0.45));
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.22);
-  }
-
-  .category-cta__label {
-    flex: 1;
-  }
-
-  .category-cta__arrow {
-    font-size: 1.1rem;
-    flex-shrink: 0;
-  }
-
 
   @media (max-width: 640px) {
     .answer-page {
       margin-top: 16px;
       gap: 20px;
+    }
+
+    .answer-page :global(.adsense-container:not(.revealed)) {
+      margin-top: -20px;
     }
 
     .quiz-header {

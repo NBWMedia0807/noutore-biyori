@@ -57,10 +57,11 @@
     navigatingPending = true;
   });
 
-  afterNavigate(({ type, to }) => {
+  afterNavigate(({ to }) => {
     navigatingPending = false;
     menuOpen = false;
-    if (type !== 'popstate' && !to?.url?.hash) {
+    // ページ読み込み・遷移後は必ずTOPを表示する（ページ内アンカー遷移は除く）
+    if (!to?.url?.hash) {
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       });
@@ -113,6 +114,13 @@
   });
 
   onMount(() => {
+    // リロードや直リンクでの読み込み時にブラウザが前回のスクロール位置を
+    // 復元しないようにし、必ずページのTOPから表示されるようにする
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
     // サイドレール広告を初期化（十分な画面幅がある場合のみ）
     if (window.innerWidth >= 1540) {
       mountSideRailAd(leftRailRef);
