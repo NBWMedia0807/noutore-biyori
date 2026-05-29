@@ -267,6 +267,7 @@ const buildContentHtml = (doc: any): string => {
 		if (answerHtml) parts.push(answerHtml);
 		if (closingHtml) parts.push(closingHtml);
 	}
+	parts.push('<p>※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>');
 
 	return parts.join('');
 };
