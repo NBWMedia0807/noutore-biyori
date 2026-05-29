@@ -198,6 +198,10 @@
     {/if}
   </header>
 
+  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
+  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
+  <AdSense slot="4170928887" />
+
   {#if problemImageSet?.src}
     <div class="problem-image">
       <picture>
@@ -434,6 +438,12 @@
     margin-bottom: 0;
   }
 
+  /* 広告がまだ表示されていない（読み込み中／未配信）枠が
+     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ） */
+  .quiz-detail :global(.adsense-container:not(.revealed)) {
+    margin-top: -24px;
+  }
+
   .hints-toggle,
   .to-answer,
   .category-nav {
@@ -545,6 +555,10 @@
     .quiz-detail {
       margin-top: 16px;
       gap: 20px;
+    }
+
+    .quiz-detail :global(.adsense-container:not(.revealed)) {
+      margin-top: -20px;
     }
 
     .quiz-header {
