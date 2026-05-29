@@ -92,7 +92,7 @@
   }
 
   .sns-btn.threads {
-    background: linear-gradient(135deg, #833ab4 0%, #e1306c 50%, #f77737 100%);
+    background: #000;
   }
 
   @media (max-width: 400px) {
