@@ -119,7 +119,19 @@
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    const scrollToTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    scrollToTop();
+
+    // 全画面広告（vignette/インタースティシャル/オファーウォール）は閉じる際に
+    // スクロールロックを解除して「広告表示前の位置」へ復元するため、TOPに戻らない。
+    // 復元処理に勝てるよう、複数回に分けてTOPへ戻す。
+    const forceScrollTop = () => {
+      scrollToTop();
+      requestAnimationFrame(scrollToTop);
+      setTimeout(scrollToTop, 60);
+      setTimeout(scrollToTop, 200);
+      setTimeout(scrollToTop, 500);
+    };
 
     // サイドレール広告を初期化（十分な画面幅がある場合のみ）
     if (window.innerWidth >= 1540) {
@@ -131,16 +143,37 @@
     loadGtagOnce();
     sendPageView(`${window.location.pathname}${window.location.search}`);
 
-    // vignette広告などの全画面広告を閉じた後にTOPへ戻す
-    // ナビゲーション中にページが非表示→再表示されたケースを補完
+    // AdSenseのインタースティシャル(vignette)は表示時にURLへ #google_vignette を付与する。
+    // ただし pushState による付与は hashchange/popstate を発火しないため、イベント監視に
+    // 加えてポーリングでも状態を確認し、「開いていた→閉じた」遷移でTOPへ戻す。
+    let vignetteWasOpen = window.location.hash.includes('google_vignette');
+    const checkVignette = () => {
+      const open = window.location.hash.includes('google_vignette');
+      if (open) {
+        vignetteWasOpen = true;
+      } else if (vignetteWasOpen) {
+        vignetteWasOpen = false;
+        forceScrollTop();
+      }
+    };
+    window.addEventListener('hashchange', checkVignette);
+    window.addEventListener('popstate', checkVignette);
+    const vignettePoll = setInterval(checkVignette, 400);
+
+    // オファーウォール等でフォーカスが外れて戻った場合や、タブ非表示→再表示時の補完。
+    // 直前にページ遷移していた場合のみ（＝広告を挟んだ遷移とみなして）TOPへ戻す。
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && navigatingPending) {
         navigatingPending = false;
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        forceScrollTop();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      window.removeEventListener('hashchange', checkVignette);
+      window.removeEventListener('popstate', checkVignette);
+      clearInterval(vignettePoll);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   });
