@@ -198,9 +198,9 @@
     {/if}
   </header>
 
-  <!-- タイトル直下: レクタングルバナー広告（必須配信） -->
-  <!-- TODO: AdSense管理画面で新規発行したレクタングル広告ユニットのスロットIDに差し替え -->
-  <AdSense slot="0000000000" />
+  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
+  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
+  <AdSense slot="4170928887" />
 
   {#if problemImageSet?.src}
     <div class="problem-image">

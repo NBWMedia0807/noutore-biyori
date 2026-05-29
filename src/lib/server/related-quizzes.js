@@ -23,7 +23,7 @@ const RELATED_QUERY = /* groq */ `*[
 }`;
 
 // このカテゴリの最新記事がこの日数より古い場合は「直近更新なし」とみなし掲載しない。
-const RECENT_CATEGORY_WINDOW_DAYS = 90;
+const RECENT_CATEGORY_WINDOW_DAYS = 30;
 
 // 1カテゴリあたり最終的に掲載する最大件数（特定カテゴリ偏重を防ぐ）。
 const MAX_PER_CATEGORY = 4;
