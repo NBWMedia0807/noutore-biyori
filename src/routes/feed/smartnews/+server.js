@@ -19,22 +19,6 @@ const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_
   mainImage
 }`;
 
-// 「さらにもう一問！」(本文内の画像付き外部リンク) を出力するかどうかを判定する。
-//
-// この本文内画像リンクは SmartFormat 外部リンクガイドライン NG事例4
-//（最終パラグラフ以降に画像でクイズを出題し遷移させる）に該当するため、
-// SmartNews には絶対に出してはいけない。
-//
-// 【最重要】SmartNews が登録している素の URL (/feed/smartnews) では、
-// この関数は必ず false を返す（= 常に準拠版）。出力可否を URL のクエリだけで決め、
-// User-Agent 等の推測判定は一切行わない。これにより、CDN キャッシュの取り違えや
-// UA の偽装・変更があっても、SmartNews 側に違反版が出る経路が構造的に存在しない。
-//
-// ママテナ／イチオシ等のパートナーには、明示的に ?variant=full を付けた
-// 別 URL（キャッシュキーも別）を渡してもらうことで「さらにもう一問！」を表示する。
-const resolveIncludeNextChallenge = ({ variant = '' }) =>
-	typeof variant === 'string' && variant.toLowerCase() === 'full';
-
 // クイズの canonical URL（カテゴリ別 URL）を生成するヘルパー。
 // サイト側 (/quiz/[...slug]) は単一セグメントのスラッグを
 // /category/{categorySlug}/{slug} へ 308 リダイレクトしているため、
@@ -103,15 +87,8 @@ const safePortableTextToHtml = (blocks) => {
 	}
 };
 
-export async function GET({ request, url }) {
-	const userAgent = request.headers.get('user-agent') ?? 'unknown';
-	const variant = url.searchParams.get('variant') ?? '';
-	// 「さらにもう一問！」(NG事例4 に該当する本文内画像リンク) を出すかどうか。
-	// 判定は URL のクエリ(?variant=full)のみ。素の URL は常に false（= SmartNews 準拠）。
-	const includeNextChallenge = resolveIncludeNextChallenge({ variant });
-	console.log(
-		`[SmartNews Feed] User-Agent: ${userAgent} / variant: ${variant || 'none'} / includeNextChallenge: ${includeNextChallenge}`
-	);
+export async function GET({ request }) {
+	console.log(`[SmartNews Feed] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
 	try {
 		// 並列でデータを取得
 		const [articles, globalLatestQuizzes] = await Promise.all([
@@ -138,7 +115,7 @@ export async function GET({ request, url }) {
 			return true;
 		});
 
-		const buildItem = async (article, globalLatestQuizzes, includeNextChallenge) => {
+		const buildItem = async (article, globalLatestQuizzes) => {
 			// 記事URL（クイズはカテゴリ別 canonical URL を使用）
 			let articleLink;
 			if (article._type === 'quiz') {
@@ -187,37 +164,26 @@ export async function GET({ request, url }) {
 				contentHtml += convertNewlinesToBr(safePortableTextToHtml(article.body));
 			}
 
-			// 「さらにもう一問」セクションの追加
+			// 「関連記事」セクションの追加
 			// 【SmartFormat外部リンクガイドライン対応】
-			// 本文内の画像付き外部リンクは NG事例4（最終パラグラフ以降に画像でクイズを出題し
-			// 遷移させる）に該当するため、SmartNews へは出力しない（includeNextChallenge=false）。
-			// ママテナ／イチオシ等のパートナー配信時（includeNextChallenge=true）のみ、
-			// 従来どおり画像付きで表示する。
-			// ※ SmartNews 向けの関連記事は、本文外の <snf:relatedLink> で別途提供している。
-			if (
-				includeNextChallenge &&
-				article._type === 'quiz' &&
-				article.relatedLinks &&
-				article.relatedLinks.length > 0
-			) {
-				let nextChallengeHtml = '<br /><br /><h3>さらにもう一問！</h3>';
+			// 本文内に画像付きの外部リンクを置くと NG事例4（最終パラグラフ以降に画像でクイズを
+			// 出題し遷移させる）に該当し違反となるため、画像は付けない。
+			// SmartNews が許可する「最終パラグラフ以降の関連記事扱い・最大3本・テキストリンク」
+			// の形で出力する（relatedLinks クエリ側で最大3件に制限済み）。
+			// ※ この RSS は SmartNews・ママテナ・イチオシ共通で、いずれもこの準拠版を配信する。
+			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
+				let relatedHtml = '<br /><br /><h3>関連記事</h3>';
 
 				for (const post of article.relatedLinks) {
 					if (!post || !post.slug || !post.title) continue;
 
 					const postUrl = buildQuizUrl(post.slug, post.categorySlug ?? article.category?.slug);
 					const title = escapeXml(post.title);
-					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					if (imageUrl) {
-						nextChallengeHtml +=
-							`<p><a href="${postUrl}"><img src="${imageUrl}" alt="" /></a></p>` +
-							`<p>▶ <a href="${postUrl}">${title}</a></p>`;
-					} else {
-						nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
-					}
+					// テキストリンクのみ（画像なし）
+					relatedHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
 				}
-				contentHtml += nextChallengeHtml;
+				contentHtml += relatedHtml;
 			}
 
 			// サムネイル画像
@@ -285,7 +251,7 @@ export async function GET({ request, url }) {
 		};
 
 		const itemsArray = await Promise.all(
-			dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes, includeNextChallenge))
+			dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes))
 		);
 		const items = itemsArray.join('\n');
 
@@ -314,9 +280,6 @@ export async function GET({ request, url }) {
 		return new Response(xml, {
 			headers: {
 				'Content-Type': 'application/xml',
-				// 出力は URL のクエリ(?variant=full の有無)だけで決まり、クエリ文字列は
-				// CDN のキャッシュキーに含まれるため、素の URL とパートナー URL の
-				// キャッシュは自然に分離される。User-Agent には依存しない。
 				'Cache-Control': 'max-age=0, s-maxage=3600'
 			}
 		});
