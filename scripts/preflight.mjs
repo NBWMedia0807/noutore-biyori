@@ -53,4 +53,16 @@ try {
   console.warn(`${PREFIX} ⚠️ git clean -fdX -n の実行に失敗しました: ${error.message}`);
 }
 
+// スラッグ重複の監視（別内容が同一スラッグを共有 / 空スラッグ を検出したら失敗）
+// ※ 読み取りトークン未設定やネットワーク失敗時はスクリプト側でスキップ（exit 0）する。
+try {
+  execSync('node scripts/check-duplicate-slugs.mjs', {
+    cwd: repoRoot,
+    stdio: 'inherit'
+  });
+} catch (error) {
+  console.error(`${PREFIX} ❌ スラッグ重複チェックで致命的な重複が検出されました。`);
+  process.exit(1);
+}
+
 console.info(`${PREFIX} ✅ OK`);
