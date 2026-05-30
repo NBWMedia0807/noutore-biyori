@@ -1,6 +1,6 @@
 import { client } from '$lib/sanity.server.js';
 import { urlFor } from '$lib/sanity/client';
-import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
+import { RSS_SMARTNEWS_QUERY, EXCLUDE_NULL_TEXT_FILTER } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 
@@ -10,8 +10,8 @@ const siteDescription =
 	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = 'https://noutorebiyori.com/logo.png';
 
-// 最新クイズリスト（広告枠用）
-const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
+// 最新クイズリスト（広告枠用）。本文に "null" が出る記事は広告リンクからも除外する。
+const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER} && ${EXCLUDE_NULL_TEXT_FILTER}] | order(publishedAt desc)[0...8]{
   title,
   "slug": slug.current,
   "categorySlug": category->slug.current,
