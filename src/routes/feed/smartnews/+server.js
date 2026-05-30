@@ -3,6 +3,7 @@ import { urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { env } from '$env/dynamic/private';
 
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
@@ -18,6 +19,36 @@ const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_
   problemImage,
   mainImage
 }`;
+
+// 「さらにもう一問！」(本文内の画像付き外部リンク) を出力する配信先かを判定する。
+//
+// この本文内画像リンクは SmartFormat 外部リンクガイドライン NG事例4
+//（最終パラグラフ以降に画像でクイズを出題し遷移させる）に該当するため、
+// SmartNews には出してはいけない。一方でママテナ／イチオシ等のパートナー配信では
+// 継続して表示したい。そこで「既定では出さない（= SmartNews 準拠）」とし、
+// 明示的にパートナー判定できた場合のみ出力する。こうしておけば、
+// User-Agent が未知の場合でも SmartNews 側は常に準拠版となり違反が再発しない。
+//
+// 判定条件（いずれか）:
+//  1. クエリ ?variant=full が付いている（パートナー側で確実に切り替えたい場合の明示指定）
+//  2. User-Agent が RSS_PARTNER_USER_AGENTS（環境変数・カンマ区切り）のいずれかを含む
+const DEFAULT_PARTNER_UA_PATTERNS = ['mamatena', 'ichioshi'];
+
+const resolveIncludeNextChallenge = ({ userAgent = '', variant = '' }) => {
+	if (typeof variant === 'string' && variant.toLowerCase() === 'full') return true;
+
+	const raw = env.RSS_PARTNER_USER_AGENTS;
+	const patterns =
+		typeof raw === 'string' && raw.trim()
+			? raw
+					.split(',')
+					.map((s) => s.trim().toLowerCase())
+					.filter(Boolean)
+			: DEFAULT_PARTNER_UA_PATTERNS;
+
+	const ua = String(userAgent).toLowerCase();
+	return patterns.some((pattern) => ua.includes(pattern));
+};
 
 // クイズの canonical URL（カテゴリ別 URL）を生成するヘルパー。
 // サイト側 (/quiz/[...slug]) は単一セグメントのスラッグを
@@ -87,8 +118,15 @@ const safePortableTextToHtml = (blocks) => {
 	}
 };
 
-export async function GET({ request }) {
-	console.log(`[SmartNews Feed] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
+export async function GET({ request, url }) {
+	const userAgent = request.headers.get('user-agent') ?? 'unknown';
+	const variant = url.searchParams.get('variant') ?? '';
+	// 「さらにもう一問！」(NG事例4 に該当する本文内画像リンク) を出すかどうか。
+	// 既定は false（SmartNews 準拠）。パートナー配信時のみ true。
+	const includeNextChallenge = resolveIncludeNextChallenge({ userAgent, variant });
+	console.log(
+		`[SmartNews Feed] User-Agent: ${userAgent} / variant: ${variant || 'none'} / includeNextChallenge: ${includeNextChallenge}`
+	);
 	try {
 		// 並列でデータを取得
 		const [articles, globalLatestQuizzes] = await Promise.all([
@@ -115,7 +153,7 @@ export async function GET({ request }) {
 			return true;
 		});
 
-		const buildItem = async (article, globalLatestQuizzes) => {
+		const buildItem = async (article, globalLatestQuizzes, includeNextChallenge) => {
 			// 記事URL（クイズはカテゴリ別 canonical URL を使用）
 			let articleLink;
 			if (article._type === 'quiz') {
@@ -166,10 +204,17 @@ export async function GET({ request }) {
 
 			// 「さらにもう一問」セクションの追加
 			// 【SmartFormat外部リンクガイドライン対応】
-			// 本文内に画像付きの外部リンクを置くと「リンク先へ遷移しなければ記事の閲覧体験が
-			// 完結しないコンテンツへの外部リンク」(ガイドライン1)3) と見なされ違反になるため、
-			// 画像は配置せず、最終パラグラフ以降の関連記事扱いとしてテキストリンクのみ（最大3本）を設置する。
-			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
+			// 本文内の画像付き外部リンクは NG事例4（最終パラグラフ以降に画像でクイズを出題し
+			// 遷移させる）に該当するため、SmartNews へは出力しない（includeNextChallenge=false）。
+			// ママテナ／イチオシ等のパートナー配信時（includeNextChallenge=true）のみ、
+			// 従来どおり画像付きで表示する。
+			// ※ SmartNews 向けの関連記事は、本文外の <snf:relatedLink> で別途提供している。
+			if (
+				includeNextChallenge &&
+				article._type === 'quiz' &&
+				article.relatedLinks &&
+				article.relatedLinks.length > 0
+			) {
 				let nextChallengeHtml = '<br /><br /><h3>さらにもう一問！</h3>';
 
 				for (const post of article.relatedLinks) {
@@ -177,9 +222,15 @@ export async function GET({ request }) {
 
 					const postUrl = buildQuizUrl(post.slug, post.categorySlug ?? article.category?.slug);
 					const title = escapeXml(post.title);
+					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					// テキストリンクのみ（画像なし）
-					nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
+					if (imageUrl) {
+						nextChallengeHtml +=
+							`<p><a href="${postUrl}"><img src="${imageUrl}" alt="" /></a></p>` +
+							`<p>▶ <a href="${postUrl}">${title}</a></p>`;
+					} else {
+						nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
+					}
 				}
 				contentHtml += nextChallengeHtml;
 			}
@@ -248,7 +299,9 @@ export async function GET({ request }) {
 		`.trim();
 		};
 
-		const itemsArray = await Promise.all(dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes)));
+		const itemsArray = await Promise.all(
+			dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes, includeNextChallenge))
+		);
 		const items = itemsArray.join('\n');
 
 		// XML全体
@@ -276,7 +329,12 @@ export async function GET({ request }) {
 		return new Response(xml, {
 			headers: {
 				'Content-Type': 'application/xml',
-				'Cache-Control': 'max-age=0, s-maxage=3600'
+				// 出力は User-Agent（パートナー判定）で変わるため、共有キャッシュが
+				// パートナー版を SmartNews へ配信しないよう Vary: User-Agent を付与し、
+				// 取り違えの窓を小さくするため s-maxage も短めにする。
+				// ?variant=full の場合は URL 自体が異なるためキャッシュキーも分かれる。
+				'Cache-Control': 'max-age=0, s-maxage=600',
+				Vary: 'User-Agent'
 			}
 		});
 	} catch (err) {
