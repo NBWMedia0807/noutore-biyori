@@ -3,7 +3,6 @@ import { urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
-import { env } from '$env/dynamic/private';
 
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
@@ -20,35 +19,21 @@ const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_
   mainImage
 }`;
 
-// 「さらにもう一問！」(本文内の画像付き外部リンク) を出力する配信先かを判定する。
+// 「さらにもう一問！」(本文内の画像付き外部リンク) を出力するかどうかを判定する。
 //
 // この本文内画像リンクは SmartFormat 外部リンクガイドライン NG事例4
 //（最終パラグラフ以降に画像でクイズを出題し遷移させる）に該当するため、
-// SmartNews には出してはいけない。一方でママテナ／イチオシ等のパートナー配信では
-// 継続して表示したい。そこで「既定では出さない（= SmartNews 準拠）」とし、
-// 明示的にパートナー判定できた場合のみ出力する。こうしておけば、
-// User-Agent が未知の場合でも SmartNews 側は常に準拠版となり違反が再発しない。
+// SmartNews には絶対に出してはいけない。
 //
-// 判定条件（いずれか）:
-//  1. クエリ ?variant=full が付いている（パートナー側で確実に切り替えたい場合の明示指定）
-//  2. User-Agent が RSS_PARTNER_USER_AGENTS（環境変数・カンマ区切り）のいずれかを含む
-const DEFAULT_PARTNER_UA_PATTERNS = ['mamatena', 'ichioshi'];
-
-const resolveIncludeNextChallenge = ({ userAgent = '', variant = '' }) => {
-	if (typeof variant === 'string' && variant.toLowerCase() === 'full') return true;
-
-	const raw = env.RSS_PARTNER_USER_AGENTS;
-	const patterns =
-		typeof raw === 'string' && raw.trim()
-			? raw
-					.split(',')
-					.map((s) => s.trim().toLowerCase())
-					.filter(Boolean)
-			: DEFAULT_PARTNER_UA_PATTERNS;
-
-	const ua = String(userAgent).toLowerCase();
-	return patterns.some((pattern) => ua.includes(pattern));
-};
+// 【最重要】SmartNews が登録している素の URL (/feed/smartnews) では、
+// この関数は必ず false を返す（= 常に準拠版）。出力可否を URL のクエリだけで決め、
+// User-Agent 等の推測判定は一切行わない。これにより、CDN キャッシュの取り違えや
+// UA の偽装・変更があっても、SmartNews 側に違反版が出る経路が構造的に存在しない。
+//
+// ママテナ／イチオシ等のパートナーには、明示的に ?variant=full を付けた
+// 別 URL（キャッシュキーも別）を渡してもらうことで「さらにもう一問！」を表示する。
+const resolveIncludeNextChallenge = ({ variant = '' }) =>
+	typeof variant === 'string' && variant.toLowerCase() === 'full';
 
 // クイズの canonical URL（カテゴリ別 URL）を生成するヘルパー。
 // サイト側 (/quiz/[...slug]) は単一セグメントのスラッグを
@@ -122,8 +107,8 @@ export async function GET({ request, url }) {
 	const userAgent = request.headers.get('user-agent') ?? 'unknown';
 	const variant = url.searchParams.get('variant') ?? '';
 	// 「さらにもう一問！」(NG事例4 に該当する本文内画像リンク) を出すかどうか。
-	// 既定は false（SmartNews 準拠）。パートナー配信時のみ true。
-	const includeNextChallenge = resolveIncludeNextChallenge({ userAgent, variant });
+	// 判定は URL のクエリ(?variant=full)のみ。素の URL は常に false（= SmartNews 準拠）。
+	const includeNextChallenge = resolveIncludeNextChallenge({ variant });
 	console.log(
 		`[SmartNews Feed] User-Agent: ${userAgent} / variant: ${variant || 'none'} / includeNextChallenge: ${includeNextChallenge}`
 	);
@@ -329,12 +314,10 @@ export async function GET({ request, url }) {
 		return new Response(xml, {
 			headers: {
 				'Content-Type': 'application/xml',
-				// 出力は User-Agent（パートナー判定）で変わるため、共有キャッシュが
-				// パートナー版を SmartNews へ配信しないよう Vary: User-Agent を付与し、
-				// 取り違えの窓を小さくするため s-maxage も短めにする。
-				// ?variant=full の場合は URL 自体が異なるためキャッシュキーも分かれる。
-				'Cache-Control': 'max-age=0, s-maxage=600',
-				Vary: 'User-Agent'
+				// 出力は URL のクエリ(?variant=full の有無)だけで決まり、クエリ文字列は
+				// CDN のキャッシュキーに含まれるため、素の URL とパートナー URL の
+				// キャッシュは自然に分離される。User-Agent には依存しない。
+				'Cache-Control': 'max-age=0, s-maxage=3600'
 			}
 		});
 	} catch (err) {
