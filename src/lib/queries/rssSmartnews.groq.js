@@ -35,7 +35,8 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   "category": category->{
     _id,
     name,
-    title
+    title,
+    "slug": slug.current
   },
 
   // 関連記事
@@ -50,6 +51,8 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     title,
     "slug": slug.current,
     _type,
+    // カテゴリ別 canonical URL を組み立てるためのカテゴリスラッグ
+    "categorySlug": category->slug.current,
     // 【修正】関連記事の画像アセット情報を追加
     mainImage{asset->},
     problemImage{asset->}

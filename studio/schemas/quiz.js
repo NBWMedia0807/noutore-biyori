@@ -79,7 +79,27 @@ export default defineType({
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',
-      options: { source: 'title', maxLength: 96 },
+      options: {
+        source: 'title',
+        maxLength: 96,
+        // スラッグの重複を防止する。
+        // 重複すると /category/{categorySlug}/{slug} や RSS の item.link が
+        // 別ドキュメントに解決され、SmartNews 等で「リンク先と記事内容が一致しない」
+        // 事象や 404 が発生するため、公開・下書きを問わず一意であることを保証する。
+        isUnique: async (slug, context) => {
+          const { document, getClient } = context
+          const client = getClient({ apiVersion: '2024-01-01' })
+          const id = (document?._id || '').replace(/^drafts\./, '')
+          const params = {
+            draft: `drafts.${id}`,
+            published: id,
+            slug
+          }
+          const query =
+            '!defined(*[_type == "quiz" && !(_id in [$draft, $published]) && slug.current == $slug][0]._id)'
+          return client.fetch(query, params)
+        }
+      },
       group: 'content',
       validation: (Rule) => Rule.required()
     }),

@@ -1,4 +1,5 @@
-import { client, urlFor } from '$lib/sanity/client';
+import { client } from '$lib/sanity.server.js';
+import { urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
@@ -13,9 +14,23 @@ const siteLogo = 'https://noutorebiyori.com/logo.png';
 const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_PUBLISHED_FILTER}] | order(publishedAt desc)[0...8]{
   title,
   "slug": slug.current,
+  "categorySlug": category->slug.current,
   problemImage,
   mainImage
 }`;
+
+// クイズの canonical URL（カテゴリ別 URL）を生成するヘルパー。
+// サイト側 (/quiz/[...slug]) は単一セグメントのスラッグを
+// /category/{categorySlug}/{slug} へ 308 リダイレクトしているため、
+// フィードでは最初から canonical URL を出力し、リダイレクトを経ずに
+// 正しい記事へ到達できるようにする（item.link と記事内容の不一致・404 を防ぐ）。
+// 複数セグメントのスラッグ（matchstick 等の特殊記事）は従来どおり /quiz/{slug}。
+const buildQuizUrl = (slug, categorySlug) => {
+	if (categorySlug && !String(slug).includes('/')) {
+		return `${siteLink}category/${categorySlug}/${slug}`;
+	}
+	return `${siteLink}quiz/${slug}`;
+};
 
 // 画像オブジェクトからURLを生成するヘルパー関数（安全対策版）
 const getImageUrl = (imageObject) => {
@@ -85,11 +100,26 @@ export async function GET({ request }) {
 			console.warn('No articles fetched for SmartNews RSS');
 		}
 
+		// 同一スラッグの記事（再公開記事などスラッグが重複したドキュメント）が複数存在すると、
+		// item.link が同一 URL を指して重複したり、リンク先が別ドキュメントに解決されて
+		// 「item.link と記事内容が一致しない」事象につながる。スラッグ単位で最新の1件のみに絞り込む。
+		// （order(publishedAt desc) 済みのため先頭が最新）
+		const seenSlugs = new Set();
+		const dedupedArticles = (articles || []).filter((article) => {
+			if (!article?.slug) return false;
+			if (seenSlugs.has(article.slug)) {
+				console.warn(`[SmartNews Feed] Duplicate slug skipped: ${article.slug} (_id: ${article._id})`);
+				return false;
+			}
+			seenSlugs.add(article.slug);
+			return true;
+		});
+
 		const buildItem = async (article, globalLatestQuizzes) => {
-			// 記事URL
+			// 記事URL（クイズはカテゴリ別 canonical URL を使用）
 			let articleLink;
 			if (article._type === 'quiz') {
-				articleLink = `${siteLink}quiz/${article.slug}`;
+				articleLink = buildQuizUrl(article.slug, article.category?.slug);
 			} else {
 				articleLink = `${siteLink}${article.slug}`;
 			}
@@ -135,29 +165,21 @@ export async function GET({ request }) {
 			}
 
 			// 「さらにもう一問」セクションの追加
-			// 【MSN対策】
-			// 1. 画像を<a>タグで直接ラップ → MSNが画像とリンクを正しく紐付けられるようにする
-			// 2. alt="" に設定 → MSNが画像下にaltテキストをキャプションとして表示するのを防ぐ
-			// 3. タイトルは別行の<a>リンクとして表示
+			// 【SmartFormat外部リンクガイドライン対応】
+			// 本文内に画像付きの外部リンクを置くと「リンク先へ遷移しなければ記事の閲覧体験が
+			// 完結しないコンテンツへの外部リンク」(ガイドライン1)3) と見なされ違反になるため、
+			// 画像は配置せず、最終パラグラフ以降の関連記事扱いとしてテキストリンクのみ（最大3本）を設置する。
 			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
 				let nextChallengeHtml = '<br /><br /><h3>さらにもう一問！</h3>';
 
 				for (const post of article.relatedLinks) {
 					if (!post || !post.slug || !post.title) continue;
 
-					const postUrl = `https://noutorebiyori.com/quiz/${post.slug}`;
+					const postUrl = buildQuizUrl(post.slug, post.categorySlug ?? article.category?.slug);
 					const title = escapeXml(post.title);
-					const imageUrl = getImageUrl(post.problemImage) || getImageUrl(post.mainImage);
 
-					if (imageUrl) {
-						// 画像を<a>で直接ラップ（MSNのリンク紐付けに必要）
-						// alt=""にしてMSNが画像下にキャプションを表示するのを防ぐ
-						nextChallengeHtml += `<p><a href="${postUrl}"><img src="${imageUrl}" alt="" /></a></p>` +
-							`<p>▶ <a href="${postUrl}">${title}</a></p>`;
-					} else {
-						// 画像がない場合：タイトルリンクのみ
-						nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
-					}
+					// テキストリンクのみ（画像なし）
+					nextChallengeHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
 				}
 				contentHtml += nextChallengeHtml;
 			}
@@ -172,7 +194,7 @@ export async function GET({ request }) {
 				.filter((quiz) => quiz.slug !== article.slug)
 				.slice(0, 2)
 				.map((quiz) => {
-					const link = `${siteLink}quiz/${quiz.slug}`;
+					const link = buildQuizUrl(quiz.slug, quiz.categorySlug);
 					const thumbnailUrl = getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage) || siteLogo;
 					const title = escapeXml(quiz.title);
 					return `<snf:sponsoredLink link="${link}" thumbnail="${thumbnailUrl}" title="${title}" advertiser="${siteTitle}"/>`;
@@ -192,7 +214,9 @@ export async function GET({ request }) {
 				.map((related) => {
 					if (!related.slug || !related.title) return null;
 					const relatedUrl =
-						related._type === 'quiz' ? `${siteLink}quiz/${related.slug}` : `${siteLink}${related.slug}`;
+						related._type === 'quiz'
+							? buildQuizUrl(related.slug, related.categorySlug ?? article.category?.slug)
+							: `${siteLink}${related.slug}`;
 
 					// 関連リンクの画像URL
 					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
@@ -224,7 +248,7 @@ export async function GET({ request }) {
 		`.trim();
 		};
 
-		const itemsArray = await Promise.all((articles || []).map((article) => buildItem(article, globalLatestQuizzes)));
+		const itemsArray = await Promise.all(dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes)));
 		const items = itemsArray.join('\n');
 
 		// XML全体
