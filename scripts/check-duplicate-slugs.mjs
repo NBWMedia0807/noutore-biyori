@@ -20,8 +20,17 @@ const PREFIX = '[check:slugs]';
 const projectId = process.env.SANITY_PROJECT_ID;
 const dataset = process.env.SANITY_DATASET;
 const apiVersion = process.env.SANITY_API_VERSION || '2024-01-01';
+// 読み取り・書き込みいずれのトークンでもクエリ可能。
+// 重複を作り得るアップロード経路（sanity_upload.mjs=SANITY_WRITE_TOKEN /
+// pipeline.py=SANITY_TOKEN 等）の認証情報しか無い環境でも検知できるよう、
+// 書き込み用トークン名も候補に含める。
 const token =
-  process.env.SANITY_READ_TOKEN || process.env.SANITY_AUTH_TOKEN || process.env.SANITY_API_TOKEN;
+  process.env.SANITY_READ_TOKEN ||
+  process.env.SANITY_WRITE_TOKEN ||
+  process.env.SANITY_AUTH_TOKEN ||
+  process.env.SANITY_DEPLOY_TOKEN ||
+  process.env.SANITY_API_TOKEN ||
+  process.env.SANITY_TOKEN;
 
 if (!projectId || !dataset) {
   console.warn(`${PREFIX} ⚠️ SANITY_PROJECT_ID / SANITY_DATASET 未設定のためスキップします。`);
