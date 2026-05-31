@@ -217,14 +217,6 @@ const createHomeSeo = (path, quizzes, description = SITE.description) => {
 export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
-  if (isDataRequest) {
-    setHeaders({ 'cache-control': 'no-store' });
-  } else {
-    setHeaders({
-      'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400'
-    });
-  }
-
   const path = url.pathname;
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const pageSize = HOME_PAGE_SIZE;
@@ -270,6 +262,10 @@ export const load = async (event) => {
 
     const seo = createHomeSeo(path, aggregatedQuizzes, SITE.description);
 
+    if (!isDataRequest) {
+      setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
+    }
+
     return {
       newest,
       popular,
@@ -285,6 +281,7 @@ export const load = async (event) => {
     };
   } catch (error) {
     console.error('[+page.server.js] Error fetching quizzes:', error);
+    setHeaders({ 'cache-control': 'no-store' });
     const seo = createHomeSeo(path, []);
     return {
       newest: [],

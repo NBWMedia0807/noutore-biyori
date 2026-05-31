@@ -217,10 +217,6 @@ export const load = async (event) => {
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 
-  if (!isDataRequest) {
-    setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
-  }
-
   const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname, requestedPage, CATEGORY_PAGE_SIZE);
 
   if (shouldSkipSanityFetch()) {
@@ -291,6 +287,10 @@ export const load = async (event) => {
       breadcrumbs
     });
 
+    if (!isDataRequest) {
+      setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400' });
+    }
+
     return {
       category: { ...category, overview },
       overview,
@@ -316,6 +316,7 @@ export const load = async (event) => {
       throw err;
     }
     console.error(`[category/${slug}] Sanity fetch failed`, err);
+    setHeaders({ 'cache-control': 'no-store' });
     const stubData = resolveStubResponse();
     if (stubData) {
       const totalPages = stubData?.pagination?.totalPages ?? 1;
