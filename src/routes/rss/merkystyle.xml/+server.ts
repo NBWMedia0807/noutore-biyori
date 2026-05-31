@@ -14,7 +14,7 @@ const sanityClient = createClient({
   projectId: import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId,
   dataset: import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset,
   apiVersion: import.meta.env?.VITE_SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion,
-  useCdn: false
+  useCdn: true
 });
 
 export const prerender = false;
