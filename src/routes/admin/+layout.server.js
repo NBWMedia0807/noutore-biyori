@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 
 export const prerender = false;
+export const ssr = true;
 
 export const load = ({ cookies, url }) => {
 	if (url.pathname === '/admin/login') return {};
