@@ -44,8 +44,9 @@
       rel="noopener noreferrer"
       aria-label="YouTubeでフォロー"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
-        <path d="M9 7.5l8 4.5-8 4.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
+        <rect x="2.5" y="5" width="19" height="14" rx="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/>
+        <path d="M10 9l5.8 3-5.8 3z"/>
       </svg>
       <span>フォローする</span>
     </a>
