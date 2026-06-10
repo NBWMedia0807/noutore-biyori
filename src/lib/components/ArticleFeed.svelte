@@ -52,6 +52,16 @@
   }
 
   /*
+   * 広告が未配信(unfilled)のときはラッパーごと折りたたむ。
+   * AdSense.svelte が非表示にするのは内側の .adsense-container のみのため、
+   * ラッパー .feed-ad をグリッドから外さないと、広告が消えても記事3枚ごとに
+   * グリッドの行ギャップ分の余分な空白が一覧へ残ってしまう。
+   */
+  .feed-ad:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
+    display: none;
+  }
+
+  /*
    * SP（モバイル）のみ表示。
    * PC・タブレット幅では display:none にする。
    * display:none の要素は IntersectionObserver が交差を検知しないため、
