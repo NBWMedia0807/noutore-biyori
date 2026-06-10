@@ -1,6 +1,5 @@
 <script>
-  import ArticleCard from '$lib/components/ArticleCard.svelte';
-  import ArticleGrid from '$lib/components/ArticleGrid.svelte';
+  import ArticleFeed from '$lib/components/ArticleFeed.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import { resolvePublishedTimestamp } from '$lib/utils/publishedDate.js';
 
@@ -62,11 +61,7 @@
     {#if !sortedNewest.length}
       <p class="empty-message">{emptyMessage}</p>
     {:else}
-      <ArticleGrid minWidth={240} gap={20}>
-        {#each sortedNewest as quiz (quiz.slug)}
-          <ArticleCard {quiz} />
-        {/each}
-      </ArticleGrid>
+      <ArticleFeed quizzes={sortedNewest} />
 
       {#if pagination?.totalPages > 1}
         <Pagination
