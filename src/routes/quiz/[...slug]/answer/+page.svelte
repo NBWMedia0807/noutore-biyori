@@ -2,11 +2,34 @@
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
   import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
+  import { createSanityImageSet } from '$lib/utils/images.js';
 
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
+
+  // 正解画像: 原寸URL直貼りをやめ、Sanity変換（リサイズ + auto format）に統一
+  const answerImageSet = quiz?.answerImage?.asset
+    ? createSanityImageSet(quiz.answerImage, {
+        width: 960,
+        quality: 80,
+        fallbackUrl: quiz.answerImage.asset.url
+      })
+    : null;
+  const answerImageDimensions =
+    quiz?.answerImage?.asset?.metadata?.dimensions ?? { width: 960, height: 540 };
+
+  // 「さらにもう一問」サムネイルも変換URLに（CLS防止に width/height を付与）
+  const buildThumbSet = (image) =>
+    image?.asset
+      ? createSanityImageSet(image, {
+          width: 400,
+          height: 225,
+          quality: 75,
+          fallbackUrl: image.asset.url
+        })
+      : null;
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
@@ -79,15 +102,17 @@
   <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
   <AdSense slot="4170928887" />
 
-  {#if quiz.answerImage?.asset?.url}
+  {#if answerImageSet?.src}
     <div class="answer-image">
       <img
-        src={quiz.answerImage.asset.url}
+        src={answerImageSet.src}
+        srcset={answerImageSet.srcset}
+        sizes="(min-width: 768px) 720px, 100vw"
         alt="正解画像"
         loading="lazy"
         decoding="async"
-        width={quiz.answerImage.asset.metadata?.dimensions?.width ?? 960}
-        height={quiz.answerImage.asset.metadata?.dimensions?.height ?? 540}
+        width={Math.round(answerImageDimensions.width)}
+        height={Math.round(answerImageDimensions.height)}
       />
     </div>
   {/if}
@@ -129,10 +154,20 @@
       <h2 class="next-challenge__title">さらにもう一問！</h2>
       <div class="next-challenge__grid">
         {#each nextChallengePosts as post}
+          {@const thumb = buildThumbSet(post.image)}
           <a href="/quiz/{post.slug}" class="next-challenge__card">
-            {#if post.image}
+            {#if thumb?.src}
               <div class="next-challenge__image">
-                <img src={post.image} alt={post.title} loading="lazy" decoding="async" />
+                <img
+                  src={thumb.src}
+                  srcset={thumb.srcset}
+                  sizes="(min-width: 768px) 220px, 45vw"
+                  alt={post.title}
+                  loading="lazy"
+                  decoding="async"
+                  width="400"
+                  height="225"
+                />
               </div>
             {/if}
             <p class="next-challenge__card-title">{post.title}</p>
