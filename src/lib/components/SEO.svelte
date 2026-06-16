@@ -29,7 +29,9 @@
   $: currentPath = $page.url ? $page.url.pathname : '';
   $: canonicalUrl = canonical || SITE_URL + currentPath;
 
-  $: titleText = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
+  // タイトルのサイト名付与は seo.js（createPageSeo）に一本化しているため、
+  // ここでは受け取った title をそのまま使う（二重付与を防止）。
+  $: titleText = title || SITE_TITLE;
   $: descriptionText = description || SITE_DESCRIPTION;
   // SVGはBingなど一部クローラーがOGP画像として認識しないためPNGを使用
   $: imageUrl = image || `${SITE_URL}/logo.png`;
@@ -50,16 +52,7 @@
             publisher: {
               '@id': `${SITE_URL}/#organization`,
             },
-            inLanguage: 'ja',
-            // サイト内検索のPotentialAction（Googleのサイト内検索リッチリザルト対応）
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${SITE_URL}/quiz?q={search_term_string}`
-              },
-              'query-input': 'required name=search_term_string'
-            }
+            inLanguage: 'ja'
           },
           {
             '@type': 'Organization',
@@ -68,11 +61,12 @@
             url: SITE_URL,
             logo: {
               '@type': 'ImageObject',
-              url: `${SITE_URL}/logo.svg`,
-              width: 512,
-              height: 512,
+              url: `${SITE_URL}/logo.png`,
+              width: 1024,
+              height: 1024,
             },
             sameAs: [
+              'https://noutorebiyori.com',
               'https://x.com/noutorebiyori'
             ]
           },

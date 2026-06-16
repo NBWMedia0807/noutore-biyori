@@ -21,7 +21,7 @@ import {
   getQuizStubQuizzesByCategory,
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
-import { mergeWithFallback, rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
+import { mergeWithFallback } from '$lib/utils/quizPopularity.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -43,14 +43,6 @@ const HOME_QUERY = /* groq */ `
     defined(slug.current)
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-
-  "popular": *[
-    _type == "quiz" &&
-    defined(slug.current)
-    ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...8]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
 
@@ -166,13 +158,11 @@ const createStubHomePayload = ({ path, requestedPage, pageSize, offset }) => {
   }
 
   const newest = sorted.slice(offset, offset + pageSize).map(toPreview).filter(Boolean);
-  const popular = sorted.slice(0, 6).map(toPreview).filter(Boolean);
   const categories = stubEnabled ? createStubCategories() : [];
   const seo = createHomeSeo(path, newest, SITE.description);
 
   return {
     newest,
-    popular,
     categories,
     seo,
     pagination: {
@@ -235,13 +225,6 @@ export const load = async (event) => {
     const newestSource = filterVisibleQuizzes(result.newest ?? []);
     const newest = newestSource.map(toPreview).filter(Boolean);
 
-    const popularSource = rankQuizzesByPopularity({
-      primary: result.popular ?? [],
-      fallback: newestSource,
-      limit: 6
-    });
-    const popular = popularSource.map(toPreview).filter(Boolean);
-
     const categories = Array.isArray(result.categories)
       ? result.categories.map(normalizeCategorySection).filter(Boolean)
       : [];
@@ -256,7 +239,7 @@ export const load = async (event) => {
     }
 
     const aggregatedQuizzes = mergeWithFallback(
-      mergeWithFallback(newest, popular),
+      newest,
       categories.flatMap((category) => category.quizzes)
     );
 
@@ -268,7 +251,6 @@ export const load = async (event) => {
 
     return {
       newest,
-      popular,
       categories,
       seo,
       pagination: {
@@ -285,7 +267,6 @@ export const load = async (event) => {
     const seo = createHomeSeo(path, []);
     return {
       newest: [],
-      popular: [],
       categories: [],
       seo,
       pagination: {

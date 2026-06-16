@@ -15,7 +15,6 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
-import { rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -50,15 +49,6 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && category->slug.current == $slug
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "popular": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current == $slug
-    ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "total": count(*[
@@ -149,7 +139,6 @@ const createStubCategoryResponse = (slug, path, page, limit) => {
     category: { ...stubCategory, description: '', overview },
     overview,
     newest,
-    popular: rankQuizzesByPopularity({ primary: previews, fallback: previews, limit: 12 }),
     quizzes: previews,
     totalCount,
     breadcrumbs,
@@ -187,7 +176,6 @@ const createFallbackResponse = (slug, path) => {
       : null,
     overview: '',
     newest: [],
-    popular: [],
     quizzes: [],
     totalCount: 0,
     seo: createPageSeo({
@@ -255,12 +243,6 @@ export const load = async (event) => {
     });
     const newestSource = filterVisibleQuizzes(quizzesResult?.newest);
     const newest = newestSource.map(toPreview).filter(Boolean);
-    const popularSource = rankQuizzesByPopularity({
-      primary: quizzesResult?.popular,
-      fallback: newestSource,
-      limit: 12
-    });
-    const popular = popularSource.map(toPreview).filter(Boolean);
 
     const totalCount = typeof quizzesResult?.total === 'number'
       ? quizzesResult.total
@@ -295,7 +277,6 @@ export const load = async (event) => {
       category: { ...category, overview },
       overview,
       newest,
-      popular,
       totalCount,
       quizzes: newest,
       breadcrumbs,

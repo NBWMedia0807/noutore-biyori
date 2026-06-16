@@ -28,6 +28,7 @@ const QUERY = /* groq */ `{
   ] | order(${QUIZ_ORDER_BY_PUBLISHED}) {
     _id,
     "slug": slug.current,
+    "categorySlug": category->slug.current,
     _updatedAt,
     _createdAt,
     publishedAt,
@@ -127,18 +128,21 @@ export const GET = async () => {
     if (!slug) return;
     const published = resolvePublishedDate(quiz, quiz?._id ?? slug);
     const lastmod = published ?? toIsoString(quiz._updatedAt ?? quiz._createdAt);
-    addEntry(`/quiz/${slug}`, {
+    // canonical URL に統一する: カテゴリがある単一スラッグは /category/[cat]/[slug]
+    // （/quiz/[slug] はそこへ 308 リダイレクトされるため、リダイレクト元は載せない）。
+    // 複数セグメントのスラッグ（例: matchstick/article/123）はリダイレクトされないため /quiz/[slug] のまま。
+    const canonicalPath =
+      quiz.categorySlug && !slug.includes('/')
+        ? `/category/${quiz.categorySlug}/${slug}`
+        : `/quiz/${slug}`;
+    addEntry(canonicalPath, {
       changefreq: 'weekly',
       priority: '0.8',
       lastmod,
       imageUrl: quiz.imageUrl ?? undefined,
       imageTitle: quiz.title ?? undefined
     });
-    addEntry(`/quiz/${slug}/answer`, {
-      changefreq: 'weekly',
-      priority: '0.6',
-      lastmod
-    });
+    // 解答ページ（/answer）は noindex のため sitemap には含めない。
   });
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${Array.from(urlEntries.values())

@@ -12,7 +12,6 @@ import {
   QUIZ_PUBLISHED_FILTER,
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
-import { rankQuizzesByPopularity } from '$lib/utils/quizPopularity.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -51,14 +50,6 @@ const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
     && ${KANJI_CATEGORY_FILTER}
     ${QUIZ_PUBLISHED_FILTER}
   ] | order(${QUIZ_ORDER_BY_PUBLISHED})[$offset...($offset + $limit)]{
-    ${QUIZ_PREVIEW_PROJECTION}
-  },
-  "popular": *[
-    _type == "quiz"
-    && defined(slug.current)
-    && ${KANJI_CATEGORY_FILTER}
-    ${QUIZ_PUBLISHED_FILTER}
-  ] | order(${QUIZ_ORDER_BY_PUBLISHED})[0...12]{
     ${QUIZ_PREVIEW_PROJECTION}
   },
   "total": count(*[
@@ -123,7 +114,6 @@ const createFallbackResponse = (path) => {
     },
     overview: '',
     newest: [],
-    popular: [],
     quizzes: [],
     totalCount: 0,
     seo: createPageSeo({
@@ -175,12 +165,6 @@ export const load = async (event) => {
 
     const newestSource = filterVisibleQuizzes(quizzesResult?.newest || []);
     const newest = newestSource.map(toPreview).filter(Boolean);
-    const popularSource = rankQuizzesByPopularity({
-      primary: quizzesResult?.popular || [],
-      fallback: newestSource,
-      limit: 12
-    });
-    const popular = popularSource.map(toPreview).filter(Boolean);
 
     const totalCount = typeof quizzesResult?.total === 'number' ? quizzesResult.total : 0;
     const totalPages = Math.max(1, Math.ceil(totalCount / CATEGORY_PAGE_SIZE));
@@ -209,7 +193,6 @@ export const load = async (event) => {
       category: { ...pageCategory, overview },
       overview,
       newest,
-      popular,
       totalCount,
       quizzes: newest,
       breadcrumbs,

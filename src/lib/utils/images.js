@@ -45,11 +45,29 @@ const buildSources = (image, { width, height, quality }) => {
 };
 
 /**
+ * urlFor が解釈できる形に画像ソースを正規化する。
+ * GROQ で `asset->{ _id, ... }` のように参照解決した画像は `_ref` を持たないため、
+ * `_id` を `_ref` に補完する（crop/hotspot などの既存プロパティは維持）。
+ */
+const normalizeImageSource = (image) => {
+  if (!image || typeof image !== 'object' || !image.asset) return image;
+  if (image.asset._ref) return image;
+  if (image.asset._id) {
+    return { ...image, asset: { ...image.asset, _ref: image.asset._id } };
+  }
+  return image;
+};
+
+/**
  * Sanityの画像参照からレスポンシブ画像情報を生成する。
- * asset._refが存在しない場合はfallbackUrlのみを返す。
+ * asset._ref / asset._id のいずれも無い場合はfallbackUrlのみを返す。
  */
 export function createSanityImageSet(image, { width = 800, height, quality = 80, fallbackUrl } = {}) {
-  const hasBuilder = Boolean(image && typeof image === 'object' && image.asset && image.asset._ref);
+  const assetRef =
+    image && typeof image === 'object' && image.asset
+      ? image.asset._ref ?? image.asset._id
+      : null;
+  const hasBuilder = Boolean(assetRef);
   const fallback = fallbackUrl ?? (typeof image === 'string' ? image : image?.asset?.url ?? '');
 
   if (!hasBuilder) {
@@ -59,7 +77,7 @@ export function createSanityImageSet(image, { width = 800, height, quality = 80,
     };
   }
 
-  const sources = buildSources(image, { width, height, quality });
+  const sources = buildSources(normalizeImageSource(image), { width, height, quality });
   return {
     ...sources,
     fallback: fallback || sources.src

@@ -18,7 +18,7 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   "slug": slug.current,
   "categoryId": category._ref,
   category->{ title, "slug": slug.current },
-  answerImage{ asset->{ url, metadata } },
+  answerImage{ asset->{ _id, url, metadata } },
   problemImage{ asset->{ url, metadata } },
   mainImage{ asset->{ url, metadata } },
   answerExplanation,
@@ -33,7 +33,7 @@ const nextChallengeQuery = /* groq */ `*[_type == "quiz" && defined(slug.current
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  "image": problemImage.asset->url
+  "image": problemImage{ asset->{ _id, url, metadata } }
 }`;
 
 export async function load({ params, setHeaders }) {

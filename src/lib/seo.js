@@ -91,30 +91,6 @@ const toIsoString = (value) => {
   }
 };
 
-const buildWebSiteSchema = () => ({
-  '@type': 'WebSite',
-  '@id': `${SITE.url}/#website`,
-  url: SITE.url,
-  name: SITE.name,
-  description: SITE.description,
-  inLanguage: SITE.locale,
-  publisher: { '@id': SITE.organization.id }
-});
-
-const buildOrganizationSchema = () => ({
-  '@type': 'Organization',
-  '@id': SITE.organization.id,
-  name: SITE.organization.name,
-  url: SITE.organization.url,
-  logo: {
-    '@type': 'ImageObject',
-    url: SITE.organization.logo,
-    width: SITE.organization.logoWidth,
-    height: SITE.organization.logoHeight
-  },
-  sameAs: SITE.organization.sameAs
-});
-
 const buildBreadcrumbSchema = (breadcrumbs = []) => {
   const list = [HOME_BREADCRUMB, ...breadcrumbs].reduce((acc, item) => {
     if (!item?.name) return acc;
@@ -267,9 +243,9 @@ export const createPageSeo = ({
   const faqQuestionText = typeof faqQuestion === 'string' ? faqQuestion.trim() : '';
   const faqAnswerText = typeof faqAnswer === 'string' ? faqAnswer.trim() : '';
 
+  // WebSite / Organization は SEO.svelte が @graph に出力するため、
+  // ここでは重複させない（同一 @id の二重ノードと定義不一致を防止）。
   const jsonld = [
-    buildWebSiteSchema(),
-    buildOrganizationSchema(),
     buildBreadcrumbSchema(breadcrumbs),
     ...(article
       ? [

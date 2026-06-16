@@ -1,9 +1,19 @@
 <script>
   export let data;
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { portableTextToPlain } from '$lib/seo.js';
 
   const { quizzes } = data;
   const FALLBACK_IMAGE = '/logo.svg';
+  const CARD_DESCRIPTION_FALLBACK = '頭の体操にぴったりのクイズです。気軽に挑戦してみましょう！';
+
+  // 各クイズの problemDescription から説明文（抜粋）を生成する。
+  // 空の場合は汎用フォールバックを使う（全カード同一文言の固定表示を解消）。
+  function buildCardDescription(quiz) {
+    const text = portableTextToPlain(quiz?.problemDescription).replace(/\s+/g, ' ').trim();
+    if (!text) return CARD_DESCRIPTION_FALLBACK;
+    return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  }
 
   function getImageSet(quiz) {
     if (!quiz) return null;
@@ -62,7 +72,7 @@
               {/if}
 
               <h2 class="quiz-title">
-                {quiz.title || '【マッチ棒クイズ】1本だけ動かして正しい式に：9＋１＝8？'}
+                {quiz.title || 'クイズ'}
               </h2>
 
               <div class="quiz-category">
@@ -70,7 +80,7 @@
               </div>
 
               <p class="quiz-description">
-                マッチ棒1本だけを動かして正しい式に直してください。頭の体操にぴったりです！
+                {buildCardDescription(quiz)}
               </p>
 
               <div class="quiz-meta">
