@@ -1,6 +1,7 @@
 <script>
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
+  import { quizHref } from '$lib/utils/quizLinks.js';
 
   export let quiz = {};
   export let fallbackImageUrl = '/logo.svg';
@@ -56,7 +57,8 @@
   $: imageSet = buildImageSet(quiz);
   $: dimensions = pickDimensions(quiz);
   $: slug = normalizeSlug(quiz?.slug);
-  $: href = slug ? `/quiz/${slug}` : '#';
+  // canonical（/category/[cat]/[slug]）へ直接リンクし、308リダイレクトを回避する
+  $: href = quizHref(quiz);
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
   $: publishContext = quiz?.slug ?? quiz?.id ?? 'article-card';

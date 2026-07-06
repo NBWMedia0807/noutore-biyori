@@ -1,5 +1,6 @@
 <script>
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { quizHref } from '$lib/utils/quizLinks.js';
 
   /** @type {Array<{slug: string, title: string, category?: {slug: string, title: string}, problemImage?: any, thumbnailUrl?: string}>} */
   export let quizzes = [];
@@ -26,9 +27,6 @@
     return createSanityImageSet(source, { width: 120, height: 80, quality: 75, fallbackUrl: fallback });
   };
 
-  const normalizeSlug = (v) =>
-    typeof v === 'string' ? v.trim() : typeof v?.current === 'string' ? v.current.trim() : '';
-
   $: items = Array.isArray(quizzes)
     ? quizzes.filter((q) => q?.slug).slice(0, MAX_ITEMS)
     : [];
@@ -42,8 +40,7 @@
     </div>
     <ul class="inline-cta__list">
       {#each items as quiz (quiz.slug)}
-        {@const slug = normalizeSlug(quiz.slug)}
-        {@const href = slug ? `/quiz/${slug}` : '#'}
+        {@const href = quizHref(quiz)}
         {@const thumb = buildThumb(quiz)}
         <li class="inline-cta__item">
           <a class="inline-cta__link" {href}>

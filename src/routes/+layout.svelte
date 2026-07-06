@@ -32,6 +32,21 @@
     } catch (_) {}
   }
 
+  // ユーザーのページ遷移ごとにサイドレールの <ins> を作り直して再リクエストする。
+  // 描画済みの <ins> へ再pushしてもAdSense側で拒否され、セッション中ずっと
+  // 同じ広告が表示され続ける（インプレッション機会の損失）ため。
+  let sideRailPath = '';
+  function refreshSideRails(path) {
+    if (typeof window === 'undefined' || !path || path === sideRailPath) return;
+    sideRailPath = path;
+    if (window.innerWidth < 1540) return;
+    for (const container of [leftRailRef, rightRailRef]) {
+      if (!container) continue;
+      container.innerHTML = '';
+      mountSideRailAd(container);
+    }
+  }
+
   export let data;
 
   $: currentPage = $page;
@@ -60,6 +75,8 @@
   afterNavigate(({ to }) => {
     navigatingPending = false;
     menuOpen = false;
+    // ページ遷移ごとにサイドレール広告を再描画（同一パスでは再実行しない）
+    refreshSideRails(to?.url?.pathname ?? window.location.pathname);
     // ページ読み込み・遷移後は必ずTOPを表示する（ページ内アンカー遷移は除く）
     if (!to?.url?.hash) {
       requestAnimationFrame(() => {
@@ -133,11 +150,10 @@
       setTimeout(scrollToTop, 500);
     };
 
-    // サイドレール広告を初期化（十分な画面幅がある場合のみ）
-    if (window.innerWidth >= 1540) {
-      mountSideRailAd(leftRailRef);
-      mountSideRailAd(rightRailRef);
-    }
+    // サイドレール広告を初期化（十分な画面幅がある場合のみ）。
+    // afterNavigate は初回ナビゲーションでも発火するが、
+    // タイミング差異に備えてここでも冪等に呼んでおく。
+    refreshSideRails(window.location.pathname);
 
     // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
     loadGtagOnce();

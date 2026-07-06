@@ -93,8 +93,13 @@
   <meta name="theme-color" content="#ffc107" />
 
   <!-- robots: インデックス対象ページはリッチスニペット最大化のオプションを追加 -->
+  <!--
+    noindex ページも follow は維持する。nofollow にするとページネーションや
+    解答ページ経由の内部リンクをクローラーが辿れなくなり、
+    旧記事の発見・評価が sitemap 頼みになってしまうため。
+  -->
   {#if noindex}
-    <meta name="robots" content="noindex,nofollow" />
+    <meta name="robots" content="noindex,follow" />
   {:else}
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   {/if}

@@ -2,8 +2,13 @@
   export let data;
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { portableTextToPlain } from '$lib/seo.js';
+  import { quizHref } from '$lib/utils/quizLinks.js';
+  import Pagination from '$lib/components/Pagination.svelte';
 
-  const { quizzes } = data;
+  // ページング遷移（?page=）でも一覧が更新されるようリアクティブに参照する
+  $: quizzes = Array.isArray(data?.quizzes) ? data.quizzes : [];
+  $: pagination = data?.pagination ?? null;
+
   const FALLBACK_IMAGE = '/logo.svg';
   const CARD_DESCRIPTION_FALLBACK = '頭の体操にぴったりのクイズです。気軽に挑戦してみましょう！';
 
@@ -47,7 +52,7 @@
       {#each quizzes as quiz}
         {@const image = getImageSet(quiz)}
         <article class="quiz-card">
-          <a href={`/quiz/${quiz.slug}`} class="quiz-link">
+          <a href={quizHref(quiz)} class="quiz-link">
             <div class="quiz-content">
               {#if image?.src}
                 <picture>
@@ -92,6 +97,16 @@
         </article>
       {/each}
     </div>
+
+    {#if pagination?.totalPages > 1}
+      <Pagination
+        basePath={pagination?.basePath ?? '/quiz'}
+        currentPage={pagination?.currentPage ?? 1}
+        totalPages={pagination?.totalPages ?? 1}
+        totalCount={pagination?.totalCount ?? quizzes.length}
+        pageSize={pagination?.pageSize ?? 12}
+      />
+    {/if}
   {/if}
 </main>
 

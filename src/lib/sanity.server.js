@@ -84,7 +84,11 @@ export const client = createClient({
   dataset,
   apiVersion,
   token: authToken,
-  useCdn: !hasToken,
+  // ドラフトプレビュー時のみ CDN を無効化する。
+  // 以前の「トークンがあれば CDN オフ」だと、本番でトークンを設定した途端に
+  // 全クエリがライブAPI直撃になり TTFB と Sanity コストが悪化していた
+  // （Sanity の API CDN は認証付きリクエストにも対応している）。
+  useCdn: !enablePreviewDrafts,
   perspective: enablePreviewDrafts ? 'previewDrafts' : 'published'
 });
 

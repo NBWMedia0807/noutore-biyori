@@ -3,6 +3,7 @@
   import AdSense from '$lib/components/AdSense.svelte';
   import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { quizHref } from '$lib/utils/quizLinks.js';
 
   export let data;
   const { quiz, nextChallengePosts = [] } = data;
@@ -89,7 +90,8 @@
     const text = toPlainText(quiz?.closingMessage);
     return text.trim().length ? text.trim() : closingDefault;
   })();
-  const questionPath = `/quiz/${quiz?.slug ?? ''}`;
+  // 問題ページへは canonical（/category/[cat]/[slug]）で直接戻り、308リダイレクトを回避する
+  const questionPath = quizHref(quiz);
 </script>
 
 <main class="answer-page hide-chrome">
@@ -100,7 +102,8 @@
 
   <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
   <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <AdSense slot="4170928887" />
+  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
+  <AdSense slot="4170928887" minHeight={250} />
 
   {#if answerImageSet?.src}
     <div class="answer-image">
@@ -155,7 +158,7 @@
       <div class="next-challenge__grid">
         {#each nextChallengePosts as post}
           {@const thumb = buildThumbSet(post.image)}
-          <a href="/quiz/{post.slug}" class="next-challenge__card">
+          <a href={quizHref(post)} class="next-challenge__card">
             {#if thumb?.src}
               <div class="next-challenge__image">
                 <img
@@ -416,8 +419,9 @@
   }
 
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
-     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ） */
-  .answer-page :global(.adsense-container:not(.revealed)) {
+     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
+     高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
+  .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
   }
 
@@ -427,7 +431,7 @@
       gap: 20px;
     }
 
-    .answer-page :global(.adsense-container:not(.revealed)) {
+    .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 
