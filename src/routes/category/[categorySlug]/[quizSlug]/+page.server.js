@@ -100,9 +100,10 @@ const buildSeo = ({ doc, path }) => {
       authorName: SITE.authorName,
       category: doc?.category?.title,
       relatedLinks
-    },
-    faqQuestion: portableTextToPlain(doc?.problemDescription),
-    faqAnswer: portableTextToPlain(doc?.answerExplanation)
+    }
+    // FAQPage スキーマは付与しない:
+    // 2023年以降、一般サイトはFAQリッチリザルトの表示対象外であり、
+    // 問題ページに解答テキストを埋め込むのは解答ページへの遷移（2PV設計）とも矛盾するため。
   });
 };
 

@@ -5,6 +5,7 @@
   import InlineCta from '$lib/components/InlineCta.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
   import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
+  import { quizHref, quizAnswerHref } from '$lib/utils/quizLinks.js';
 
   export let data;
 
@@ -53,7 +54,7 @@
   $: categoryUrl = category ? `/category/${category.slug}` : null;
 
   $: hasRelated = relatedQuizzes.length > 0;
-  $: nextQuizUrl = nextQuiz?.slug ? `/quiz/${nextQuiz.slug}` : '/';
+  $: nextQuizUrl = nextQuiz?.slug ? quizHref(nextQuiz) : '/';
   $: nextQuizLabel = nextQuiz?.title ? `${nextQuiz.title}に挑戦する` : '最新の問題に挑戦する';
 
   let hintOpen = false;
@@ -181,7 +182,7 @@
   };
 
   let answerPath;
-  $: answerPath = `/quiz/${doc?.slug ?? ''}/answer`;
+  $: answerPath = quizAnswerHref(doc);
 
 </script>
 
@@ -200,7 +201,8 @@
 
   <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
   <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <AdSense slot="4170928887" />
+  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
+  <AdSense slot="4170928887" minHeight={250} />
 
   {#if problemImageSet?.src}
     <div class="problem-image">
@@ -439,8 +441,9 @@
   }
 
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
-     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ） */
-  .quiz-detail :global(.adsense-container:not(.revealed)) {
+     上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
+     高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
+  .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
   }
 
@@ -557,7 +560,7 @@
       gap: 20px;
     }
 
-    .quiz-detail :global(.adsense-container:not(.revealed)) {
+    .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 

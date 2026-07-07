@@ -6,7 +6,8 @@ export const SITE = {
   url: 'https://noutorebiyori.com',
   language: 'ja',
   locale: 'ja_JP',
-  defaultOgImage: 'https://noutorebiyori.com/logo.svg',
+  // SVG は X/Facebook/LINE 等の主要スクレイパーが OGP 画像として描画しないため PNG を使う
+  defaultOgImage: 'https://noutorebiyori.com/logo.png',
   twitterHandle: '@noutorebiyori',
   /** JSON-LD の author.name に使う編集部名 */
   authorName: '脳トレ日和 編集部',

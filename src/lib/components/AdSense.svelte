@@ -5,6 +5,12 @@
 
   /** @type {string} */
   export let slot;
+  /**
+   * 高さ予約(px)。ほぼ確実に配信される固定枠のみ指定し、
+   * 広告読み込みによるレイアウトシフト(CLS)を防ぐ。0なら予約なし。
+   * @type {number}
+   */
+  export let minHeight = 0;
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
@@ -20,11 +26,19 @@
   let intersectionObs = null;
   let adPushed = false;
 
+  // ページ遷移時は {#key currentPath} で <ins> をDOMごと作り直す。
+  // 既に広告が入った <ins> への再pushはAdSense側で拒否され、
+  // 前ページの広告が表示され続けてしまう（インプレッション損失）ため。
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
     if (initialized) {
       adPushed = false;
-      if (containerRef) containerRef.classList.remove('revealed');
+      stopPolling();
+      if (containerRef) {
+        containerRef.classList.remove('revealed');
+        // unfilled時に付与した display:none を解除して新しい枠を計測可能にする
+        containerRef.style.removeProperty('display');
+      }
       observeViewport();
     }
   }
@@ -114,16 +128,23 @@
   });
 </script>
 
-<div class="adsense-container" bind:this={containerRef}>
-  <ins
-    bind:this={adRef}
-    class="adsbygoogle"
-    style="display:block"
-    data-ad-client={AD_CLIENT}
-    data-ad-slot={slot}
-    data-ad-format="auto"
-    data-full-width-responsive="true"
-  ></ins>
+<div
+  class="adsense-container"
+  class:ad-reserved={minHeight > 0}
+  style={minHeight > 0 ? `min-height:${minHeight}px` : null}
+  bind:this={containerRef}
+>
+  {#key currentPath}
+    <ins
+      bind:this={adRef}
+      class="adsbygoogle"
+      style="display:block"
+      data-ad-client={AD_CLIENT}
+      data-ad-slot={slot}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    ></ins>
+  {/key}
 </div>
 
 <style>

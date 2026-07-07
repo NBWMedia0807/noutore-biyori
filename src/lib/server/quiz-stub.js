@@ -190,6 +190,9 @@ export const getQuizStubCatalog = () =>
   STUB_QUIZZES.map((doc) => ({
     _id: doc._id,
     slug: doc.slug,
+    // 本番のQUIZ_PREVIEW_PROJECTIONと同様にcategoryを含める
+    // （内部リンクの canonical URL 生成に必要）
+    category: doc.category ? clone(doc.category) : null,
     publishedAt: doc.publishedAt,
     _createdAt: doc._createdAt,
     _updatedAt: doc._updatedAt
