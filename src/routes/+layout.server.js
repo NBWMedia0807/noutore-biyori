@@ -18,6 +18,18 @@ const GLOBAL_NAV_CATEGORIES = [
   { title: '数式パズル', slug: 'formula-puzzle' }
 ];
 
+// Sanity 取得が失敗（一時障害・環境変数不備など）したときに使う静的フォールバック。
+// 取得成功時は使われない。メニューが空になる事故を防ぐための最低限のカテゴリ一覧。
+const FALLBACK_CATEGORIES = [
+  { title: 'マッチ棒クイズ', slug: 'matchstick-quiz' },
+  { title: '難読漢字', slug: 'kanji-quiz' },
+  { title: '計算クイズ', slug: 'arithmetic-quiz' },
+  { title: 'クロスワード', slug: 'crossword' },
+  { title: '数式パズル', slug: 'formula-puzzle' },
+  { title: 'ビジネスマナー', slug: 'business-manner' },
+  { title: '数字クイズ', slug: 'number-quiz' }
+];
+
 // 全カテゴリと、その公開クイズ数を取得する。
 // クイズ数は references(^._id) で数える（category 参照の _id 突き合わせ。
 // ^.slug のような文字列/オブジェクト不一致による数え漏れを避ける確実な方法）。
@@ -96,11 +108,26 @@ export const load = async () => {
 
   const now = Date.now();
   if (!_cache || now - _cache.ts > CACHE_TTL) {
-    const fetched = await client.fetch(CATEGORIES_QUERY).catch((err) => {
+    let data = null;
+    try {
+      const fetched = await client.fetch(CATEGORIES_QUERY);
+      const built = buildMenuCategories(fetched);
+      if (built.length > 0) data = built;
+    } catch (err) {
       console.error('[+layout.server] categories fetch failed', err);
-      return [];
-    });
-    _cache = { data: buildMenuCategories(fetched), ts: now };
+    }
+
+    if (data) {
+      // 正常取得: 通常どおりキャッシュ
+      _cache = { data, ts: now };
+    } else if (_cache?.data?.length) {
+      // 取得失敗だが直前の良いキャッシュがある: それを維持（TTLだけ更新して過剰リトライを防ぐ）
+      _cache = { data: _cache.data, ts: now };
+    } else {
+      // 取得失敗＋キャッシュ無し: 静的フォールバックを使い、メニューを空にしない。
+      // ts=0 で毎リクエスト再取得を試み、成功したら通常キャッシュに切り替える。
+      _cache = { data: FALLBACK_CATEGORIES, ts: 0 };
+    }
   }
 
   const categories = _cache.data;
