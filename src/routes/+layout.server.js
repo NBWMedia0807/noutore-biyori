@@ -6,18 +6,21 @@ import {
 } from '$lib/queries/quizVisibility.js';
 import { getQuizStubCategories } from '$lib/server/quiz-stub.js';
 
-// グローバルナビ（TOPページ等の水平タブ）に表示するカテゴリの並び順。
-// 左から順に表示する。slug は Sanity のカテゴリ title でマッチングして解決するため、
-// ここの slug はあくまで Sanity 取得に失敗した場合のフォールバック値。
+// グローバルナビ（TOPページ等の水平タブ）に表示するカテゴリの並び順（左→右）。
+// slug は Sanity のカテゴリ title でマッチングして実 slug に解決する。
+// pinnedSlug:true の項目は title 照合せず必ずこの slug を使う
+// （難読漢字は kanji-quiz / nandoku-kanji の2スラッグを統合する静的ルートへ固定）。
 const GLOBAL_NAV_CATEGORIES = [
   { title: 'マッチ棒クイズ', slug: 'matchstick-quiz' },
-  { title: '難読漢字', slug: 'nandoku-kanji' },
+  { title: '難読漢字', slug: 'kanji-quiz', pinnedSlug: true },
   { title: '計算クイズ', slug: 'arithmetic-quiz' },
   { title: 'クロスワード', slug: 'crossword' },
   { title: '数式パズル', slug: 'formula-puzzle' }
 ];
 
-// 公開クイズを1件以上持つ全カテゴリを取得する（空カテゴリはメニューに出さない）。
+// 全カテゴリと、その公開クイズ数を取得する。
+// クイズ数は references(^._id) で数える（category 参照の _id 突き合わせ。
+// ^.slug のような文字列/オブジェクト不一致による数え漏れを避ける確実な方法）。
 const CATEGORIES_QUERY = /* groq */ `
 *[
   _type == "category"
@@ -29,8 +32,7 @@ const CATEGORIES_QUERY = /* groq */ `
   "quizCount": count(*[
     _type == "quiz"
     && defined(slug.current)
-    && defined(category._ref)
-    && category->slug.current == ^.slug
+    && references(^._id)
     ${QUIZ_PUBLISHED_FILTER}
   ])
 }`;
@@ -42,19 +44,44 @@ let _cache = null;
 
 /**
  * グローバルナビ用に、指定順のカテゴリを Sanity 実データへ突き合わせて解決する。
- * title が一致するカテゴリがあればその実 slug を使い、無ければフォールバック slug を使う。
+ * pinnedSlug の項目は固定 slug を使い、それ以外は title が一致するカテゴリの
+ * 実 slug を使う（無ければフォールバック slug）。
  */
 const resolveGlobalNav = (allCategories) => {
   const byTitle = new Map(
     (Array.isArray(allCategories) ? allCategories : []).map((c) => [c.title, c])
   );
   return GLOBAL_NAV_CATEGORIES.map((item) => {
+    if (item.pinnedSlug) {
+      return { title: item.title, slug: item.slug };
+    }
     const matched = byTitle.get(item.title);
     return {
       title: item.title,
       slug: matched?.slug ?? item.slug
     };
   });
+};
+
+/**
+ * 重複タイトルを1件に畳んでメニュー用カテゴリ配列を作る。
+ * 公開クイズを持つカテゴリを優先し、万一すべて0件でもメニューが空にならないよう
+ * フォールバックで全カテゴリを返す（＝メニューが消える事故を防ぐ）。
+ */
+const buildMenuCategories = (list) => {
+  const valid = (Array.isArray(list) ? list : []).filter((c) => c?.slug && c?.title);
+  const withQuizzes = valid.filter((c) => (c.quizCount ?? 0) > 0);
+  const source = withQuizzes.length > 0 ? withQuizzes : valid;
+
+  // 同一タイトルの重複を排除（先勝ち）
+  const seen = new Set();
+  const deduped = [];
+  for (const c of source) {
+    if (seen.has(c.title)) continue;
+    seen.add(c.title);
+    deduped.push({ title: c.title, slug: c.slug });
+  }
+  return deduped;
 };
 
 export const load = async () => {
@@ -69,17 +96,17 @@ export const load = async () => {
 
   const now = Date.now();
   if (!_cache || now - _cache.ts > CACHE_TTL) {
-    const fetched = await client.fetch(CATEGORIES_QUERY).catch(() => []);
-    const list = Array.isArray(fetched) ? fetched : [];
-    // 公開クイズを持つカテゴリのみをメニューに掲載する
-    const withQuizzes = list.filter((c) => c?.slug && (c.quizCount ?? 0) > 0);
-    _cache = { data: withQuizzes, ts: now };
+    const fetched = await client.fetch(CATEGORIES_QUERY).catch((err) => {
+      console.error('[+layout.server] categories fetch failed', err);
+      return [];
+    });
+    _cache = { data: buildMenuCategories(fetched), ts: now };
   }
 
   const categories = _cache.data;
 
   return {
-    // ハンバーガーメニュー用: 公開クイズを持つ全カテゴリ（title昇順）
+    // ハンバーガーメニュー用: 全カテゴリ（公開クイズ優先・title昇順）
     categories,
     // グローバルナビ用: 指定順の5カテゴリ（実データで slug を解決）
     globalNav: resolveGlobalNav(categories)
