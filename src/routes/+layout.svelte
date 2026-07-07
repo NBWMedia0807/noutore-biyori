@@ -269,14 +269,10 @@
         <p class="menu-section-heading">カテゴリ</p>
         <ul class="menu-list">
           {#if data?.categories?.length}
-            {#each data.categories as c}
+            {#each data.categories as c (c.slug)}
               <li><a href="/category/{c.slug}" on:click={closeMenu}>{c.title}</a></li>
             {/each}
           {/if}
-          <li><a href="/category/kanji-quiz" on:click={closeMenu}>難読漢字</a></li>
-          <li><a href="/category/business-manner" on:click={closeMenu}>ビジネスマナー</a></li>
-          <li><a href="/category/number-quiz" on:click={closeMenu}>数字クイズ</a></li>
-          <li><a href="/category/pc-skill-quiz" on:click={closeMenu}>PCスキルクイズ</a></li>
         </ul>
       </nav>
 
@@ -296,31 +292,17 @@
   </div>
 {/if}
 
-{#if !ui.hideGlobalNavTabs}
+{#if !ui.hideGlobalNavTabs && data?.globalNav?.length}
   <nav class="main-nav">
     <div class="nav-container">
       <ul class="nav-menu">
-        {#if data?.categories?.length}
-          {#each data.categories.filter(c => c.title !== '読解クイズ') as c}
-            <li>
-              <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data
-                >{c.title}</a
-              >
-            </li>
-          {/each}
-        {/if}
-        <li>
-          <a href="/category/kanji-quiz" class="nav-link" data-sveltekit-preload-data>難読漢字</a>
-        </li>
-        <li>
-          <a href="/category/business-manner" class="nav-link" data-sveltekit-preload-data>ビジネスマナー</a>
-        </li>
-        <li>
-          <a href="/category/number-quiz" class="nav-link" data-sveltekit-preload-data>数字クイズ</a>
-        </li>
-        <li>
-          <a href="/category/pc-skill-quiz" class="nav-link" data-sveltekit-preload-data>PCスキルクイズ</a>
-        </li>
+        {#each data.globalNav as c (c.title)}
+          <li>
+            <a href={`/category/${c.slug}`} class="nav-link" data-sveltekit-preload-data
+              >{c.title}</a
+            >
+          </li>
+        {/each}
       </ul>
     </div>
   </nav>
