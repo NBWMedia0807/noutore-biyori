@@ -27,7 +27,11 @@ const FALLBACK_CATEGORIES = [
   { title: 'クロスワード', slug: 'crossword' },
   { title: '数式パズル', slug: 'formula-puzzle' },
   { title: 'ビジネスマナー', slug: 'business-manner' },
-  { title: '数字クイズ', slug: 'number-quiz' }
+  { title: '数字クイズ', slug: 'number-quiz' },
+  { title: '時間・日付計算クイズ', slug: 'time-quiz' },
+  { title: 'お金の計算クイズ', slug: 'money-quiz' },
+  { title: '文字探しクイズ', slug: 'find-quiz' },
+  { title: '虫食い算クイズ', slug: 'mushikui-quiz' }
 ];
 
 // 全カテゴリと、その公開クイズ数を取得する。

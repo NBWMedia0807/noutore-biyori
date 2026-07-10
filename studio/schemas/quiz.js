@@ -371,7 +371,11 @@ export default defineType({
           { title: '漢字', value: 'kanji' },
           { title: '四字熟語・ことわざ', value: 'idiom' },
           { title: 'PCスキル', value: 'pc-skill' },
-          { title: 'AIクイズ', value: 'ai-quiz' }
+          { title: 'AIクイズ', value: 'ai-quiz' },
+          { title: '時間・日付計算', value: 'time-calc' },
+          { title: 'お金の計算', value: 'money-calc' },
+          { title: '文字探し', value: 'find-char' },
+          { title: '虫食い算', value: 'mushikui' }
         ],
         layout: 'radio'
       }
