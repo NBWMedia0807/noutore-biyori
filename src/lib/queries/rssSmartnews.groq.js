@@ -19,7 +19,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   defined(slug.current) &&
   publishedAt < now() &&
   ${EXCLUDE_NULL_TEXT_FILTER}
-] | order(publishedAt desc)[0...20]{
+] | order(publishedAt desc)[0...30]{
   _id,
   _type,
   publishedAt,
