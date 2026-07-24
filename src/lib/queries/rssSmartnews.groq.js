@@ -19,7 +19,13 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   defined(slug.current) &&
   publishedAt < now() &&
   ${EXCLUDE_NULL_TEXT_FILTER}
-] | order(publishedAt desc)[0...30]{
+]
+// マッチ棒クイズを必ずフィード先頭に固定する。
+// 配信先（SmartNews/ママテナ/イチオシ）が「上位N件のみ取り込む」挙動でも、
+// マッチ棒が取り込み枠から漏れないようにするため。マッチ棒のスラッグは
+// 必ず "matchstick-quiz/..." で始まるので、それを 0（先頭）に寄せる。
+// 同一グループ内は従来どおり公開日の新しい順。全体上限は30件。
+| order(select(string::startsWith(slug.current, "matchstick-quiz/") => 0, 1) asc, publishedAt desc)[0...30]{
   _id,
   _type,
   publishedAt,
