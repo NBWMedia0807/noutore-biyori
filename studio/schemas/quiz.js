@@ -357,6 +357,48 @@ export default defineType({
       initialValue: false,
     }),
 
+    // ── 公開審査ステータス ─────────────────
+    // 「非公開化」を実現するための単一の判定軸。
+    // publishedAt は日付でしか制御できず記事を隠せないため、この項目で明示的に制御する。
+    // retracted にすると、サイト・カテゴリ一覧・sitemap・RSS(SmartNews/Merkystyle/TRILL)・
+    // 関連記事・毎日の再公開バッチのすべてから即座に除外され、記事URLは 410 Gone を返す。
+    defineField({
+      name: 'reviewStatus',
+      title: '公開審査ステータス',
+      description:
+        '「非公開（是正対象）」にすると、サイト・配信フィード・sitemap の全経路から除外され、記事URLは 410 Gone を返します。記事データは削除されないため、修正後に「公開可」へ戻せば復帰します。',
+      type: 'string',
+      group: 'publish',
+      options: {
+        list: [
+          { title: '✅ 公開可', value: 'approved' },
+          { title: '🕒 要確認（サイトには出ません）', value: 'needs_review' },
+          { title: '🚫 非公開（是正対象）', value: 'retracted' }
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'approved'
+    }),
+    defineField({
+      name: 'retractedReason',
+      title: '非公開の理由',
+      description:
+        '監査で検出した不備の内容を記録します（例: 別解あり 14-6=8 / 14-8=6、画像と本文の不一致）。SmartNews への説明資料の根拠になるため、具体的に残してください。',
+      type: 'text',
+      rows: 2,
+      group: 'publish',
+      hidden: ({ document }) =>
+        document?.reviewStatus !== 'retracted' && document?.reviewStatus !== 'needs_review'
+    }),
+    defineField({
+      name: 'retractedAt',
+      title: '非公開にした日時',
+      type: 'datetime',
+      group: 'publish',
+      readOnly: true,
+      hidden: ({ document }) => !document?.retractedAt
+    }),
+
     // ── クイズ種別 ───────────────────────
     defineField({
       name: 'quizType',

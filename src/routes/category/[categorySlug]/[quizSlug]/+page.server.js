@@ -13,6 +13,7 @@ import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { ensurePublishedAt, resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -118,7 +119,8 @@ export async function load({ params, setHeaders }) {
     throw error(503, 'データ取得に失敗しました。しばらくしてから再度お試しください。');
   }
 
-  if (!doc) throw error(404, `Quiz not found: ${quizSlug}`);
+  // 非公開化された記事は 410 Gone、本当に存在しない場合のみ 404
+  if (!doc) await throwGoneOrNotFound(quizSlug);
 
   const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? quizSlug);
 

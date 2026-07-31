@@ -1,10 +1,11 @@
 import { env } from '$env/dynamic/private';
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { ensurePublishedAt, resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -95,7 +96,8 @@ export async function load({ params, setHeaders }) {
     query: Q,
     logPrefix: 'quiz/[...slug]'
   });
-  if (!doc) throw error(404, `Quiz not found: ${slug}`);
+  // 非公開化された記事は 410 Gone、本当に存在しない場合のみ 404
+  if (!doc) await throwGoneOrNotFound(slug);
   const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
 
   // スラッグ正規化リダイレクト

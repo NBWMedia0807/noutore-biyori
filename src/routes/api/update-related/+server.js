@@ -17,11 +17,14 @@ import { createClient } from '@sanity/client';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 
-// 全公開済み quiz を publishedAt 降順で取得（再公開記事を除外）
+// 全公開済み quiz を publishedAt 降順で取得（再公開記事・是正対象記事を除外）
+// 是正対象を除外しないと、非公開記事への relatedArticles 参照が生成され、
+// JSON-LD の relatedLink と内部リンクが 410 のページを指してしまう。
 const ALL_QUIZ_QUERY = /* groq */ `*[
   _type == "quiz" &&
   !(_id in path("drafts.**")) &&
-  isRepublished != true
+  isRepublished != true &&
+  coalesce(reviewStatus, "approved") != "retracted"
 ] | order(publishedAt desc) {
   _id,
   "slug": slug.current,

@@ -1,15 +1,11 @@
 // src/lib/queries/rssSmartnews.groq.js
+import {
+  EXCLUDE_NULL_TEXT_FILTER,
+  QUIZ_NOT_RETRACTED_CONDITION,
+} from '$lib/queries/quizVisibility.js';
 
-// 本文に「null」が表示される（生成バグ）記事をフィードから除外するフィルタ。
-// 例：「11からnullは差が5」「6+7+null=15」のように、数値が埋まらず "null" が残ったもの。
-// ※ Sanity 側の本文を修正すれば該当しなくなり、自動的にフィードへ復帰する（self-healing）。
-export const EXCLUDE_NULL_TEXT_FILTER = /* groq */ `!(
-  pt::text(problemDescription) match "*null*" ||
-  pt::text(hints) match "*null*" ||
-  pt::text(answerExplanation) match "*null*" ||
-  pt::text(closingMessage) match "*null*" ||
-  pt::text(body) match "*null*"
-)`;
+// 本文の「null」除外フィルタと是正対象の除外条件は quizVisibility.js に集約した
+// （サイト本体・sitemap・他フィードにも同じ判定を適用するため）。
 
 // 公開済みの記事のみを取得するクエリ
 export const RSS_SMARTNEWS_QUERY = /* groq */ `
@@ -18,6 +14,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
   !(_id in path("drafts.**")) &&
   defined(slug.current) &&
   publishedAt < now() &&
+  ${QUIZ_NOT_RETRACTED_CONDITION} &&
   ${EXCLUDE_NULL_TEXT_FILTER}
 ]
 // マッチ棒クイズを必ずフィード先頭に固定する。
@@ -65,6 +62,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     publishedAt < now() &&
     _id != ^._id && // 自分自身を除外
     category._ref == ^.category._ref && // 同じカテゴリ (展開前の参照IDと比較)
+    ${QUIZ_NOT_RETRACTED_CONDITION} && // 是正対象の記事は関連記事からも除外
     ${EXCLUDE_NULL_TEXT_FILTER} // 本文に "null" が出る記事は関連記事からも除外
   ] | order(publishedAt desc)[0...3]{
     title,

@@ -1,12 +1,18 @@
 // src/lib/queries/rssMerkystyle.groq.js
+import {
+  EXCLUDE_NULL_TEXT_FILTER,
+  QUIZ_NOT_RETRACTED_CONDITION,
+} from '$lib/queries/quizVisibility.js';
 
 const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
 
-// 公開判定（ドラフト除外＆公開日時チェック）
+// 公開判定（ドラフト除外＆公開日時チェック＆是正対象除外＆生成バグ記事除外）
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
   !(_id in path("drafts.**")) &&
-  ${PUBLISHED_DATETIME_FIELD} <= now()
+  ${PUBLISHED_DATETIME_FIELD} <= now() &&
+  ${QUIZ_NOT_RETRACTED_CONDITION} &&
+  ${EXCLUDE_NULL_TEXT_FILTER}
 `;
 
 export const RSS_MERKYSTYLE_QUERY = /* groq */ `
