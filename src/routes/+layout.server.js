@@ -26,7 +26,6 @@ const FALLBACK_CATEGORIES = [
   { title: '計算クイズ', slug: 'arithmetic-quiz' },
   { title: 'クロスワード', slug: 'crossword' },
   { title: '数式パズル', slug: 'formula-puzzle' },
-  { title: 'ビジネスマナー', slug: 'business-manner' },
   { title: '数字クイズ', slug: 'number-quiz' }
 ];
 
