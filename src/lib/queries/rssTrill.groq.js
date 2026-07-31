@@ -1,12 +1,19 @@
 // src/lib/queries/rssTrill.groq.js
 // rssMerkystyle.groq.js と同じ構造で記述（動作確認済み構文を踏襲）
 
+import {
+  EXCLUDE_NULL_TEXT_FILTER,
+  QUIZ_NOT_RETRACTED_CONDITION,
+} from '$lib/queries/quizVisibility.js';
+
 const PUBLISHED_DATETIME_FIELD = 'coalesce(publishedAt, _createdAt)';
 
 const PUBLISHED_FILTER = `
   defined(slug.current) &&
   !(_id in path("drafts.**")) &&
-  ${PUBLISHED_DATETIME_FIELD} <= now()
+  ${PUBLISHED_DATETIME_FIELD} <= now() &&
+  ${QUIZ_NOT_RETRACTED_CONDITION} &&
+  ${EXCLUDE_NULL_TEXT_FILTER}
 `;
 
 export const RSS_TRILL_QUERY = /* groq */ `

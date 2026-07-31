@@ -1,7 +1,8 @@
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
 import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
@@ -45,7 +46,8 @@ export async function load({ params, setHeaders }) {
     query: Q,
     logPrefix: 'quiz/[...slug]/answer'
   });
-  if (!quiz) throw error(404, 'Answer not found');
+  // 非公開化された記事は 410 Gone、本当に存在しない場合のみ 404
+  if (!quiz) await throwGoneOrNotFound(slug);
   if (typeof quiz.slug === 'string' && quiz.slug !== slug) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
