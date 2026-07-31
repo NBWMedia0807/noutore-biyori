@@ -16,6 +16,7 @@ import {
   filterVisibleQuizzes
 } from '$lib/queries/quizVisibility.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
+import { assertCategoryNotRetracted } from '$lib/server/retracted.js';
 
 export const prerender = false;
 
@@ -202,6 +203,11 @@ const createFallbackResponse = (slug, path) => {
 export const load = async (event) => {
   const { params, setHeaders, url, isDataRequest } = event;
   const { slug } = params;
+
+  // 閉鎖されたカテゴリは 410 Gone。記事一覧だけで描画されてしまうのを防ぐため、
+  // 他の取得より先に判定する。
+  await assertCategoryNotRetracted(slug);
+
   const requestedPage = parsePageParam(url.searchParams.get('page'));
   const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 

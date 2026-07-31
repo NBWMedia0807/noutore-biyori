@@ -78,10 +78,35 @@ export const QUIZ_RETRACTED_LOOKUP = /* groq */ `*[
 
 export const QUIZ_ORDER_BY_PUBLISHED = `${QUIZ_PUBLISHED_FIELD} desc`;
 
-export const CATEGORY_DRAFT_FILTER = shouldRestrictToPublishedContent
-  ? `
+/**
+ * 閉鎖されていないカテゴリだけを通す条件（先頭に && を持たない素の式）。
+ * quiz と同じく「approved だけを通す」許可リスト方式。
+ */
+export const CATEGORY_NOT_RETRACTED_CONDITION = /* groq */ `coalesce(reviewStatus, "approved") == "approved"`;
+
+/**
+ * カテゴリ用フィルタ。閉鎖判定はプレビューの有無に関わらず常に適用する。
+ * これを通ることで、グローバルナビ・メニュー・sitemap・カテゴリ一覧から
+ * 閉鎖カテゴリが一括で消える。
+ */
+export const CATEGORY_DRAFT_FILTER =
+  (shouldRestrictToPublishedContent
+    ? `
   && !(_id in path("drafts.**"))`
-  : '';
+    : '') +
+  `
+  && ${CATEGORY_NOT_RETRACTED_CONDITION}`;
+
+/**
+ * スラッグから「存在するが閉鎖されている」カテゴリを引くクエリ。
+ * カテゴリページで 404 と 410 Gone を出し分けるために使う。
+ */
+export const CATEGORY_RETRACTED_LOOKUP = /* groq */ `*[
+  _type == "category"
+  && slug.current == $slug
+  && !(_id in path("drafts.**"))
+  && coalesce(reviewStatus, "approved") == "retracted"
+][0]{ _id, title, retractedReason }`;
 
 const toSlugString = (quiz) => {
   if (!quiz) return '';

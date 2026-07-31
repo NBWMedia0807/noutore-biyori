@@ -10,7 +10,7 @@
 
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity.server.js';
-import { QUIZ_RETRACTED_LOOKUP } from '$lib/queries/quizVisibility.js';
+import { CATEGORY_RETRACTED_LOOKUP, QUIZ_RETRACTED_LOOKUP } from '$lib/queries/quizVisibility.js';
 
 /**
  * 公開クエリが 0 件だったスラッグについて、非公開化されたものか単に存在しないのかを判定し、
@@ -33,4 +33,28 @@ export async function throwGoneOrNotFound(slug) {
   }
 
   throw error(404, `Quiz not found: ${slug}`);
+}
+
+/**
+ * 閉鎖されたカテゴリのページで 410 を返す。閉鎖されていなければ何もしない。
+ *
+ * カテゴリページはカテゴリ文書が取れなくても記事一覧だけで成立してしまう実装が
+ * あるため、「見つからなかったとき」ではなく**ページ表示の前に必ず**呼ぶ。
+ *
+ * @param {string} slug カテゴリスラッグ
+ * @returns {Promise<void>}
+ */
+export async function assertCategoryNotRetracted(slug) {
+  let retracted = null;
+  try {
+    retracted = await client.fetch(CATEGORY_RETRACTED_LOOKUP, { slug });
+  } catch (err) {
+    // 判定用クエリの失敗でページを壊さない。通常表示にフォールバックする。
+    console.error('[retracted] category lookup failed:', err);
+    return;
+  }
+
+  if (retracted?._id) {
+    throw error(410, 'このカテゴリは内容の見直しのため公開を終了しました。');
+  }
 }
