@@ -8,7 +8,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildGunosyFeed, buildGuid, toGunosyItem } from '../src/lib/rss/gunosyFeed.js';
+import {
+  buildGunosyFeed,
+  buildGuid,
+  resolveModifiedDate,
+  toGunosyItem,
+} from '../src/lib/rss/gunosyFeed.js';
 import { createFixtureDocs } from '../scripts/fixtures/gunosy-feed-docs.mjs';
 import { validateGunosyFeed } from '../scripts/validate-gunosy-feed.mjs';
 
@@ -126,6 +131,52 @@ test('pubDate と gnf:modified は RFC822（+0900）形式', () => {
       /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} \+0900$/
     );
   }
+});
+
+test('gnf:modified は pubDate より前にならない', () => {
+  const published = '2026-08-27T09:00:00+09:00';
+  // 前日に編集して翌朝公開する運用（_updatedAt < publishedAt）は公開日にクランプする
+  assert.equal(
+    resolveModifiedDate('2026-08-26T09:49:19+09:00', published)?.toISOString(),
+    new Date(published).toISOString()
+  );
+  // 公開後の編集はそのまま通す（更新の検知に影響させない）
+  const edited = '2026-08-28T10:00:00+09:00';
+  assert.equal(
+    resolveModifiedDate(edited, published)?.toISOString(),
+    new Date(edited).toISOString()
+  );
+  assert.equal(
+    resolveModifiedDate(null, published)?.toISOString(),
+    new Date(published).toISOString()
+  );
+  assert.equal(resolveModifiedDate(null, null), null);
+});
+
+test('フィード全体でも gnf:modified >= pubDate になっている', () => {
+  const now = new Date('2026-08-27T04:00:00Z');
+  const { docs, buildImageUrl } = createFixtureDocs({ now });
+  // 実データと同じ「前日編集・翌朝公開」の形にする
+  const scheduled = docs.map((doc) => ({
+    ...doc,
+    publishedAt: now.toISOString(),
+    _createdAt: now.toISOString(),
+    _updatedAt: new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString(),
+  }));
+  const xml = buildGunosyFeed(scheduled, { buildImageUrl, gaMeasurementId: GA_ID, now });
+
+  for (const item of itemBlocks(xml)) {
+    const pubDate = new Date(item.match(/<pubDate>([^<]+)<\/pubDate>/)[1]);
+    const modified = new Date(item.match(/<gnf:modified>([^<]+)<\/gnf:modified>/)[1]);
+    assert.ok(
+      modified.getTime() >= pubDate.getTime(),
+      `gnf:modified が pubDate より前: ${modified.toISOString()} < ${pubDate.toISOString()}`
+    );
+  }
+  const stray = validateGunosyFeed(xml, { now }).warnings.filter((w) =>
+    w.message.includes('gnf:modified')
+  );
+  assert.deepEqual(stray, [], JSON.stringify(stray, null, 2));
 });
 
 test('本文にリンク・script・style 属性が入らない（ガイドライン 2.3.1 / 禁止タグ）', () => {
