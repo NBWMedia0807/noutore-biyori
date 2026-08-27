@@ -1,4 +1,5 @@
 # noutore-biyori
+
 脳トレ・クイズに特化したWebメディア「脳トレ日和」のフロントエンド（HTML/CSS）リポジトリです。
 
 ## セットアップ
@@ -28,10 +29,10 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 
 1. Vercel の Environment Variables に以下を追加します（Production / Preview 両方）。値は十分な長さのランダム文字列を推奨します。
 
-   | Key                         | 用途                                                                 |
-   | --------------------------- | -------------------------------------------------------------------- |
-   | `SANITY_REVALIDATE_SECRET`  | Sanity Webhook からの認証、および ISR の再検証トークンとして利用します。 |
-   | `VERCEL_REVALIDATE_TOKEN`※ | 任意。`SANITY_REVALIDATE_SECRET` と別値にしたい場合のみ設定します。     |
+   | Key                        | 用途                                                                     |
+   | -------------------------- | ------------------------------------------------------------------------ |
+   | `SANITY_REVALIDATE_SECRET` | Sanity Webhook からの認証、および ISR の再検証トークンとして利用します。 |
+   | `VERCEL_REVALIDATE_TOKEN`※ | 任意。`SANITY_REVALIDATE_SECRET` と別値にしたい場合のみ設定します。      |
 
    ※未設定の場合は `SANITY_REVALIDATE_SECRET` の値が再検証トークンとして使われます。
 
@@ -56,6 +57,7 @@ node scripts/backfill-publishedAt.mjs
 ```
 
 ### 反映
+
 Sanity Studio のスキーマを更新した際は、以下の手順で反映・キャッシュクリアを行ってください。
 
 1. **ローカル開発環境**
@@ -71,6 +73,7 @@ Sanity Studio のスキーマを更新した際は、以下の手順で反映・
 Vercel 版と Hosted 版の Studio はどちらも `src/lib/sanityDefaults.js` に定義した `projectId` / `dataset` を参照します。環境変数で上書きしない限り、双方が同一の Sanity プロジェクト（`quljge22` / `production`）を指すため、データの参照先がズレない構成になっています。
 
 codex/add-publishedat-field-to-quiz-document-6zd8p9
+
 ### Vision での確認用クエリ
 
 Sanity Studio の Vision で公開日時が正しく保存されているか確認する際は、以下のクエリを実行してください。
@@ -79,8 +82,8 @@ Sanity Studio の Vision で公開日時が正しく保存されているか確�
 *[_type == "quiz"]{_id, title, publishedAt} | order(_updatedAt desc)[0...5]
 ```
 
-
 main
+
 ### バックデート公開の運用手順
 
 - Sanity Studio の記事編集画面には `公開日時 (publishedAt)` フィールドがあります。新規作成時は自動で現在時刻がセットされます。
@@ -93,8 +96,8 @@ main
 1. Vercel のダッシュボードで対象プロジェクトを開き、**Settings > Environment Variables** を選択します。
 2. 「Add new」から以下の値を Production と Preview の両方に追加し、デプロイを再実行してください。
 
-   | Key          | Value          | Target                 |
-   | ------------ | -------------- | ---------------------- |
+   | Key          | Value          | Target               |
+   | ------------ | -------------- | -------------------- |
    | `VITE_GA_ID` | `G-855Y7S6M95` | Production / Preview |
 
 3. 必要に応じてローカル環境でも `.env.local` に同じキーを追加すると、開発中に GA 連携を確認できます。
@@ -148,3 +151,33 @@ main
 - [ ] `<enclosure>` 画像は横 640px 以上、`<thumbnail>` は 300px 以上（利用時）
 - [ ] `pnpm lint` / `pnpm build` が成功する
 - [ ] README の手順に従い、ブラウザと `curl -I` で内容を目視確認できる
+
+## GunosyFeed（グノシー / ニュースライト / auサービスToday）
+
+- `GET /feed/gunosy` で GunosyFeed 仕様書 ver 3.2.4 準拠の RSS 2.0 フィードを配信します。
+  このフィード1本で「グノシー」「ニュースライト」「auサービスToday」の3アプリに連携されます。
+- 仕様・ガイドライン対応の詳細、Gunosy 側への連絡が必要になるタイミングは
+  [`docs/gunosy-feed.md`](docs/gunosy-feed.md) を参照してください。
+
+### 動作確認手順
+
+1. `pnpm run test:gunosy` — 仕様適合テスト（必須要素・エスケープ・関連記事3件上限など）
+2. `pnpm run validate:gunosy` — サンプル記事からフィードを生成してセルフチェック
+3. `pnpm dev` を起動し `http://localhost:5173/feed/gunosy` で実データの出力を確認
+4. デプロイ後、`pnpm run validate:gunosy https://noutorebiyori.com/feed/gunosy` でセルフチェック
+5. **デプロイ後に必須**: バリデータチェックツール <https://feed-validator.newspass.jp/> に
+   `https://noutorebiyori.com/feed/gunosy` を入力し、エラー・警告が0件であることを確認する
+
+### 仕様チェックリスト
+
+- [ ] `<rss>` に `gnf` / `content` / `dc` / `media` の4名前空間が指定されている
+- [ ] `<channel>` に title / link / description（35文字以内）/ image / gnf:wide_image_link がある
+- [ ] 各 `<item>` に title / link / guid / content:encoded / media:status / pubDate がある
+- [ ] guid が URL 形式ではなく、記事URLが変わっても不変（Sanity の `_id` を使用）
+- [ ] pubDate / gnf:modified が RFC822（+0900）形式
+- [ ] link / 画像URL がすべて https かつ256文字未満
+- [ ] `gnf:relatedLink` が1記事あたり最大3件
+- [ ] 本文にリンク・`<script>`・style 属性が含まれない（コンテンツ掲載ガイドライン対応）
+- [ ] 本文と補完関係のない画像（ロゴ・NO IMAGE）を enclosure に使っていない
+- [ ] `pnpm run test:gunosy` / `pnpm run validate:gunosy` が成功する
+- [ ] バリデータチェックツールでエラー・警告が0件
