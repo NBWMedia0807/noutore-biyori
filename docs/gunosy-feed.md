@@ -174,8 +174,14 @@ auサービスToday にはこの機能がない。
 | メディア概要   | 間違い探し・難読漢字・計算パズルなど／無料の脳トレクイズを毎日お届け |
 
 差し替える場合は同じサイズ（750×420px、PNG または JPG）で `static/` のファイルを置き換え、
-改めて media@gunosy.com へ送る。ブランドカラーは背景 `#fefae9`／アクセント `#f3a008`／
-文字 `#5a3b1c`。
+改めて media@gunosy.com へ送る。
+
+**書体・配色**（`static/logo-wide.png` も同じ）:
+
+- フォント: **Zen Maru Gothic**（丸ゴシック / SIL OFL 1.1）。
+  `static/logo.svg` が `font-family` の第一候補に指定しているブランドフォントに揃えている。
+  npm の `@fontsource/zen-maru-gothic` から取得できる
+- 配色: 背景 `#fefae9`／アクセント `#f3a008`／文字 `#5a3b1c`
 
 ## Gunosy 側への連絡が必要なタイミング
 
