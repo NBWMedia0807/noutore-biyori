@@ -9,15 +9,16 @@ Gunosy とのコンテンツパートナー契約に伴う記事連携用 RSS �
 
 ## 構成ファイル
 
-| ファイル                                | 役割                                                 |
-| --------------------------------------- | ---------------------------------------------------- |
-| `src/routes/feed/gunosy/+server.ts`     | 配信エンドポイント。Sanity 取得と HTTP 応答のみ      |
-| `src/lib/rss/gunosyFeed.js`             | XML 組み立ての本体。SvelteKit 非依存の純粋モジュール |
-| `src/lib/queries/rssGunosy.groq.js`     | Sanity から記事を取得する GROQ クエリ                |
-| `scripts/validate-gunosy-feed.mjs`      | 仕様書・ガイドラインのセルフチェッカー（CLI）        |
-| `scripts/fixtures/gunosy-feed-docs.mjs` | セルフチェック用のサンプル記事                       |
-| `tests/gunosy-feed.test.mjs`            | 仕様適合テスト（35件）                               |
-| `static/logo-wide.png`                  | `gnf:wide_image_link` 用の横長ロゴ（192×44px / PNG） |
+| ファイル                                | 役割                                                  |
+| --------------------------------------- | ----------------------------------------------------- |
+| `src/routes/feed/gunosy/+server.ts`     | 配信エンドポイント。Sanity 取得と HTTP 応答のみ       |
+| `src/lib/rss/gunosyFeed.js`             | XML 組み立ての本体。SvelteKit 非依存の純粋モジュール  |
+| `src/lib/queries/rssGunosy.groq.js`     | Sanity から記事を取得する GROQ クエリ                 |
+| `scripts/validate-gunosy-feed.mjs`      | 仕様書・ガイドラインのセルフチェッカー（CLI）         |
+| `scripts/fixtures/gunosy-feed-docs.mjs` | セルフチェック用のサンプル記事                        |
+| `tests/gunosy-feed.test.mjs`            | 仕様適合テスト（37件）                                |
+| `static/logo-wide.png`                  | `gnf:wide_image_link` 用の横長ロゴ（192×44px / PNG）  |
+| `static/gunosy-channel-banner.png`      | チャンネル誘導バナー（750×420px / PNG・グノシー専用） |
 
 XML の組み立てを `+server.ts` から切り出しているのは、Sanity にもネットワークにも触れずに
 フィードの中身をテスト・検証できるようにするため。
@@ -52,7 +53,7 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 | `media:status`                                            | `state="active"`                                                              |
 | `pubDate`                                                 | 公開日（RFC822 / +0900）                                                      |
 | `dc:creator`                                              | 記事の著者。未設定なら「脳トレ日和 編集部」                                   |
-| `gnf:modified`                                            | 更新日（RFC822 / +0900）                                                      |
+| `gnf:modified`                                            | 更新日（RFC822 / +0900）。`max(_updatedAt, publishedAt)`                      |
 | `enclosure`                                               | 問題画像→メイン画像→解答画像の順で1件。`type="image/jpeg"` `length="0"`       |
 | `gnf:relatedLink`                                         | 関連記事 最大3件（`thumbnail` は 320×240 / 4:3）                              |
 | `gnf:analytics_gn` / `gnf:analytics` / `gnf:analytics_st` | GA4 の gtag スニペット（アプリごとに1つずつ）                                 |
@@ -86,6 +87,10 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
   テキストが `<p>` / `<h1>`〜`<h6>` / `<figcaption>` のいずれかに収まっていれば指摘されない
 - **画像**: サイトロゴや「NO IMAGE」など本文と補完関係のない画像は enclosure にも本文にも入れない。
   記事に画像が無い場合は `enclosure` ごと省略する（アプリ側の既定画像が使われる）
+- **`gnf:modified` は公開日でクランプ**: Sanity の `_updatedAt` は「最後に編集した時刻」なので、
+  前日に記事を作って翌朝公開する運用だと `_updatedAt < publishedAt` となり
+  「更新日が公開日より前」という不自然な値になる。`max(_updatedAt, publishedAt)` を出力する。
+  公開後の編集は `_updatedAt` がそれより後になるため、Gunosy 側の更新検知には影響しない
 
 ## コンテンツ掲載ガイドライン対応
 
@@ -146,6 +151,31 @@ pnpm run validate:gunosy https://noutorebiyori.com/feed/gunosy
 
 > 公式ツールの表示イメージは「ニュースライト」「auサービスToday」のもの。
 > 「グノシー」では一部表現が異なる（キャプション非表示、`iframe`・`table` 非対応など）。
+
+## チャンネル誘導バナー（グノシー専用）
+
+グノシーアプリの「チャンネルホーム」に掲載される、チャンネルをフォローさせるためのバナー。
+掲載枠は4つで、どの媒体を載せるかは Gunosy 側が決める（定期更新）。ニュースライトと
+auサービスToday にはこの機能がない。
+
+- **入稿先**: media@gunosy.com へメール添付
+- **ファイル**: `static/gunosy-channel-banner.png`（750×420px / PNG）
+- **公開URL**: <https://noutorebiyori.com/gunosy-channel-banner.png>
+- **入稿は1種類のみ**（複数パターンは不可）
+
+仕様で「メディア名・ロゴ・メディア概要をバナー内に明記」と定められているため、バナーには
+以下をすべて入れている。
+
+| 要素           | バナー内の文言                                                       |
+| -------------- | -------------------------------------------------------------------- |
+| ロゴ           | サイトロゴの脳マーク（`static/logo.png` と同じ意匠）                 |
+| メディア名     | 脳トレ日和                                                           |
+| キャッチコピー | 毎日更新！ 楽しく続ける脳トレ習慣                                    |
+| メディア概要   | 間違い探し・難読漢字・計算パズルなど／無料の脳トレクイズを毎日お届け |
+
+差し替える場合は同じサイズ（750×420px、PNG または JPG）で `static/` のファイルを置き換え、
+改めて media@gunosy.com へ送る。ブランドカラーは背景 `#fefae9`／アクセント `#f3a008`／
+文字 `#5a3b1c`。
 
 ## Gunosy 側への連絡が必要なタイミング
 

@@ -381,6 +381,22 @@ const buildAnalyticsSnippet = (articleUrl, title, measurementId) => {
 };
 
 /**
+ * gnf:modified に出す日時。
+ *
+ * Sanity の _updatedAt は「最後に編集した時刻」なので、前日に記事を作って翌朝に公開する
+ * 運用だと _updatedAt < publishedAt となり「更新日が公開日より前」という不自然な値になる。
+ * 公開日より前にはならないよう publishedAt でクランプする。
+ * 公開後に記事を直した場合は _updatedAt がそれより後になるので、更新の検知には影響しない。
+ */
+export const resolveModifiedDate = (updatedAt, publishedAt) => {
+  const updated = toDate(updatedAt);
+  const published = toDate(publishedAt);
+  if (!updated) return published ?? null;
+  if (!published) return updated;
+  return updated.getTime() >= published.getTime() ? updated : published;
+};
+
+/**
  * Sanity ドキュメント1件をフィード item の中間表現へ変換する。
  * 配信できない記事（スラッグ無し・公開日不正・URLが長すぎる）は null を返す。
  */
@@ -418,7 +434,7 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
     guid: buildGuid(doc, slug),
     contentHtml: buildContentHtml(doc, title, buildImageUrl),
     pubDate,
-    modified: toRfc822Jst(doc?._updatedAt || publishedIso),
+    modified: toRfc822Jst(resolveModifiedDate(doc?._updatedAt, publishedIso)),
     creator: (typeof doc?.author?.name === 'string' && doc.author.name.trim()) || DEFAULT_CREATOR,
     enclosureUrl,
     enclosureCaption: typeof enclosureSource?.alt === 'string' ? enclosureSource.alt.trim() : '',
