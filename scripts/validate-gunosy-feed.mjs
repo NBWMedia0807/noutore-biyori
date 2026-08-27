@@ -3,10 +3,12 @@
 //
 // GunosyFeed（仕様書 ver 3.2.4）+ Gunosyコンテンツ掲載ガイドライン のセルフチェッカー。
 //
-// Gunosy 公式のバリデータチェックツール（https://feed-validator.newspass.jp/）は
-// 「公開済みのフィードURL」を入力する形式のため、デプロイ前には実行できない。
 // このスクリプトは仕様書の各条件をローカルで先に潰しておくためのもので、
 // 公式バリデータの代わりではなく「公式バリデータに投げる前の関門」として使う。
+//
+// 公式のバリデータチェックツール（https://feed-validator.newspass.jp/）には
+// 「RSSのURLを入力してチェックする」と「XMLを直接チェックする」の2つの入力欄がある。
+// デプロイ前は後者に XML を貼り付ければ検証できるので、最終確認は必ずそちらで行う。
 //
 // 使い方:
 //   node scripts/validate-gunosy-feed.mjs https://noutorebiyori.com/feed/gunosy
@@ -419,25 +421,55 @@ const checkContentHtml = (report, where, html) => {
     report.warn(where, '<br> が連続しています（グノシーでは2つ目以降が反映されません）');
   }
 
-  // 「文章は全て <p> タグで囲んでください」：ネスト階層0に地の文が無いか確認する
+  // 「文章は全て <p> タグで囲んでください」
+  //
+  // 公式バリデータは「<p>タグで囲まれていないテキストが存在します」を、
+  // テキストの直近の親要素が本文コンテナでない場合に出す。<li> 直下のテキストも
+  // 対象になることを実測で確認済み（<ul><li>ヒント</li></ul> が指摘された）。
+  // ここでも同じ判定にして、公式バリデータに投げる前に潰せるようにする。
+  const TEXT_CONTAINERS = new Set([
+    'p',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'figcaption',
+    'caption',
+    'td',
+    'th',
+  ]);
   const voidTags = new Set(['br', 'img', 'hr', 'source', 'col']);
-  let depth = 0;
+  const stack = [];
   let cursor = 0;
-  let strayText = '';
+  const strayTexts = [];
+
+  const collectText = (text) => {
+    if (!text.trim()) return;
+    const parent = stack[stack.length - 1];
+    if (parent && TEXT_CONTAINERS.has(parent)) return;
+    strayTexts.push({ text: text.trim(), parent: parent ?? '(直下)' });
+  };
+
   tagPattern.lastIndex = 0;
   while ((match = tagPattern.exec(html)) !== null) {
-    if (depth === 0) strayText += html.slice(cursor, match.index);
+    collectText(html.slice(cursor, match.index));
     cursor = tagPattern.lastIndex;
     const tag = match[1].toLowerCase();
     if (voidTags.has(tag) || /\/\s*>$/.test(match[0])) continue;
-    if (match[0].startsWith('</')) depth = Math.max(0, depth - 1);
-    else depth += 1;
+    if (match[0].startsWith('</')) {
+      if (stack[stack.length - 1] === tag) stack.pop();
+      continue;
+    }
+    stack.push(tag);
   }
-  strayText += html.slice(cursor);
-  if (strayText.trim()) {
+  collectText(html.slice(cursor));
+
+  for (const { text, parent } of strayTexts) {
     report.warn(
       where,
-      `タグで囲まれていない地の文があります（文章はすべて <p> で囲んでください）: "${strayText.trim().slice(0, 30)}"`
+      `<${parent}> 直下に <p> で囲まれていないテキストがあります: "${text.slice(0, 30)}"`
     );
   }
 

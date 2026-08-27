@@ -16,7 +16,7 @@ Gunosy とのコンテンツパートナー契約に伴う記事連携用 RSS �
 | `src/lib/queries/rssGunosy.groq.js`     | Sanity から記事を取得する GROQ クエリ                |
 | `scripts/validate-gunosy-feed.mjs`      | 仕様書・ガイドラインのセルフチェッカー（CLI）        |
 | `scripts/fixtures/gunosy-feed-docs.mjs` | セルフチェック用のサンプル記事                       |
-| `tests/gunosy-feed.test.mjs`            | 仕様適合テスト（32件）                               |
+| `tests/gunosy-feed.test.mjs`            | 仕様適合テスト（35件）                               |
 | `static/logo-wide.png`                  | `gnf:wide_image_link` 用の横長ロゴ（192×44px / PNG） |
 
 XML の組み立てを `+server.ts` から切り出しているのは、Sanity にもネットワークにも触れずに
@@ -80,6 +80,10 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
   新着5件までを残す（`MIN_ITEMS`）
 - **本文HTML**: 文章はすべて `<p>`、画像は `<figure><img><figcaption>`、
   `<script>` と `style` 属性は使わない、`<br />` は連続させない
+- **箇条書きは `<p>` で出す**: `<ul><li>` は使わず、行頭に `・` / `1. ` を付けた `<p>` にする。
+  公式バリデータが `<li>` 直下のテキストを
+  「【注意】`<p>`タグで囲まれていないテキストが存在します」として指摘するため（実測で確認）。
+  テキストが `<p>` / `<h1>`〜`<h6>` / `<figcaption>` のいずれかに収まっていれば指摘されない
 - **画像**: サイトロゴや「NO IMAGE」など本文と補完関係のない画像は enclosure にも本文にも入れない。
   記事に画像が無い場合は `enclosure` ごと省略する（アプリ側の既定画像が使われる）
 
@@ -110,19 +114,30 @@ pnpm run validate:gunosy ./feed.xml   # 手元の XML を検証
 URL長・名前空間・禁止タグ・関連記事3件上限・エスケープ漏れなど）をローカルで確認する。
 エラーが1件でもあれば終了コード1を返す。
 
-### 2. 公式バリデータチェックツール（デプロイ後・必須）
+### 2. 公式バリデータチェックツール
 
 <https://feed-validator.newspass.jp/>
 
-公式ツールは**公開済みのフィードURLを入力する形式**のため、デプロイ後にしか実行できない。
-セルフチェッカーは公式ツールの代わりではなく、公式ツールに投げる前の関門として使う。
+このツールには入力欄が2つある。
 
-```
-https://noutorebiyori.com/feed/gunosy
+| 入力欄                             | 使いどころ                                                   |
+| ---------------------------------- | ------------------------------------------------------------ |
+| **RSSのURLを入力してチェックする** | デプロイ後。公開URLを取得しに行くので、未公開だと 404 になる |
+| **XMLを直接チェックする**          | デプロイ前。生成した XML を貼り付ければそのまま検証できる    |
+
+デプロイ前に確認する場合は、ローカルの実データを貼り付けるのが本番相当になる。
+
+```bash
+pnpm dev
+# 別ターミナルで
+curl -s http://localhost:5173/feed/gunosy > gunosy-feed.xml
+pnpm run validate:gunosy ./gunosy-feed.xml   # 先に手元で潰す
+cat gunosy-feed.xml | pbcopy                 # 「XMLを直接チェックする」に貼る
 ```
 
-を入力し、**エラー・警告が0件**であることと、記事の表示イメージが崩れていないことを確認する。
-デプロイ後に必ず一度実行すること。
+デプロイ後は URL 欄に `https://noutorebiyori.com/feed/gunosy` を入力する。
+いずれの場合も**エラー・警告が0件**であることと、プレビューで記事の表示イメージが
+崩れていないことを確認する。
 
 ```bash
 # デプロイ後、公開URLに対してセルフチェックをかけることもできる

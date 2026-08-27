@@ -223,10 +223,16 @@ export const portableToGunosyHtml = (value, buildImageUrl) => {
   let listBuffer = [];
   let listType = null;
 
+  // 箇条書きは <ul><li> ではなく、行頭に記号を付けた <p> として出力する。
+  // 仕様書の「文章は全て <p> タグで囲んでください」に対し、<li> 直下のテキストは
+  // バリデータチェックツールで「<p>タグで囲まれていないテキストが存在します」と
+  // 指摘されるため（実測）。Merkystyle 用フィードの本文変換と同じ方針。
   const flushList = () => {
     if (!listType || listBuffer.length === 0) return;
-    const tag = listType === 'number' ? 'ol' : 'ul';
-    parts.push(`<${tag}>${listBuffer.map((item) => `<li>${item}</li>`).join('')}</${tag}>`);
+    listBuffer.forEach((item, index) => {
+      const prefix = listType === 'number' ? `${index + 1}. ` : '・';
+      parts.push(`<p>${prefix}${item}</p>`);
+    });
     listBuffer = [];
     listType = null;
   };

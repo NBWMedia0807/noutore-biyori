@@ -151,8 +151,36 @@ test('本文は全文（問題・ヒント・解答）を含み、地の文は <
   assert.match(first, /<h2>ヒント<\/h2>/);
   assert.match(first, /<h2>解答<\/h2>/);
   assert.match(first, /<figure><img src="https:\/\/[^"]+" alt="[^"]*" \/>/);
-  assert.match(first, /<ul><li>記号に注目してみましょう<\/li>/);
   assert.ok(!/>\s*[^<\s][^<]*<h2/.test(first), 'タグの外に地の文がある');
+});
+
+test('箇条書きは <li> ではなく <p> で出力する', () => {
+  // 公式バリデータは <li> 直下のテキストを
+  // 「<p>タグで囲まれていないテキストが存在します」として指摘する
+  const { xml } = buildFixtureFeed();
+  for (const html of contentSections(xml)) {
+    assert.ok(!/<li[\s>]/i.test(html), `<li> が残っている: ${html.slice(0, 80)}`);
+    assert.ok(!/<[uo]l[\s>]/i.test(html), '<ul>/<ol> が残っている');
+  }
+  const [first] = contentSections(xml);
+  assert.match(first, /<p>・記号に注目してみましょう<\/p><p>・数字の形も変えられます<\/p>/);
+});
+
+test('本文のテキストは <p>・見出し・figcaption のいずれかに収まっている', () => {
+  const { xml } = buildFixtureFeed();
+  const { warnings } = validateGunosyFeed(xml);
+  const stray = warnings.filter((w) => w.message.includes('<p> で囲まれていない'));
+  assert.deepEqual(stray, [], JSON.stringify(stray, null, 2));
+});
+
+test('セルフチェッカーが <li> 直下のテキストを検出する', () => {
+  const { xml } = buildFixtureFeed();
+  const broken = xml.replace(
+    '<p>・記号に注目してみましょう</p><p>・数字の形も変えられます</p>',
+    '<ul><li>記号に注目してみましょう</li><li>数字の形も変えられます</li></ul>'
+  );
+  const stray = validateGunosyFeed(broken).warnings.filter((w) => w.message.includes('<li>'));
+  assert.equal(stray.length, 2, JSON.stringify(validateGunosyFeed(broken).warnings, null, 2));
 });
 
 test('gnf:relatedLink は最大3件で、非公開の関連記事は除外される', () => {
