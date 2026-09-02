@@ -114,6 +114,18 @@ export const RSS_GUNOSY_QUERY = /* groq */ `
     ]
     | order(${PUBLISHED_DATETIME_FIELD} desc)[0...5]${RELATED_FIELDS},
     []
-  )
+  ),
+
+  // 同カテゴリだけでは3枠が埋まらない場合の最終補充（全カテゴリの新着）。
+  // カテゴリの記事数が少ない、またはカテゴリ未設定の記事では autoRelated が
+  // 3件に届かず、gnf:relatedLink が欠けたまま配信されていた。
+  // relatedLink はアプリ内で本文を読んだ人をサイトへ連れてくる唯一の導線なので、
+  // 空き枠を作らないことを優先する。
+  "fallbackRelated": *[
+    _type == "quiz" &&
+    ${PUBLISHED_FILTER} &&
+    _id != ^._id
+  ]
+  | order(${PUBLISHED_DATETIME_FIELD} desc)[0...8]${RELATED_FIELDS}
 }
 `;

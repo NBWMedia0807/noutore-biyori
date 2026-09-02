@@ -63,6 +63,17 @@ const relatedRef = (index, categorySlug, now) => ({
 });
 
 /**
+ * GROQ の fallbackRelated 相当（全カテゴリの新着）。
+ * サムネイル優先の並べ替えを検証できるよう、先頭に画像なしの記事を置いている。
+ */
+const fallbackPool = (now) => [
+  { ...relatedRef(11, 'kanji-quiz', now), image: null },
+  relatedRef(12, 'kanji-quiz', now),
+  relatedRef(13, 'business-manner', now),
+  relatedRef(14, 'kotowaza', now),
+];
+
+/**
  * サンプル記事一式と、それに対応する buildImageUrl スタブを返す。
  * @param {{now?: Date}} [options]
  */
@@ -103,6 +114,7 @@ export const createFixtureDocs = ({ now = new Date() } = {}) => {
         relatedRef(4, 'matchstick-quiz', now),
         relatedRef(5, 'matchstick-quiz', now),
       ],
+      fallbackRelated: fallbackPool(now),
     },
     {
       // 特殊文字とリンクマークを含む記事
@@ -141,6 +153,7 @@ export const createFixtureDocs = ({ now = new Date() } = {}) => {
       category: { _id: 'cat-nandoku', title: '難読漢字', name: '難読漢字', slug: 'nandoku-kanji' },
       manualRelated: [],
       autoRelated: [relatedRef(6, 'nandoku-kanji', now)],
+      fallbackRelated: fallbackPool(now),
     },
     {
       // 画像が1枚も無い記事（enclosure を省略する）
@@ -162,6 +175,7 @@ export const createFixtureDocs = ({ now = new Date() } = {}) => {
       category: { _id: 'cat-number', title: '数字クイズ', name: '数字クイズ', slug: 'number-quiz' },
       manualRelated: [],
       autoRelated: [],
+      fallbackRelated: fallbackPool(now),
     },
     {
       // 非公開の関連記事が混ざっている記事
@@ -191,6 +205,7 @@ export const createFixtureDocs = ({ now = new Date() } = {}) => {
         relatedRef(8, 'spot-the-difference', now),
       ],
       autoRelated: [relatedRef(9, 'spot-the-difference', now)],
+      fallbackRelated: fallbackPool(now),
     },
     {
       _id: 'quiz-recent-005',
@@ -211,6 +226,7 @@ export const createFixtureDocs = ({ now = new Date() } = {}) => {
       category: { _id: 'cat-kotowaza', title: 'ことわざ', name: 'ことわざ', slug: 'kotowaza' },
       manualRelated: [],
       autoRelated: [relatedRef(10, 'kotowaza', now)],
+      fallbackRelated: fallbackPool(now),
     },
   ];
 

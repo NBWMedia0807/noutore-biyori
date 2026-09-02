@@ -247,6 +247,61 @@ test('gnf:relatedLink は最大3件で、非公開の関連記事は除外され
   assert.ok(spotItem.includes('related-quiz-8'), '公開中の関連記事が出力されていない');
 });
 
+test('gnf:relatedLink は同カテゴリで埋まらない記事でも3枠すべて埋まる', () => {
+  const { xml } = buildFixtureFeed();
+  const items = itemBlocks(xml);
+  const counts = items.map((item) => (item.match(/<gnf:relatedLink /g) ?? []).length);
+  // アプリ内から自サイトへの唯一の導線なので、空き枠を作らない
+  assert.deepEqual(
+    counts,
+    counts.map(() => 3),
+    `関連記事が3件に満たない item がある: ${counts}`
+  );
+});
+
+test('関連記事が1件も無い記事でも全カテゴリの新着で3枠を埋める', () => {
+  const { xml } = buildFixtureFeed();
+  // calc-003 は manualRelated / autoRelated がどちらも空
+  const noRelatedItem = itemBlocks(xml).find((item) => item.includes('calc-003'));
+  assert.ok(noRelatedItem, '関連記事なしのサンプル記事が見つからない');
+  assert.equal((noRelatedItem.match(/<gnf:relatedLink /g) ?? []).length, 3);
+});
+
+test('同カテゴリの関連記事が全カテゴリの補充より先に並ぶ', () => {
+  const { xml } = buildFixtureFeed();
+  // nandoku-002 は同カテゴリの autoRelated を1件だけ持つ
+  const item = itemBlocks(xml).find((item) => item.includes('nandoku-002'));
+  const links = [...item.matchAll(/<gnf:relatedLink title="[^"]*" link="([^"]+)"/g)].map(
+    (m) => m[1]
+  );
+  assert.equal(links.length, 3);
+  assert.ok(links[0].includes('related-quiz-6'), `同カテゴリの記事が先頭にない: ${links}`);
+});
+
+test('補充ではサムネイル付きの記事を優先する', () => {
+  const { xml } = buildFixtureFeed();
+  const noRelatedItem = itemBlocks(xml).find((item) => item.includes('calc-003'));
+  // related-quiz-11 は画像なし。画像ありの候補だけで3枠埋まるので出てこない
+  assert.ok(
+    !noRelatedItem.includes('related-quiz-11'),
+    'サムネイルの無い記事がサムネイル付きより先に採用されている'
+  );
+  const thumbless = [...noRelatedItem.matchAll(/<gnf:relatedLink [^>]*\/>/g)].filter(
+    (m) => !m[0].includes('thumbnail=')
+  );
+  assert.equal(thumbless.length, 0, `サムネイルの無い関連記事が出力されている: ${thumbless}`);
+});
+
+test('編集部の手動指定は補充より優先され、順序も保たれる', () => {
+  const { xml } = buildFixtureFeed();
+  const item = itemBlocks(xml).find((el) => el.includes('matchstick-001'));
+  const links = [...item.matchAll(/<gnf:relatedLink title="[^"]*" link="([^"]+)"/g)].map(
+    (m) => m[1]
+  );
+  assert.ok(links[0].includes('related-quiz-1'), `手動指定1件目が先頭にない: ${links}`);
+  assert.ok(links[1].includes('related-quiz-2'), `手動指定2件目が2番目にない: ${links}`);
+});
+
 test('画像が無い記事は enclosure を出さない（ロゴで代替しない）', () => {
   const { xml } = buildFixtureFeed();
   const noImageItem = itemBlocks(xml).find((item) => item.includes('calc-003'));
