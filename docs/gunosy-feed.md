@@ -44,19 +44,19 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 
 ### item
 
-| 要素                                                      | 内容                                                                          |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `title`                                                   | 記事タイトル                                                                  |
-| `link`                                                    | カテゴリ別 canonical URL（`/category/{cat}/{slug}`）。256文字以上は配信しない |
-| `guid`                                                    | `noutorebiyori-{Sanity の _id}`。`isPermaLink="false"`                        |
-| `content:encoded`                                         | 記事全文（CDATA）。問題・ヒント・解答をすべて含む                             |
-| `media:status`                                            | `state="active"`                                                              |
-| `pubDate`                                                 | 公開日（RFC822 / +0900）                                                      |
-| `dc:creator`                                              | 記事の著者。未設定なら「脳トレ日和 編集部」                                   |
-| `gnf:modified`                                            | 更新日（RFC822 / +0900）。`max(_updatedAt, publishedAt)`                      |
-| `enclosure`                                               | 問題画像→メイン画像→解答画像の順で1件。`type="image/jpeg"` `length="0"`       |
-| `gnf:relatedLink`                                         | 関連記事 最大3件（`thumbnail` は 320×240 / 4:3）                              |
-| `gnf:analytics_gn` / `gnf:analytics` / `gnf:analytics_st` | GA4 の gtag スニペット（アプリごとに1つずつ）                                 |
+| 要素                                                      | 内容                                                                                 |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `title`                                                   | 記事タイトル                                                                         |
+| `link`                                                    | カテゴリ別 canonical URL（`/category/{cat}/{slug}`）。256文字以上は配信しない        |
+| `guid`                                                    | `noutorebiyori-{Sanity の _id}`。`isPermaLink="false"`                               |
+| `content:encoded`                                         | 記事全文（CDATA）。問題・ヒント・解答をすべて含む                                    |
+| `media:status`                                            | `state="active"`                                                                     |
+| `pubDate`                                                 | 公開日（RFC822 / +0900）                                                             |
+| `dc:creator`                                              | 記事の著者。未設定なら「脳トレ日和 編集部」                                          |
+| `gnf:modified`                                            | 更新日（RFC822 / +0900）。`max(_updatedAt, publishedAt)`                             |
+| `enclosure`                                               | 問題画像→メイン画像→解答画像の順で1件。`type="image/jpeg"` `length="0"`              |
+| `gnf:relatedLink`                                         | 関連記事 **常に3件**（`thumbnail` は 320×240 / 4:3）。下記「関連記事枠の埋め方」参照 |
+| `gnf:analytics_gn` / `gnf:analytics` / `gnf:analytics_st` | GA4 の gtag スニペット（アプリごとに1つずつ）                                        |
 
 仕様書 ver 3.2 で `item` から `description` / `gnf:category` / `gnf:keyword` が削除されたため、
 これらは出力していない。
@@ -91,6 +91,34 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
   前日に記事を作って翌朝公開する運用だと `_updatedAt < publishedAt` となり
   「更新日が公開日より前」という不自然な値になる。`max(_updatedAt, publishedAt)` を出力する。
   公開後の編集は `_updatedAt` がそれより後になるため、Gunosy 側の更新検知には影響しない
+
+## 関連記事枠（gnf:relatedLink）の埋め方
+
+本文（`content:encoded`）は問題・ヒント・解答をすべて含むため、読者はグノシーの
+アプリ内で完結できる。**`gnf:relatedLink` の3枠が、アプリ内で本文を読んだ人を
+自サイトへ連れてくる唯一の導線**になる（ガイドライン上、本文にはリンクを出せない）。
+そのため「空き枠を作らない」ことを最優先にしている。
+
+採用の優先順位（`buildRelatedLinks`）:
+
+1. **編集部が明示した関連記事**（`relatedArticles` / 順序も指定どおり）。
+   非公開・是正対象の記事は除外する
+2. **同カテゴリの新着 → 全カテゴリの新着** のうち、**サムネイルがあるもの**
+3. 同上（サムネイルが無いものも含めて残り枠を埋める）
+
+同カテゴリの新着（`autoRelated`）だけでは、カテゴリの記事数が少ない場合や
+カテゴリ未設定の記事で3枠が埋まらず、関連記事が欠けたまま配信されていた。
+全カテゴリの新着（`fallbackRelated`）を最終補充に加えてこれを解消している。
+
+サムネイル付きを先に拾うのは、アプリ内の関連記事枠が画像ありきの見え方をするため
+（画像が無い行はクリック率が落ちる）。
+
+> **並び順について**: 「人気順」は現時点では実装できない。Sanity の `quiz` スキーマに
+> PV 数などの指標フィールドが存在せず、`$lib/utils/quizPopularity.js` の
+> `computePopularityScore()` は実質「新着順」にしかなっていないため
+> （`quizPreview.js` の `metrics.pageViews` などはすべて未定義で 0 になる）。
+> 本当の人気順にするには、GA4 Data API から記事別 PV を取得して Sanity へ
+> 書き戻すバッチが別途必要になる。
 
 ## コンテンツ掲載ガイドライン対応
 

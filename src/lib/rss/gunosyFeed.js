@@ -328,11 +328,26 @@ const buildContentHtml = (doc, title, buildImageUrl) => {
   return parts.join('');
 };
 
+/**
+ * gnf:relatedLink（アプリ内の本文下に出る関連記事枠・最大3件）を組み立てる。
+ *
+ * この3枠は、グノシー / ニュースライト / auサービスToday のアプリ内で本文を
+ * 読み終えた人を自サイトへ連れてくる唯一の導線なので、
+ * 「空き枠を作らない」ことを最優先にしている。
+ *
+ * 採用の優先順位:
+ *   1. 編集部が明示した関連記事（manualRelated / 順序も指定どおり）
+ *   2. 同カテゴリの新着 → 全カテゴリの新着 のうち、サムネイルがあるもの
+ *   3. 同上（サムネイルが無いものも含めて残り枠を埋める）
+ *
+ * サムネイル付きを先に拾うのは、アプリ内の関連記事枠が画像ありきの
+ * 見え方をするため（画像が無い行はクリック率が落ちる）。
+ */
 const buildRelatedLinks = (doc, buildImageUrl) => {
   const seen = new Set();
   const result = [];
 
-  const push = (entry) => {
+  const push = (entry, { requireThumbnail = false } = {}) => {
     if (result.length >= MAX_RELATED_LINKS || !entry) return;
     const slug = normalizeSlug(entry.slug);
     const title = typeof entry.title === 'string' ? entry.title.trim() : '';
@@ -340,22 +355,28 @@ const buildRelatedLinks = (doc, buildImageUrl) => {
     const categorySlug = normalizeSlug(entry.categorySlug) || normalizeSlug(doc?.category?.slug);
     const link = buildQuizUrl(slug, categorySlug);
     if (!link || link.length >= MAX_URL_LENGTH || seen.has(link)) return;
-    seen.add(link);
     // gnf:relatedLink の thumbnail は 4:3 / 320×240px 推奨
     const thumbnail = entry.image
       ? buildImageUrl(entry.image, { width: 320, height: 240, format: 'jpg' })
       : null;
+    if (requireThumbnail && !thumbnail) return;
+    seen.add(link);
     result.push({ title, link, thumbnail: thumbnail || '' });
   };
 
-  // 編集部が明示した関連記事を優先し、足りない分を同カテゴリの新着で補う
-  for (const entry of Array.isArray(doc?.manualRelated) ? doc.manualRelated : []) {
-    if (entry?.visible === false) continue;
-    push(entry);
-  }
-  for (const entry of Array.isArray(doc?.autoRelated) ? doc.autoRelated : []) {
-    push(entry);
-  }
+  const manual = (Array.isArray(doc?.manualRelated) ? doc.manualRelated : []).filter(
+    (entry) => entry?.visible !== false
+  );
+  // 同カテゴリの新着 → 全カテゴリの新着 の順に補充する。
+  // 後者は、カテゴリの記事数が少ない・カテゴリ未設定で3枠が埋まらない記事の受け皿。
+  const supplements = [
+    ...(Array.isArray(doc?.autoRelated) ? doc.autoRelated : []),
+    ...(Array.isArray(doc?.fallbackRelated) ? doc.fallbackRelated : []),
+  ];
+
+  for (const entry of manual) push(entry);
+  for (const entry of supplements) push(entry, { requireThumbnail: true });
+  for (const entry of supplements) push(entry);
 
   return result;
 };

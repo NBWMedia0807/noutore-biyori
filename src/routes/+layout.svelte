@@ -67,17 +67,40 @@
 
   // vignette広告などでページが非表示→再表示された時にTOPへ戻すためのフラグ
   let navigatingPending = false;
+  // 「前へ進む遷移」が最後に完了した時刻。
+  // 全画面広告を閉じたあとにTOPへ戻すかどうかの判定に使う（下の isNavigationRelated）。
+  let lastForwardNavigationAt = 0;
+  // 遷移から何ms以内の全画面広告なら「遷移を挟んで表示された」とみなすか
+  const FORWARD_NAVIGATION_RECENCY_MS = 10000;
 
-  beforeNavigate(() => {
-    navigatingPending = true;
+  // 「戻る/進む」（popstate）かどうか。
+  // popstate では読んでいた位置に戻すのが正しい挙動なので、強制TOP復帰の対象から外し、
+  // SvelteKit 標準のスクロール復元に任せる。
+  // （一覧を深くスクロール → 記事 → 戻る、で毎回リスト先頭に戻され、
+  //   2本目以降のクリック＝広告インプレッションの源泉を自ら潰していた）
+  const isForwardNavigation = (navigation) => navigation?.type !== 'popstate';
+
+  beforeNavigate((navigation) => {
+    navigatingPending = isForwardNavigation(navigation);
   });
 
-  afterNavigate(({ to }) => {
+  afterNavigate((navigation) => {
     navigatingPending = false;
     menuOpen = false;
+    const to = navigation?.to;
     // ページ遷移ごとにサイドレール広告を再描画（同一パスでは再実行しない）
     refreshSideRails(to?.url?.pathname ?? window.location.pathname);
-    // ページ読み込み・遷移後は必ずTOPを表示する（ページ内アンカー遷移は除く）
+
+    // 戻る/進むはスクロール位置を復元させる（TOPへ戻さない）
+    if (!isForwardNavigation(navigation)) return;
+
+    // 初回読み込み（enter）は元々TOPから始まるので、
+    // 全画面広告の位置ズレ対策（isNavigationRelated）の起点にはしない。
+    if (navigation?.type !== 'enter') {
+      lastForwardNavigationAt = Date.now();
+    }
+
+    // 通常の遷移はTOPから読み始める（ページ内アンカー遷移は除く）
     if (!to?.url?.hash) {
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -131,8 +154,10 @@
   });
 
   onMount(() => {
-    // リロードや直リンクでの読み込み時にブラウザが前回のスクロール位置を
-    // 復元しないようにし、必ずページのTOPから表示されるようにする
+    // リロードや直リンクでの「初回読み込み」時に、ブラウザが前回のスクロール位置を
+    // 復元しないようにし、必ずページのTOPから表示されるようにする。
+    // SPA内の戻る/進むのスクロール復元は SvelteKit のルーターが担当するため、
+    // この指定によって「戻る」で位置が復元されなくなることはない。
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
@@ -150,6 +175,16 @@
       setTimeout(scrollToTop, 500);
     };
 
+    // TOPへ戻すのは「遷移を挟んで全画面広告が出た」場合だけに限定する。
+    // AdSense の「全画面広告の追加のトリガー」（2026-02〜）により、
+    // リンククリック以外（記事末尾までのスクロール、30秒無操作のあとの操作など）でも
+    // vignette が出るようになったため、遷移していないのにTOPへ飛ばすと
+    // 読んでいた位置をこちらから奪ってしまう。
+    const isNavigationRelated = () =>
+      navigatingPending ||
+      (lastForwardNavigationAt > 0 &&
+        Date.now() - lastForwardNavigationAt < FORWARD_NAVIGATION_RECENCY_MS);
+
     // サイドレール広告を初期化（十分な画面幅がある場合のみ）。
     // afterNavigate は初回ナビゲーションでも発火するが、
     // タイミング差異に備えてここでも冪等に呼んでおく。
@@ -163,13 +198,23 @@
     // ただし pushState による付与は hashchange/popstate を発火しないため、イベント監視に
     // 加えてポーリングでも状態を確認し、「開いていた→閉じた」遷移でTOPへ戻す。
     let vignetteWasOpen = window.location.hash.includes('google_vignette');
+    // 「遷移を挟んで出た広告か」は開いた瞬間に判定して覚えておく。
+    // 閉じた時点で判定すると、広告を長く開いたままにされただけで
+    // 「遷移とは無関係」と誤判定してしまうため。
+    let vignetteFollowedNavigation = vignetteWasOpen;
     const checkVignette = () => {
       const open = window.location.hash.includes('google_vignette');
       if (open) {
+        if (!vignetteWasOpen) {
+          vignetteFollowedNavigation = isNavigationRelated();
+        }
         vignetteWasOpen = true;
       } else if (vignetteWasOpen) {
         vignetteWasOpen = false;
-        forceScrollTop();
+        // 遷移を挟まずに出た広告（記事末尾までのスクロール・30秒無操作など）は、
+        // 閉じたあとも読んでいた位置のままにする。
+        if (vignetteFollowedNavigation) forceScrollTop();
+        vignetteFollowedNavigation = false;
       }
     };
     window.addEventListener('hashchange', checkVignette);
@@ -177,7 +222,8 @@
     const vignettePoll = setInterval(checkVignette, 400);
 
     // オファーウォール等でフォーカスが外れて戻った場合や、タブ非表示→再表示時の補完。
-    // 直前にページ遷移していた場合のみ（＝広告を挟んだ遷移とみなして）TOPへ戻す。
+    // 「前へ進む遷移」の途中だった場合のみ（＝広告を挟んだ遷移とみなして）TOPへ戻す。
+    // navigatingPending は popstate では立たないので、戻る/進むはここでも影響を受けない。
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && navigatingPending) {
         navigatingPending = false;
