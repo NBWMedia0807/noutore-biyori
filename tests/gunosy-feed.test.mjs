@@ -13,7 +13,9 @@ import {
   buildGuid,
   resolveModifiedDate,
   toGunosyItem,
+  IN_APP_CONTENT_GROUP,
 } from '../src/lib/rss/gunosyFeed.js';
+import { SITE_CONTENT_GROUP } from '../src/lib/analytics/traffic-source.js';
 import { createFixtureDocs } from '../scripts/fixtures/gunosy-feed-docs.mjs';
 import { validateGunosyFeed } from '../scripts/validate-gunosy-feed.mjs';
 
@@ -340,6 +342,38 @@ test('アクセス解析タグは3アプリ分あり、それぞれ script は1�
       assert.ok(!snippet.includes('http://'), '計測タグに http:// がある');
     }
   }
+});
+
+test('アクセス解析タグはアプリごとに traffic_partner を出し分ける', () => {
+  const { xml } = buildFixtureFeed();
+  const expected = {
+    'gnf:analytics_gn': 'gunosy',
+    'gnf:analytics': 'newspass',
+    'gnf:analytics_st': 'au_service_today',
+  };
+  for (const [name, partner] of Object.entries(expected)) {
+    const pattern = new RegExp(`<${name}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${name}>`, 'g');
+    const matches = [...xml.matchAll(pattern)];
+    assert.ok(matches.length > 0, `${name} が無い`);
+    for (const [, snippet] of matches) {
+      assert.ok(
+        snippet.includes(`traffic_partner:"${partner}"`),
+        `${name} の traffic_partner が ${partner} でない: ${snippet.slice(-160)}`
+      );
+      assert.ok(snippet.includes(`content_group:"${IN_APP_CONTENT_GROUP}"`), name);
+    }
+  }
+});
+
+test('アプリ内表示とサイトのコンテンツグループが別の値になっている', () => {
+  // 同じ値だと GA4 上で「アプリ内で読まれたPV」と「サイトのPV」を分離できない
+  assert.notEqual(IN_APP_CONTENT_GROUP, SITE_CONTENT_GROUP);
+});
+
+test('計測タグはセッションの参照元/メディアを書き換えない（フェーズA）', () => {
+  const { xml } = buildFixtureFeed();
+  assert.ok(!xml.includes("gtag('set'"), "gtag('set',...) が出力されている");
+  assert.ok(!/campaign/i.test(xml), 'campaign 系の指定が出力されている');
 });
 
 test('GA の測定IDが未設定なら計測タグを出さない', () => {

@@ -12,6 +12,7 @@
     "test:quiz": "ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 QUIZ_KNOWN_SLUGS=sample-quiz-a,sample-quiz-b node --test tests/quiz-pages.test.mjs",
     "test:gunosy": "node --test tests/gunosy-feed.test.mjs",
     "test:landing": "node --test tests/landing-log.test.mjs",
+    "test:traffic": "node --test tests/traffic-source.test.mjs",
     "validate:gunosy": "node scripts/validate-gunosy-feed.mjs",
     "lint": "pnpm run format:check && pnpm run check:conflicts",
     "format": "pnpm dlx prettier --write .",

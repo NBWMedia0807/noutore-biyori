@@ -53,6 +53,19 @@ export const MAX_URL_LENGTH = 256;
 // gnf:relatedLink は1 item につき最大3件
 export const MAX_RELATED_LINKS = 3;
 
+// アプリ内ビューアで読まれたPVに付ける GA4 のコンテンツグループ。
+// サイト本体のPV（$lib/analytics/traffic-source.js の SITE_CONTENT_GROUP）と
+// 同じ値にしないこと。この2つを分けるのがフェーズAの目的。
+export const IN_APP_CONTENT_GROUP = 'gunosy_inapp';
+
+// gnf:analytics 系の各要素がどのアプリ向けかの対応表。
+// 仕様書の要素名（_gn / 無印 / _st）に対応する。
+export const ANALYTICS_PARTNERS = {
+  gn: 'gunosy', // グノシー
+  np: 'newspass', // ニュースライト
+  st: 'au_service_today', // auサービスToday
+};
+
 // ---- 日付 ----
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -381,7 +394,26 @@ const buildRelatedLinks = (doc, buildImageUrl) => {
   return result;
 };
 
-const buildAnalyticsSnippet = (articleUrl, title, measurementId) => {
+/**
+ * アプリ内ビューアで動く GA4 の計測スニペット。
+ *
+ * ── なぜアプリごとに出し分けるか ────────────────────────────
+ * 従来は同じスニペットを gnf:analytics_gn / gnf:analytics / gnf:analytics_st の
+ * 3要素にそのまま使い回していたため、GA4 側でどのアプリで読まれたのかを
+ * 区別する手がかりが無く、これらのPVは (not set) に落ちていた。
+ *
+ * ── フェーズA の方針 ───────────────────────────────────────
+ * セッションの参照元 / メディアは **書き換えない**（gtag('set','campaign',...) は使わない）。
+ * content_group と traffic_partner を足すだけにして、
+ * 「アプリ内で読まれたPV」と「サイトのPV」を分離できるようにする。
+ * 既存レポートの数値と時系列は変わらない。
+ *
+ * @param {string} articleUrl 元記事の URL（中間URLで集計されないよう page_location に渡す）
+ * @param {string} title 記事タイトル
+ * @param {string} measurementId GA4 の測定ID
+ * @param {string} partner 配信先アプリの識別子（gunosy / newspass / au_service_today）
+ */
+const buildAnalyticsSnippet = (articleUrl, title, measurementId, partner) => {
   // 未設定・プレースホルダ（G-XXXXXXXXXX）のときは計測タグを出さない
   if (!measurementId || /X{4,}/.test(measurementId)) return '';
   const id = toJsString(measurementId);
@@ -396,7 +428,8 @@ const buildAnalyticsSnippet = (articleUrl, title, measurementId) => {
     `window.dataLayer=window.dataLayer||[];` +
     `function gtag(){window.dataLayer.push(arguments);}` +
     `gtag('js',new Date());` +
-    `gtag('config',${id},{page_location:${toJsString(articleUrl)},page_title:${toJsString(title)}});` +
+    `gtag('config',${id},{page_location:${toJsString(articleUrl)},page_title:${toJsString(title)},` +
+    `content_group:${toJsString(IN_APP_CONTENT_GROUP)},traffic_partner:${toJsString(partner)}});` +
     `})();</script>`
   );
 };
@@ -460,7 +493,12 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
     enclosureUrl,
     enclosureCaption: typeof enclosureSource?.alt === 'string' ? enclosureSource.alt.trim() : '',
     related: buildRelatedLinks(doc, buildImageUrl),
-    analytics: buildAnalyticsSnippet(link, title, gaMeasurementId),
+    analytics: {
+      // 要素ごとに配信先アプリが違うので、traffic_partner を変えて出し分ける
+      gn: buildAnalyticsSnippet(link, title, gaMeasurementId, ANALYTICS_PARTNERS.gn),
+      np: buildAnalyticsSnippet(link, title, gaMeasurementId, ANALYTICS_PARTNERS.np),
+      st: buildAnalyticsSnippet(link, title, gaMeasurementId, ANALYTICS_PARTNERS.st),
+    },
     publishedAtMs: publishedIso ? new Date(publishedIso).getTime() : Number.NaN,
   };
 };
@@ -498,11 +536,12 @@ const buildItemXml = (item) => {
     );
   }
 
-  if (item.analytics) {
-    // グノシー / ニュースライト / auサービスToday でそれぞれ専用の要素が必要
-    lines.push(`    <gnf:analytics_gn>${wrapCdata(item.analytics)}</gnf:analytics_gn>`);
-    lines.push(`    <gnf:analytics>${wrapCdata(item.analytics)}</gnf:analytics>`);
-    lines.push(`    <gnf:analytics_st>${wrapCdata(item.analytics)}</gnf:analytics_st>`);
+  // グノシー / ニュースライト / auサービスToday でそれぞれ専用の要素が必要。
+  // 中身は traffic_partner だけが異なる（どのアプリで読まれたか を GA4 で分けるため）。
+  if (item.analytics?.gn) {
+    lines.push(`    <gnf:analytics_gn>${wrapCdata(item.analytics.gn)}</gnf:analytics_gn>`);
+    lines.push(`    <gnf:analytics>${wrapCdata(item.analytics.np)}</gnf:analytics>`);
+    lines.push(`    <gnf:analytics_st>${wrapCdata(item.analytics.st)}</gnf:analytics_st>`);
   }
 
   lines.push('  </item>');
