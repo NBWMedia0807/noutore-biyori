@@ -5,7 +5,7 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { onMount } from 'svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
-  import { loadGtagOnce, sendPageView } from '$lib/ga';
+  import { sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
@@ -190,8 +190,10 @@
     // タイミング差異に備えてここでも冪等に呼んでおく。
     refreshSideRails(window.location.pathname);
 
-    // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
-    loadGtagOnce();
+    // GA4の初期化（gtag.js のロードと gtag('config', …, {send_page_view:false})）は
+    // app.html が初期HTMLの解析時点で済ませている。ここでは初回の page_view を1回だけ送る。
+    // 上の afterNavigate は初回(type:'enter')を shouldSkipNextPageView でスキップするので、
+    // 初回ロード時の page_view はこの1回だけになる。
     sendPageView(`${window.location.pathname}${window.location.search}`);
 
     // AdSenseのインタースティシャル(vignette)は表示時にURLへ #google_vignette を付与する。
@@ -242,7 +244,7 @@
 </script>
 
 <svelte:head>
-  <!-- GA4スクリプトはga.tsのloadGtagOnce()で動的に読み込むため、ここには記載しない -->
+  <!-- GA4 (gtag.js) は app.html で初期HTMLから読み込むため、ここには記載しない -->
   <script
     async
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846"

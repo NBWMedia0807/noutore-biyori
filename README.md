@@ -102,6 +102,26 @@ main
 
 3. 必要に応じてローカル環境でも `.env.local` に同じキーを追加すると、開発中に GA 連携を確認できます。
 
+> **`VITE_GA_ID` はビルド時に埋め込まれます。** Vercel に環境変数を追加・変更しただけでは
+> 反映されないため、必ず再デプロイしてください。
+> 設定漏れ・再デプロイ漏れでサイト全体が無計測になる事故を防ぐため、
+> `src/lib/config/analytics.js` が未設定時・プレースホルダ（`G-XXXXXXXXXX`）時に
+> 既定の測定IDへフォールバックします。サイト本体の測定IDを持つのはこのファイルだけです。
+
+#### GA4 タグの読み込み位置（重要）
+
+Google タグ（gtag.js / `gtag('config', …)`）は **`src/app.html` の初期HTMLから**読み込みます。
+`src/hooks.server.js` の `transformPageChunk` が `app.html` のプレースホルダを
+`src/lib/config/analytics.js` の測定IDへ置換します。
+
+- `send_page_view: false` を指定しているため、config は自動 page_view を送りません。
+- `page_view` は `src/lib/ga.ts` の `sendPageView()` から送ります。
+  呼び出しは `src/routes/+layout.svelte` の2箇所（初回ロードの `onMount` /
+  SPA遷移の `afterNavigate`）で、1ページにつき必ず1回です。
+- **`onMount` などハイドレーション後に gtag.js を読み込む実装に戻さないでください。**
+  セッション最初のヒットが遅れ、GA4 の「セッションの参照元/メディア」が
+  `(not set)` に落ちる原因になります。
+
 #### デプロイ後のトラッキング確認手順（GA4 リアルタイム / DebugView）
 
 1. 上記設定を適用したうえで、Vercel にデプロイされたプレビューもしくは本番環境の URL を開きます。

@@ -22,6 +22,9 @@
     href="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846" as="script"
     crossorigin="anonymous" />
 
+  <!-- GA4 (gtag.js) の接続を先に張っておく -->
+  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!--
@@ -35,6 +38,9 @@
     GDPR対象外なのでバナー不要だが、Google要件に準拠するためv2 APIを実装。
     ※ sveltekit.head より前に置かないと GA4/AdSense より遅れてしまうため
        ここに配置している。
+    ※ wait_for_update は同意更新を送ってくる CMP がある場合の待ち時間。
+       CMP は 2026-07 に撤去済みで更新が来ないため指定しない
+       （指定すると初回ヒットを無駄に遅らせうる）。
   -->
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -48,9 +54,31 @@
       'analytics_storage': 'granted',
       'functionality_storage': 'granted',
       'personalization_storage': 'granted',
-      'security_storage': 'granted',
-      'wait_for_update': 500
+      'security_storage': 'granted'
     });
+  </script>
+
+  <!--
+    GA4 (Google タグ) — 初期HTMLの解析時点で初期化する。
+    以前は $lib/ga.ts が onMount（＝ハイドレーション完了後）に script を動的注入して
+    いたため、gtag.js のダウンロード開始が JS バンドルの取得・実行を待っており、
+    セッション最初のヒットが大きく遅れていた（GA4 の
+    「セッションの参照元/メディア = (not set)」の主要因）。
+
+    - 測定IDのプレースホルダは hooks.server.js の transformPageChunk が
+      $lib/config/analytics.js の GA_MEASUREMENT_ID に置換する。
+    - send_page_view:false は維持する。初回・SPA遷移とも page_view の送信は
+      +layout.svelte 側で1回ずつ行う（config の自動 page_view との二重計測を防ぐ）。
+    - 配置は「consent default より後、SvelteKit の head 差し込みより前」を守ること
+      （dataLayer の順序: consent → js → config → event）。
+
+    注意: このコメント内にパーセント記号で囲んだ SvelteKit / 測定IDのプレースホルダを
+    書かないこと。置換対象になり、差し込まれたHTMLがコメントを途中で閉じてしまう。
+  -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=%ga.measurementId%"></script>
+  <script>
+    gtag('js', new Date());
+    gtag('config', '%ga.measurementId%', { send_page_view: false });
   </script>
 
   %sveltekit.head%
