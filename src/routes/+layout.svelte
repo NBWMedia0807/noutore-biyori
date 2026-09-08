@@ -7,6 +7,7 @@
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
+  import { shouldNoindexForQuery } from '$lib/utils/trackingParams.js';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
@@ -58,7 +59,10 @@
     : [];
 
   $: reviewMode = Boolean(data?.flags?.adsenseReviewMode);
-  $: hasQuery = Boolean(currentPage?.url?.search && currentPage.url.search.length > 0);
+  // クエリを理由に noindex にするかどうか。
+  // UTM だけが付いたURL（ニュースアプリ配信からの流入に付ける予定）は index させる。
+  // 検索・ページング・プレビューなど内容が変わりうるクエリは従来どおり noindex。
+  $: hasIndexBlockingQuery = shouldNoindexForQuery(currentPage?.url?.search);
   $: mainClass = typeof ui?.mainClass === 'string' ? ui.mainClass : '';
   let shouldSkipNextPageView = true;
   let menuOpen = false;
@@ -133,7 +137,7 @@
 
   // noindex判定
   $: isAnswerPage = (currentPage?.url?.pathname ?? '').endsWith('/answer');
-  $: noindexPage = isErrorPage || hasQuery || isAnswerPage || seo.noindex === true;
+  $: noindexPage = isErrorPage || hasIndexBlockingQuery || isAnswerPage || seo.noindex === true;
 
   const SITE_NAME = '脳トレ日和';
 
