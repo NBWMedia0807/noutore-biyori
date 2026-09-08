@@ -9,6 +9,7 @@ import { resolveImage } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
+import { withFeedUtm, FEED_UTM_SOURCE } from '$lib/utils/feedUtm.js';
 
 const sanityClient = createClient({
   projectId: import.meta.env?.VITE_SANITY_PROJECT_ID || SANITY_DEFAULTS.projectId,
@@ -126,7 +127,7 @@ const buildRelatedLinks = (doc: any) => {
       const title = typeof entry?.title === 'string' ? entry.title.trim() : '';
       if (!slug || !title) return null;
       const path = `/quiz/${slug}`;
-      const link = getAbsoluteUrl(path);
+      const link = withFeedUtm(getAbsoluteUrl(path), { source: FEED_UTM_SOURCE.merkystyle });
       const thumbnail = pickThumbnail(entry);
       return { title, link, thumbnail };
     })
@@ -137,7 +138,10 @@ const toItem = (doc: any) => {
   const slug = typeof doc?.slug === 'string' ? doc.slug.trim() : '';
   if (!slug) return null;
   const path = `/quiz/${slug}`;
-  const link = getAbsoluteUrl(path);
+  // guid は記事の同一性を表すため UTM を付けない正規URLを使う。
+  // link だけ UTM 付きにする（guid が変わると媒体側で別記事として再配信されるため）。
+  const canonicalLink = getAbsoluteUrl(path);
+  const link = withFeedUtm(canonicalLink, { source: FEED_UTM_SOURCE.merkystyle });
   const title = typeof doc?.title === 'string' ? doc.title : '脳トレ問題';
 
   const publishedIso = resolvePublishedDate(doc, doc?._id ?? slug) || doc?.publishedAt || doc?._createdAt;
@@ -210,7 +214,7 @@ const toItem = (doc: any) => {
   return {
     title,
     link,
-    guid: link,
+    guid: canonicalLink,
     description,
     encoded,
     pubDate,
