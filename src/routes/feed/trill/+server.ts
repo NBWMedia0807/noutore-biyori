@@ -8,6 +8,7 @@ import { toRfc822 } from '$lib/rss/toRfc822';
 import { portableTextToPlain } from '$lib/rss/portableText';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_TRILL_QUERY } from '$lib/queries/rssTrill.groq.js';
+import { withFeedUtm, FEED_UTM_SOURCE } from '$lib/utils/feedUtm.js';
 
 export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
@@ -284,7 +285,10 @@ const toItem = (doc: any) => {
 	const slug = typeof doc?.slug === 'string' ? doc.slug.trim() : '';
 	if (!slug) return null;
 
-	const link = getAbsoluteUrl(`/quiz/${slug}`);
+	// guid は記事の同一性を表すため UTM を付けない正規URLを使う。
+	// link だけ UTM 付きにする（guid が変わると媒体側で別記事として再配信されるため）。
+	const canonicalLink = getAbsoluteUrl(`/quiz/${slug}`);
+	const link = withFeedUtm(canonicalLink, { source: FEED_UTM_SOURCE.trill });
 	const title = typeof doc?.title === 'string' ? doc.title.trim() : '脳トレ問題';
 
 	const publishedIso =
@@ -309,10 +313,22 @@ const toItem = (doc: any) => {
 		.slice(0, 3)
 		.map((e: any) => ({
 			title: e.title.trim(),
-			link: getAbsoluteUrl(`/quiz/${e.slug.trim()}`)
+			link: withFeedUtm(getAbsoluteUrl(`/quiz/${e.slug.trim()}`), {
+				source: FEED_UTM_SOURCE.trill
+			})
 		}));
 
-	return { title, link, guid: link, description, contentHtml, pubDate, atomUpdated, eyecatchUrl, related };
+	return {
+		title,
+		link,
+		guid: canonicalLink,
+		description,
+		contentHtml,
+		pubDate,
+		atomUpdated,
+		eyecatchUrl,
+		related
+	};
 };
 
 const buildItemXml = (item: NonNullable<ReturnType<typeof toItem>>): string => {

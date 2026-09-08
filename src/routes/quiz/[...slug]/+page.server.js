@@ -87,7 +87,7 @@ const buildSeo = ({ doc, path }) => {
   });
 };
 
-export async function load({ params, setHeaders }) {
+export async function load({ params, url, setHeaders }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
   const slug = slugSegments.join('/');
   const slugContext = createSlugContext(slug);
@@ -100,15 +100,20 @@ export async function load({ params, setHeaders }) {
   if (!doc) await throwGoneOrNotFound(slug);
   const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? slug);
 
+  // リダイレクト先へクエリ文字列を引き継ぐ。
+  // TRILL / Merkystyle へ配信する記事URLは /quiz/[slug] 形式で、UTM が付いている。
+  // ここでクエリを落とすと参照元の計測ができなくなる（GA4 が (direct) に落ちる）。
+  const search = url.search ?? '';
+
   // スラッグ正規化リダイレクト
   if (typeof normalizedDoc.slug === 'string' && normalizedDoc.slug !== slug) {
-    throw redirect(308, `/quiz/${normalizedDoc.slug}`);
+    throw redirect(308, `/quiz/${normalizedDoc.slug}${search}`);
   }
 
   // カテゴリ別 canonical URL へ 308 リダイレクト（Discover トピック権威対応）
   // 複数セグメントのスラッグ（例: matchstick-quiz/article/123）はリダイレクト対象外
   if (!slug.includes('/') && normalizedDoc.category?.slug) {
-    throw redirect(308, `/category/${normalizedDoc.category.slug}/${normalizedDoc.slug}`);
+    throw redirect(308, `/category/${normalizedDoc.category.slug}/${normalizedDoc.slug}${search}`);
   }
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });

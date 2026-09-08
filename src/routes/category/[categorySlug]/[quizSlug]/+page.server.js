@@ -108,7 +108,7 @@ const buildSeo = ({ doc, path }) => {
   });
 };
 
-export async function load({ params, setHeaders }) {
+export async function load({ params, url, setHeaders }) {
   const { categorySlug, quizSlug } = params;
 
   let doc;
@@ -124,15 +124,20 @@ export async function load({ params, setHeaders }) {
 
   const normalizedDoc = ensurePublishedAt(doc, doc?._id ?? quizSlug);
 
+  // リダイレクト先へクエリ文字列を引き継ぐ。
+  // Gunosy へ配信する記事URLはこの形式で UTM が付いているため、
+  // カテゴリ変更などでリダイレクトが起きたときに参照元の計測を失わないようにする。
+  const search = url.search ?? '';
+
   // カテゴリスラッグが一致しない場合は正しいカテゴリ URL へリダイレクト
   const correctCategorySlug = normalizedDoc.category?.slug;
   if (correctCategorySlug && correctCategorySlug !== categorySlug) {
-    throw redirect(308, `/category/${correctCategorySlug}/${normalizedDoc.slug}`);
+    throw redirect(308, `/category/${correctCategorySlug}/${normalizedDoc.slug}${search}`);
   }
 
   // カテゴリ情報がない場合はフォールバック（旧 URL へ）
   if (!correctCategorySlug) {
-    throw redirect(308, `/quiz/${normalizedDoc.slug}`);
+    throw redirect(308, `/quiz/${normalizedDoc.slug}${search}`);
   }
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });

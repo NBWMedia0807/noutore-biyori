@@ -26,6 +26,10 @@
 //   - 広告・記事広告・アプリDL等への誘導リンクは出力しない
 //     （SmartNews 用フィードの snf:advertisement に相当するものは載せない）。
 
+// このファイルは tests/ や scripts/ から Node で直接読み込まれるため、
+// SvelteKit の $lib エイリアスではなく相対パスで import する。
+import { withFeedUtm, FEED_UTM_SOURCE } from '../utils/feedUtm.js';
+
 export const SITE_NAME = '脳トレ日和';
 export const SITE_URL = 'https://noutorebiyori.com';
 export const DEFAULT_CREATOR = '脳トレ日和 編集部';
@@ -353,14 +357,18 @@ const buildRelatedLinks = (doc, buildImageUrl) => {
     const title = typeof entry.title === 'string' ? entry.title.trim() : '';
     if (!slug || !title) return;
     const categorySlug = normalizeSlug(entry.categorySlug) || normalizeSlug(doc?.category?.slug);
-    const link = buildQuizUrl(slug, categorySlug);
-    if (!link || link.length >= MAX_URL_LENGTH || seen.has(link)) return;
+    // 重複判定は UTM を付ける前のURLで行う（同じ記事を二重に出さないため）
+    const canonicalLink = buildQuizUrl(slug, categorySlug);
+    if (!canonicalLink || seen.has(canonicalLink)) return;
+    const link = withFeedUtm(canonicalLink, { source: FEED_UTM_SOURCE.gunosy });
+    // グノシーは link が256文字以上のURLを取り込めない。UTM を付けたあとの長さで判定する。
+    if (link.length >= MAX_URL_LENGTH) return;
     // gnf:relatedLink の thumbnail は 4:3 / 320×240px 推奨
     const thumbnail = entry.image
       ? buildImageUrl(entry.image, { width: 320, height: 240, format: 'jpg' })
       : null;
     if (requireThumbnail && !thumbnail) return;
-    seen.add(link);
+    seen.add(canonicalLink);
     result.push({ title, link, thumbnail: thumbnail || '' });
   };
 
@@ -426,9 +434,13 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
   if (!slug) return null;
 
   const title = (typeof doc?.title === 'string' ? doc.title.trim() : '') || '脳トレ問題';
-  const link = buildQuizUrl(slug, doc?.category?.slug);
-  // グノシーは link が256文字以上の記事を取り込めない
-  if (!link || link.length >= MAX_URL_LENGTH) return null;
+  const canonicalLink = buildQuizUrl(slug, doc?.category?.slug);
+  if (!canonicalLink) return null;
+  // 配信するURLには UTM を付ける（アプリ内ブラウザは Referer を送らないため）。
+  // guid は Sanity の _id なのでURLを変えても記事の同一性には影響しない。
+  const link = withFeedUtm(canonicalLink, { source: FEED_UTM_SOURCE.gunosy });
+  // グノシーは link が256文字以上の記事を取り込めない。UTM を付けたあとの長さで判定する。
+  if (link.length >= MAX_URL_LENGTH) return null;
 
   const publishedIso =
     (typeof resolvePublishedDate === 'function'
@@ -460,7 +472,11 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
     enclosureUrl,
     enclosureCaption: typeof enclosureSource?.alt === 'string' ? enclosureSource.alt.trim() : '',
     related: buildRelatedLinks(doc, buildImageUrl),
-    analytics: buildAnalyticsSnippet(link, title, gaMeasurementId),
+    // アプリ内ビューアで動く計測タグの page_location は UTM を付けない正規URLを渡す。
+    // GA4 のページレポートにクエリ付きURLが並ぶのを避けるため。
+    // ※ この計測タグ経由のセッションに参照元を付けるには page_location ではなく
+    //   campaign_source/campaign_medium を config に渡す必要がある（未対応・要判断）。
+    analytics: buildAnalyticsSnippet(canonicalLink, title, gaMeasurementId),
     publishedAtMs: publishedIso ? new Date(publishedIso).getTime() : Number.NaN,
   };
 };
