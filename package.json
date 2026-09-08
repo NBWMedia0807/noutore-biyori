@@ -13,6 +13,7 @@
     "test:gunosy": "node --test tests/gunosy-feed.test.mjs",
     "test:landing": "node --test tests/landing-log.test.mjs",
     "test:tracking-params": "node --test tests/tracking-params.test.mjs",
+    "test:feed-utm": "node --test tests/feed-utm.test.mjs",
     "validate:gunosy": "node scripts/validate-gunosy-feed.mjs",
     "lint": "pnpm run format:check && pnpm run check:conflicts",
     "format": "pnpm dlx prettier --write .",
