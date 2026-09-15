@@ -29,6 +29,7 @@
 // このファイルは tests/ や scripts/ から Node で直接読み込まれるため、
 // SvelteKit の $lib エイリアスではなく相対パスで import する。
 import { withFeedUtm, FEED_UTM_SOURCE } from '../utils/feedUtm.js';
+import { buildGunosyAnalyticsSnippet } from './feedAnalytics.js';
 
 export const SITE_NAME = '脳トレ日和';
 export const SITE_URL = 'https://noutorebiyori.com';
@@ -118,10 +119,6 @@ const wrapCdata = (value) => {
   // 本文中に ]]> があると CDATA が途中で閉じてしまうため分割する
   return `<![CDATA[${text.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 };
-
-// gnf:analytics 内の JavaScript 文字列リテラルとして安全に埋め込む
-const toJsString = (value) =>
-  JSON.stringify(sanitizeXml(value)).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 
 const escapeHtml = (value) =>
   String(value)
@@ -389,26 +386,6 @@ const buildRelatedLinks = (doc, buildImageUrl) => {
   return result;
 };
 
-const buildAnalyticsSnippet = (articleUrl, title, measurementId) => {
-  // 未設定・プレースホルダ（G-XXXXXXXXXX）のときは計測タグを出さない
-  if (!measurementId || /X{4,}/.test(measurementId)) return '';
-  const id = toJsString(measurementId);
-  // JavaScript で動く計測コードは1要素につき1つまで。
-  // page_location / page_title に元記事の情報を渡し、
-  // /v1/xxxx のような中間URLで集計されないようにする。
-  return (
-    `<script>(function(){` +
-    `var s=document.createElement('script');s.async=true;` +
-    `s.src='https://www.googletagmanager.com/gtag/js?id='+${id};` +
-    `document.head.appendChild(s);` +
-    `window.dataLayer=window.dataLayer||[];` +
-    `function gtag(){window.dataLayer.push(arguments);}` +
-    `gtag('js',new Date());` +
-    `gtag('config',${id},{page_location:${toJsString(articleUrl)},page_title:${toJsString(title)}});` +
-    `})();</script>`
-  );
-};
-
 /**
  * gnf:modified に出す日時。
  *
@@ -474,9 +451,15 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
     related: buildRelatedLinks(doc, buildImageUrl),
     // アプリ内ビューアで動く計測タグの page_location は UTM を付けない正規URLを渡す。
     // GA4 のページレポートにクエリ付きURLが並ぶのを避けるため。
-    // ※ この計測タグ経由のセッションに参照元を付けるには page_location ではなく
-    //   campaign_source/campaign_medium を config に渡す必要がある（未対応・要判断）。
-    analytics: buildAnalyticsSnippet(canonicalLink, title, gaMeasurementId),
+    // アプリ内ビューアの閲覧は本体サイトの page_view とは別イベント
+    // （gunosy_page_view）で送る。理由は $lib/rss/feedAnalytics.js を参照。
+    analytics: buildGunosyAnalyticsSnippet({
+      measurementId: gaMeasurementId,
+      articleUrl: canonicalLink,
+      articleTitle: title,
+      articleSlug: slug,
+      articleCategory: doc?.category?.title || doc?.category?.name || '',
+    }),
     publishedAtMs: publishedIso ? new Date(publishedIso).getTime() : Number.NaN,
   };
 };

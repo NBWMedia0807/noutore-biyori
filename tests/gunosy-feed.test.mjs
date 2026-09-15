@@ -342,6 +342,41 @@ test('アクセス解析タグは3アプリ分あり、それぞれ script は1�
   }
 });
 
+test('アプリ内ビューアの閲覧は page_view ではなく gunosy_page_view で送る', () => {
+  const { xml } = buildFixtureFeed();
+  const pattern = /<gnf:analytics><!\[CDATA\[([\s\S]*?)\]\]><\/gnf:analytics>/g;
+  const snippets = [...xml.matchAll(pattern)].map((m) => m[1]);
+  assert.equal(snippets.length, 5);
+
+  for (const snippet of snippets) {
+    // 自動 page_view を止めていること（本体サイトの表示回数に混ぜない）
+    assert.ok(snippet.includes('send_page_view:false'), 'send_page_view:false が無い');
+    assert.ok(!/gtag\('event',"page_view"/.test(snippet), 'page_view を送っている');
+    // 専用イベントと面の識別情報
+    assert.ok(snippet.includes(`gtag('event',"gunosy_page_view"`), '専用イベントが無い');
+    assert.ok(snippet.includes('content_surface:"gunosy_app"'), 'content_surface が無い');
+    assert.ok(snippet.includes('distribution_platform:"gunosy"'), 'distribution_platform が無い');
+    assert.ok(snippet.includes('article_path:"/'), 'article_path が無い');
+    // アプリ内閲覧と本体サイトへの実遷移を参照元で分けるための指定
+    assert.ok(snippet.includes('campaign_source:"gunosy"'), 'campaign_source が無い');
+    assert.ok(snippet.includes('campaign_medium:"app_view"'), 'campaign_medium が無い');
+    // CDATA と script を壊さない
+    assert.ok(!snippet.includes(']]>'), 'CDATA が途中で閉じている');
+    assert.equal((snippet.match(/<\/script>/g) ?? []).length, 1, '</script> が1つでない');
+  }
+});
+
+test('計測タグの page_location は UTM を付けない正規URL', () => {
+  const { xml } = buildFixtureFeed();
+  const snippets = [...xml.matchAll(/<gnf:analytics><!\[CDATA\[([\s\S]*?)\]\]><\/gnf:analytics>/g)];
+  for (const [, snippet] of snippets) {
+    const pageLocation = snippet.match(/page_location:"([^"]+)"/)?.[1];
+    assert.ok(pageLocation, 'page_location が無い');
+    assert.ok(pageLocation.startsWith('https://noutorebiyori.com/'), pageLocation);
+    assert.ok(!pageLocation.includes('utm_'), `page_location に UTM が付いている: ${pageLocation}`);
+  }
+});
+
 test('GA の測定IDが未設定なら計測タグを出さない', () => {
   const { docs, buildImageUrl } = createFixtureDocs();
   const xml = buildGunosyFeed(docs, { buildImageUrl, gaMeasurementId: 'G-XXXXXXXXXX' });

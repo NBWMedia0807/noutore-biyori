@@ -47,7 +47,7 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 | 要素                                                      | 内容                                                                                 |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `title`                                                   | 記事タイトル                                                                         |
-| `link`                                                    | カテゴリ別 canonical URL（`/category/{cat}/{slug}`）。256文字以上は配信しない        |
+| `link`                                                    | カテゴリ別 canonical URL（`/category/{cat}/{slug}`）+ UTM。256文字以上は配信しない   |
 | `guid`                                                    | `noutorebiyori-{Sanity の _id}`。`isPermaLink="false"`                               |
 | `content:encoded`                                         | 記事全文（CDATA）。問題・ヒント・解答をすべて含む                                    |
 | `media:status`                                            | `state="active"`                                                                     |
@@ -56,7 +56,7 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 | `gnf:modified`                                            | 更新日（RFC822 / +0900）。`max(_updatedAt, publishedAt)`                             |
 | `enclosure`                                               | 問題画像→メイン画像→解答画像の順で1件。`type="image/jpeg"` `length="0"`              |
 | `gnf:relatedLink`                                         | 関連記事 **常に3件**（`thumbnail` は 320×240 / 4:3）。下記「関連記事枠の埋め方」参照 |
-| `gnf:analytics_gn` / `gnf:analytics` / `gnf:analytics_st` | GA4 の gtag スニペット（アプリごとに1つずつ）                                        |
+| `gnf:analytics_gn` / `gnf:analytics` / `gnf:analytics_st` | GA4 の gtag スニペット（アプリごとに1つずつ）。下記「計測」参照                      |
 
 仕様書 ver 3.2 で `item` から `description` / `gnf:category` / `gnf:keyword` が削除されたため、
 これらは出力していない。
@@ -132,6 +132,40 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 - **記事の非公開化に追随する**。`reviewStatus` が `approved` 以外の記事、
   本文に「null」が残っている記事は `QUIZ_FEED_SAFE_FILTER` と同じ条件で除外する。
   関連記事に選ばれた記事も同じ条件で確認し、非公開のものは `gnf:relatedLink` から外す。
+
+## 計測（GA4）
+
+設計の全体像は `docs/ga4-measurement.md` にまとめてある。GunosyFeed に関わる部分は次の2つ。
+
+### 配信URLの UTM
+
+`src/lib/utils/feedUtm.js` の `withFeedUtm()` で、`link` と `gnf:relatedLink` の URL に
+`utm_source=gunosy` / `utm_medium=referral` / `utm_campaign=feed` を付けている。
+アプリ内ブラウザは Referer を送らないため、URL に媒体名を持たせないと
+GA4 で `(direct)/(none)` に落ちてしまうため。
+
+- **グノシー / ニュースライト / auサービスToday は同じフィード・同じURLを共有する**ので、
+  `utm_source` は3アプリまとめて `gunosy` になる。URL を分けない限りアプリ単位では区別できない。
+  アプリごとの内訳はグノシー管理画面のクリック実績で見る。
+  （媒体側がアプリ別フィードを用意できるようになったら `FEED_UTM_SOURCE` を分割する）
+- 256文字制限の判定は **UTM を付けたあとの長さ**で行う（`toGunosyItem` / `buildRelatedLinks`）。
+- `guid` は Sanity の `_id` なので、URL にクエリが付いても記事の同一性には影響しない。
+
+### アプリ内ビューアの閲覧は `page_view` にしない
+
+`gnf:analytics*` に入れる計測タグは `src/lib/rss/feedAnalytics.js` が組み立てる。
+アプリ内ビューアは noutorebiyori.com をロードせずに本文を描画するため、
+素の `gtag('config', ID)`（＝ 自動 `page_view`）のままだと
+GA4 の「表示回数」に本体サイトの PV と混ざってしまう。そこで、
+
+- `send_page_view: false` で自動 `page_view` を止める
+- 代わりに専用イベント `gunosy_page_view` を送る
+  （`content_surface=gunosy_app` / `distribution_platform=gunosy` / `article_path` ほか）
+- `campaign_source=gunosy` / `campaign_medium=app_view` で
+  「アプリ内閲覧」と「本体サイトへの実遷移（`gunosy / referral`）」を参照元で分離する
+
+`page_location` には UTM を付けない canonical URL を渡している
+（GA4 のページレポートにクエリ付きURLが並ぶのを避けるため）。
 
 ## 検証手順
 
