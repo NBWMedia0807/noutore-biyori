@@ -133,9 +133,13 @@ export const createSmartnewsFixtureArticles = () => [
   },
 ];
 
-/** 広告枠（snf:advertisement）用の最新クイズ一覧 */
+/**
+ * 回遊枠のフォールバック用「サイト全体の新着」プール
+ * （globalLatestQuizzesQuery 相当）
+ */
 export const createSmartnewsFixtureLatestQuizzes = () => [
   {
+    _type: 'quiz',
     title: '難読漢字 <漢字&熟語> "上級編" の\'挑戦\'',
     slug: 'kanji-001',
     categorySlug: 'kanji-quiz',
@@ -143,6 +147,7 @@ export const createSmartnewsFixtureLatestQuizzes = () => [
     mainImage: image('kanji-001-main', '難読漢字'),
   },
   {
+    _type: 'quiz',
     title: 'マッチ棒クイズ「1本動かして正しい式に」',
     slug: 'matchstick-quiz/matchstick-001',
     categorySlug: 'matchstick-quiz',
@@ -150,10 +155,35 @@ export const createSmartnewsFixtureLatestQuizzes = () => [
     mainImage: image('matchstick-main', 'マッチ棒クイズ'),
   },
   {
+    _type: 'quiz',
     title: '間違い探し「公園の風景」',
     slug: 'spot-001',
     categorySlug: 'spot-the-difference',
     problemImage: null,
     mainImage: image('spot-001-main', '間違い探し'),
   },
+  ...Array.from({ length: 6 }, (_, i) => ({
+    _type: 'quiz',
+    title: `計算クイズ ${i + 1}`,
+    slug: `number-${String(i + 1).padStart(3, '0')}`,
+    categorySlug: 'number-quiz',
+    problemImage: image(`number-${i + 1}-problem`, '計算クイズの問題'),
+    mainImage: null,
+  })),
 ];
+
+/**
+ * マッチ棒クイズの新着プール（matchstickQuizzesQuery 相当）。
+ *
+ * マッチ棒記事を表示しているときは広告枠2 + 本文末3 + 関連記事枠3 の
+ * 合計8枠をここから取るため、自記事を除いて8件以上になるようにしている。
+ */
+export const createSmartnewsFixtureMatchstickQuizzes = () =>
+  Array.from({ length: 9 }, (_, i) => ({
+    _type: 'quiz',
+    title: `マッチ棒クイズ ${String(i + 1).padStart(3, '0')}`,
+    slug: `matchstick-quiz/matchstick-${String(i + 1).padStart(3, '0')}`,
+    categorySlug: 'matchstick-quiz',
+    problemImage: image(`matchstick-${i + 1}-problem`, 'マッチ棒クイズの問題'),
+    mainImage: null,
+  }));

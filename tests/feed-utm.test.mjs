@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { withFeedUtm, FEED_UTM_SOURCE } from '../src/lib/utils/feedUtm.js';
+import {
+  withFeedUtm,
+  FEED_UTM_SOURCE,
+  SMARTNEWS_RECIRCULATION_UTM,
+  SMARTNEWS_RECIRCULATION_CONTENT,
+} from '../src/lib/utils/feedUtm.js';
 
 const ARTICLE = 'https://noutorebiyori.com/category/kanji-quiz/sample';
 
@@ -99,6 +104,41 @@ test('Gunosy: XML出力で & が &amp; にエスケープされる', async () =>
   assert.ok(linkLine, 'UTM付きの <link> 行が存在する');
   assert.ok(linkLine.includes('&amp;utm_medium='), '& が &amp; になっている');
   assert.ok(!/[^;]&(?!amp;)/.test(linkLine), '未エスケープの & が残っていない');
+});
+
+// ── SmartNews の回遊枠（記事下からサイトへ出ていくリンク）────
+
+test('utm_content は指定したときだけ付く', () => {
+  const without = new URL(withFeedUtm(ARTICLE, { source: 'gunosy' }));
+  assert.equal(without.searchParams.get('utm_content'), null);
+
+  const withContent = new URL(withFeedUtm(ARTICLE, { source: 'gunosy', content: 'bodylink' }));
+  assert.equal(withContent.searchParams.get('utm_content'), 'bodylink');
+
+  // 空文字は付けない（意味のない utm_content= を生まないため）
+  const empty = new URL(withFeedUtm(ARTICLE, { source: 'gunosy', content: '' }));
+  assert.equal(empty.searchParams.get('utm_content'), null);
+});
+
+test('SmartNews 回遊枠は smartnews / recirculation で枠ごとに utm_content が分かれる', () => {
+  // SmartView 内の表示は snf:analytics 経由で `smartnews.com / referral` になるため、
+  // 実際にサイトへ着地した人を medium で見分けられるようにしている。
+  assert.equal(SMARTNEWS_RECIRCULATION_UTM.source, 'smartnews');
+  assert.equal(SMARTNEWS_RECIRCULATION_UTM.medium, 'recirculation');
+
+  const contents = Object.values(SMARTNEWS_RECIRCULATION_CONTENT);
+  assert.deepEqual(contents, ['sponsoredlink', 'bodylink', 'relatedlink']);
+  assert.equal(new Set(contents).size, contents.length, '枠ごとに別の値になっている');
+
+  const url = new URL(
+    withFeedUtm(ARTICLE, {
+      ...SMARTNEWS_RECIRCULATION_UTM,
+      content: SMARTNEWS_RECIRCULATION_CONTENT.sponsoredLink,
+    })
+  );
+  assert.equal(url.searchParams.get('utm_source'), 'smartnews');
+  assert.equal(url.searchParams.get('utm_medium'), 'recirculation');
+  assert.equal(url.searchParams.get('utm_content'), 'sponsoredlink');
 });
 
 test('既存の utm_medium は重複せず上書きされる', () => {

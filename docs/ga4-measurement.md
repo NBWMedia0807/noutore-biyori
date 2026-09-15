@@ -106,13 +106,20 @@ SmartView で記事を読んだ直後に本体サイトへ遷移して同一セ�
 「本体サイトへ実際に遷移した流入」と見分けが付かない。
 そこで計測タグ側で `campaign_source` / `campaign_medium` を明示している。
 
-| GA4 の参照元 / メディア    | 意味                                                   |
-| -------------------------- | ------------------------------------------------------ |
-| `smartnews / smartview`    | SmartView の**アプリ内閲覧**（本体サイトのPVではない） |
-| `smartnews.com / referral` | SmartNews から**本体サイトへ遷移**した流入             |
-| `gunosy / app_view`        | グノシー系の**アプリ内閲覧**（本体サイトのPVではない） |
-| `gunosy / referral`        | 配信URLの UTM 経由で**本体サイトへ遷移**した流入       |
-| `gunosy.com / referral`    | Web版グノシー（ブラウザ）からのリンク流入              |
+| GA4 の参照元 / メディア     | 意味                                                     |
+| --------------------------- | -------------------------------------------------------- |
+| `smartnews / smartview`     | SmartView の**アプリ内閲覧**（本体サイトのPVではない）   |
+| `smartnews / recirculation` | SmartView の**回遊枠**から本体サイトへ遷移した流入       |
+| `smartnews.com / referral`  | SmartNews から本体サイトへ遷移した流入のうち、回遊枠以外 |
+| `gunosy / app_view`         | グノシー系の**アプリ内閲覧**（本体サイトのPVではない）   |
+| `gunosy / referral`         | 配信URLの UTM 経由で**本体サイトへ遷移**した流入         |
+| `gunosy.com / referral`     | Web版グノシー（ブラウザ）からのリンク流入                |
+
+SmartView の回遊枠（記事下の広告枠・本文末リンク・関連記事枠）のリンクには
+`utm_source=smartnews` / `utm_medium=recirculation` / `utm_content=枠名` を付けている。
+**SmartNews からの実質的な送客数はこの `smartnews / recirculation` で見る**。
+枠ごとの内訳は `utm_content`（`sponsoredlink` / `bodylink` / `relatedlink`）で分かれる。
+詳細は `docs/smartnews-recirculation.md`。
 
 `gunosy / (not set)` のような表記揺れは、`utm_source` だけが残って `utm_medium` が
 欠けたセッションで発生する。本修正でアプリ内閲覧が `gunosy / app_view` に分離されるため、
@@ -181,15 +188,15 @@ GA4 管理画面 → **管理 → データの表示 → カスタム定義 → 
 - ディメンション: `イベント名`、`セッションの参照元 / メディア`、`コンテンツ表示面`
 - 指標: `イベント数`、`表示回数`、`セッション`
 
-| 見たいもの                 | 条件                                                                                     |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| 脳トレ日和 本体サイト PV   | `イベント名 = page_view`（＝ GA4 ホームの「表示回数」と一致）                            |
-| SmartNews SmartView 閲覧数 | `イベント名 = smartview_page_view` のイベント数                                          |
-| SmartNews → 本体サイト PV  | `イベント名 = page_view` かつ `セッションの参照元 / メディア = smartnews.com / referral` |
-| グノシー系アプリ内閲覧数   | `イベント名 = gunosy_page_view` のイベント数                                             |
-| Gunosy系 → 本体サイト PV   | `イベント名 = page_view` かつ `セッションの参照元 = gunosy`（medium は referral）        |
-| Google Organic             | `イベント名 = page_view` かつ `参照元 / メディア = google / organic`                     |
-| Direct                     | `イベント名 = page_view` かつ `参照元 / メディア = (direct) / (none)`                    |
+| 見たいもの                 | 条件                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 脳トレ日和 本体サイト PV   | `イベント名 = page_view`（＝ GA4 ホームの「表示回数」と一致）                                                                        |
+| SmartNews SmartView 閲覧数 | `イベント名 = smartview_page_view` のイベント数                                                                                      |
+| SmartNews → 本体サイト PV  | `イベント名 = page_view` かつ `セッションの参照元 / メディア = smartnews / recirculation`（回遊枠以外は `smartnews.com / referral`） |
+| グノシー系アプリ内閲覧数   | `イベント名 = gunosy_page_view` のイベント数                                                                                         |
+| Gunosy系 → 本体サイト PV   | `イベント名 = page_view` かつ `セッションの参照元 = gunosy`（medium は referral）                                                    |
+| Google Organic             | `イベント名 = page_view` かつ `参照元 / メディア = google / organic`                                                                 |
+| Direct                     | `イベント名 = page_view` かつ `参照元 / メディア = (direct) / (none)`                                                                |
 
 記事単位で SmartView の閲覧数を見たいときは、
 ディメンションに `記事パス`（`article_path`）、指標に `イベント数` を置き、

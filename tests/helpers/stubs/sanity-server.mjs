@@ -6,6 +6,7 @@
 import {
   createSmartnewsFixtureArticles,
   createSmartnewsFixtureLatestQuizzes,
+  createSmartnewsFixtureMatchstickQuizzes,
 } from '../../../scripts/fixtures/smartnews-feed-docs.mjs';
 
 export const previewDraftsEnabled = false;
@@ -16,6 +17,8 @@ export const client = {
     const text = String(query ?? '');
     // 記事本体のクエリだけが relatedLinks を投影している
     if (text.includes('relatedLinks')) return createSmartnewsFixtureArticles();
+    // マッチ棒プールはスラッグ前方一致で絞り込んでいる
+    if (text.includes('matchstick-quiz/')) return createSmartnewsFixtureMatchstickQuizzes();
     return createSmartnewsFixtureLatestQuizzes();
   },
 };

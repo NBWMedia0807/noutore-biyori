@@ -24,7 +24,9 @@
 // そこで campaign_source / campaign_medium を明示し、
 //   - smartnews / smartview → SmartView のアプリ内閲覧
 //   - gunosy    / app_view  → グノシー系のアプリ内閲覧
-//   - smartnews.com / referral, gunosy / referral → 本体サイトへの実遷移
+//   - smartnews / recirculation → SmartView の回遊枠から本体サイトへの実遷移
+//     （記事下の枠に付けた UTM。枠の内訳は utm_content で分かれる）
+//   - smartnews.com / referral, gunosy / referral → その他の本体サイトへの実遷移
 // を分離する。配信そのもの（本文・URL・画像）には一切影響しない。
 //
 // ── 配信仕様上の制約 ────────────────────────────────────────

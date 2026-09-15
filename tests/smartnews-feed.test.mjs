@@ -123,11 +123,13 @@ test('本文・画像・関連記事・広告枠の構造が維持されてい�
   // 関連記事は本文末尾のテキストリンク + snf:relatedLink
   assert.ok(withImage.includes('<h3>関連記事</h3>'));
   assert.ok(withImage.includes('<snf:relatedLink link="https://noutorebiyori.com/'));
-  const relatedCount = (feed.match(/<snf:relatedLink /g) ?? []).length;
-  assert.equal(
-    relatedCount,
-    articles.reduce((sum, a) => sum + (a.relatedLinks?.length ?? 0), 0)
-  );
+  // snf:relatedLink は記事ごとに最大3件（マッチ棒の推し枠）。
+  // 以前は article.relatedLinks の件数と一致していたが、本文末リンクと枠を分けたため
+  // 「同カテゴリの関連記事の件数」とは独立になった。
+  for (const item of items) {
+    const related = (item.match(/<snf:relatedLink /g) ?? []).length;
+    assert.ok(related <= 3, 'snf:relatedLink が4件以上ある');
+  }
 
   // 広告枠は1記事あたり最大2件
   for (const item of items) {
@@ -140,10 +142,20 @@ test('本文・画像・関連記事・広告枠の構造が維持されてい�
   assert.equal((feed.match(/<media:thumbnail url="/g) ?? []).length, items.length);
 });
 
-test('本文中のリンクは本体サイトの canonical URL のまま（UTM を付けない）', () => {
-  for (const href of [...feed.matchAll(/href="([^"]+)"/g)].map((m) => m[1])) {
+test('本文末の回遊リンクは本体サイト宛で、枠を識別する UTM が付く', () => {
+  // SmartFormat 仕様で UTM を外すのは canonical 相当の <link> / <guid>（上のテストで固定）。
+  // 本文末リンクは SmartView から本体サイトへ出ていく外向きリンクなので、
+  // どの枠のクリックかを GA4 で見分けられるよう utm_content を付けている。
+  const hrefs = [...feed.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(hrefs.length > 0, '本文末の回遊リンクが1本も出ていない');
+
+  for (const href of hrefs) {
     assert.ok(href.startsWith('https://noutorebiyori.com/'), href);
-    assert.ok(!href.includes('utm_'), `本文リンクに UTM が付いている: ${href}`);
+    assert.ok(href.includes('utm_source=smartnews'), href);
+    assert.ok(href.includes('utm_medium=recirculation'), href);
+    assert.ok(href.includes('utm_content=bodylink'), href);
+    // CDATA 内の HTML なので & は &amp; になっていること
+    assert.ok(!/&(?!amp;)/.test(href), `未エスケープの & が残っている: ${href}`);
   }
 });
 
@@ -195,4 +207,95 @@ test('タイトルに特殊文字がある記事でも計測タグが壊れな�
   assert.ok(snippet.includes('\\u003c'), '< がエスケープされていない');
   const js = snippet.replace(/^<script>/, '').replace(/<\/script>$/, '');
   assert.doesNotThrow(() => new Function(js), 'JavaScript の構文が壊れている');
+});
+
+// ── 記事下の回遊枠（8枠ユニーク8記事）─────────────────────
+
+/** item から枠ごとのリンク先パスを取り出す */
+const slotPaths = (item) => {
+  const paths = (regex) =>
+    [...item.matchAll(regex)].map((m) => new URL(m[1].replace(/&amp;/g, '&')).pathname);
+  return {
+    ad: paths(/<snf:sponsoredLink link="([^"]+)"/g),
+    body: paths(/<a href="([^"]+)"/g),
+    related: paths(/<snf:relatedLink link="([^"]+)"/g),
+  };
+};
+
+test('回遊枠は8枠すべて別々の記事を指す（自記事も含めて重複しない）', () => {
+  itemBlocks(feed).forEach((item, index) => {
+    const { ad, body, related } = slotPaths(item);
+    const all = [...ad, ...body, ...related];
+    assert.equal(new Set(all).size, all.length, `item[${index}] の枠が重複している`);
+
+    const selfPath = new URL(item.match(/<link>([^<]+)<\/link>/)[1]).pathname;
+    assert.ok(!all.includes(selfPath), `item[${index}] が自分自身をレコメンドしている`);
+  });
+});
+
+test('マッチ棒以外の記事は関連記事枠がマッチ棒の推し枠になる', () => {
+  itemBlocks(feed).forEach((item, index) => {
+    const selfPath = new URL(item.match(/<link>([^<]+)<\/link>/)[1]).pathname;
+    if (selfPath.startsWith('/quiz/matchstick-quiz/')) return;
+
+    const { related } = slotPaths(item);
+    assert.ok(related.length > 0, `item[${index}] の関連記事枠が空`);
+    for (const path of related) {
+      assert.ok(
+        path.startsWith('/quiz/matchstick-quiz/'),
+        `item[${index}] の関連記事枠にマッチ棒以外が入っている: ${path}`
+      );
+    }
+  });
+});
+
+test('マッチ棒記事は8枠すべてマッチ棒から 1-2 / 3-5 / 6-8 の順で埋まる', () => {
+  const item = itemBlocks(feed).find((block) =>
+    block.includes('<link>https://noutorebiyori.com/quiz/matchstick-quiz/')
+  );
+  assert.ok(item, 'マッチ棒記事の item が無い');
+
+  const { ad, body, related } = slotPaths(item);
+  for (const path of [...ad, ...body, ...related]) {
+    assert.ok(path.startsWith('/quiz/matchstick-quiz/'), `マッチ棒以外が入っている: ${path}`);
+  }
+  // プールの並び順どおりに 広告枠 → 本文末 → 関連記事枠 の順で取られる
+  const order = [...ad, ...body, ...related];
+  assert.deepEqual([...order].sort(), order, 'プールの順序どおりに割り当てられていない');
+});
+
+test('枠ごとに utm_content が分かれている', () => {
+  const item = itemBlocks(feed)[0];
+  const utmOf = (regex) =>
+    [...item.matchAll(regex)].map((m) =>
+      new URL(m[1].replace(/&amp;/g, '&')).searchParams.get('utm_content')
+    );
+
+  assert.deepEqual(
+    new Set(utmOf(/<snf:sponsoredLink link="([^"]+)"/g)),
+    new Set(['sponsoredlink'])
+  );
+  assert.deepEqual(new Set(utmOf(/<a href="([^"]+)"/g)), new Set(['bodylink']));
+  assert.deepEqual(new Set(utmOf(/<snf:relatedLink link="([^"]+)"/g)), new Set(['relatedlink']));
+});
+
+test('XML 属性の UTM は & がエスケープされている', () => {
+  for (const attr of [...feed.matchAll(/<snf:(?:sponsoredLink|relatedLink) link="([^"]+)"/g)]) {
+    const link = attr[1];
+    assert.ok(link.includes('&amp;utm_'), `& がエスケープされていない: ${link}`);
+    assert.ok(!/&(?!amp;)/.test(link), `未エスケープの & が残っている: ${link}`);
+  }
+});
+
+test('コラム記事（post）にも本文末の回遊リンクが出る', () => {
+  const postArticle = articles.find((article) => article._type === 'post');
+  assert.ok(postArticle, 'テスト用の post 記事が見つからない');
+
+  const item = itemBlocks(feed).find((block) => block.includes(`/${postArticle.slug}</link>`));
+  assert.ok(item, 'post の item が無い');
+
+  const { ad, body, related } = slotPaths(item);
+  assert.equal(body.length, 3, 'post の本文末リンクが3本出ていない');
+  assert.equal(ad.length + body.length + related.length, 8, 'post の回遊枠が8枠になっていない');
+  assert.ok(item.includes('<h3>関連記事</h3>'));
 });
