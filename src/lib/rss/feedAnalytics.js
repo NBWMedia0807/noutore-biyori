@@ -61,6 +61,19 @@ const sanitize = (value) =>
 const toJsString = (value) =>
   JSON.stringify(sanitize(value)).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 
+// 専用の dataLayer 名。gtag.js は `l=` パラメータで読み書きする配列名を変えられる。
+//
+// これを使う理由は、配信先のページが「自分のものではない」から。
+// 既定の `window.dataLayer` は1ページに1つしかない共有のキューなので、
+// アプリ内ビューアのページが媒体自身の GA を動かしていると、
+//   - こちらのイベントが媒体のプロパティにも送られる
+//   - 媒体のイベントがこちらのプロパティにも入ってくる
+// という相互汚染が起きうる（send_to で前者は防げるが、後者は防げない）。
+//
+// 専用の名前にしておけば、こちらは window.dataLayer に一切触れず、
+// 双方向で完全に独立する。媒体の計測を壊すこともない。
+export const DATA_LAYER_NAME = 'noutorebiyoriDataLayer';
+
 /** 測定IDが未設定・プレースホルダ（G-XXXXXXXXXX）なら計測タグを出さない */
 const isUsableMeasurementId = (measurementId) =>
   typeof measurementId === 'string' && measurementId !== '' && !/X{4,}/.test(measurementId);
@@ -133,10 +146,8 @@ const buildInAppAnalyticsSnippet = ({
 
   // 専用イベント: 記事単位で閲覧数を集計できるように記事の識別情報も持たせる。
   //
-  // send_to を必ず付ける。window.dataLayer はページ全体で共有されるので、
-  // アプリ内ビューアのページが媒体自身の GA4 を動かしていた場合、
-  // send_to が無いイベントはそちらのプロパティにも送られてしまう。
-  // 送信先をこちらの測定IDに限定して、他社プロパティを汚さないようにする。
+  // send_to も明示しておく。専用 dataLayer で隔離済みなので本来は不要だが、
+  // 「このイベントの送信先はこの測定IDだけ」をタグ自身に書いておく。
   const eventParams = toJsObject([
     ['content_surface', contentSurface],
     ['distribution_platform', distributionPlatform],
@@ -149,15 +160,18 @@ const buildInAppAnalyticsSnippet = ({
     ['send_to', measurementId],
   ]);
 
+  const q = toJsString(DATA_LAYER_NAME);
+
   return (
     `<script>(function(){` +
     `var s=document.createElement('script');s.async=true;` +
-    `s.src='https://www.googletagmanager.com/gtag/js?id='+${id};` +
+    // l= で専用の dataLayer 名を指定し、ページ既定の window.dataLayer を使わない
+    `s.src='https://www.googletagmanager.com/gtag/js?id='+${id}+'&l='+${q};` +
     `document.head.appendChild(s);` +
-    `window.dataLayer=window.dataLayer||[];` +
+    `window[${q}]=window[${q}]||[];` +
     // gtag は IIFE 内のローカル関数に留める。window.gtag へ代入すると、
     // アプリ内ビューアのページが自前の GA を動かしていた場合にそれを壊す。
-    `function gtag(){window.dataLayer.push(arguments);}` +
+    `function gtag(){window[${q}].push(arguments);}` +
     `gtag('js',new Date());` +
     `gtag('config',${id},${configParams});` +
     `gtag('event',${toJsString(eventName)},${eventParams});` +
