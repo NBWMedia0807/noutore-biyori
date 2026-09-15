@@ -212,7 +212,12 @@ export async function GET({ request }) {
 			// SmartNews が許可する「最終パラグラフ以降の関連記事扱い・最大3本・テキストリンク」
 			// の形で出力する（BODY_LINK_COUNT = 3 を超えない割り当てになっている）。
 			// ※ この RSS は SmartNews・ママテナ・イチオシ共通で、いずれもこの準拠版を配信する。
-			if (article._type === 'quiz' && bodyLinks.length > 0) {
+			//
+			// quiz / post のどちらにも出す。以前はクイズ本文にしか関連記事が無かったため
+			// `_type === 'quiz'` で絞っていたが、回遊枠はマッチ棒プールとサイト全体の新着から
+			// 埋めるようになったので、コラム記事（post）でも3枠を使える。
+			// ここで絞ると割り当て済みの3件が出力されずに捨てられ、post だけ 5枠になってしまう。
+			if (bodyLinks.length > 0) {
 				let relatedHtml = '<br /><br /><h3>関連記事</h3>';
 
 				for (const post of bodyLinks) {

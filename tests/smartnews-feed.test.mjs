@@ -286,3 +286,16 @@ test('XML 属性の UTM は & がエスケープされている', () => {
     assert.ok(!/&(?!amp;)/.test(link), `未エスケープの & が残っている: ${link}`);
   }
 });
+
+test('コラム記事（post）にも本文末の回遊リンクが出る', () => {
+  const postArticle = articles.find((article) => article._type === 'post');
+  assert.ok(postArticle, 'テスト用の post 記事が見つからない');
+
+  const item = itemBlocks(feed).find((block) => block.includes(`/${postArticle.slug}</link>`));
+  assert.ok(item, 'post の item が無い');
+
+  const { ad, body, related } = slotPaths(item);
+  assert.equal(body.length, 3, 'post の本文末リンクが3本出ていない');
+  assert.equal(ad.length + body.length + related.length, 8, 'post の回遊枠が8枠になっていない');
+  assert.ok(item.includes('<h3>関連記事</h3>'));
+});
