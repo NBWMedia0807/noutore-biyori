@@ -15,6 +15,7 @@
 import { createPageViewTracker } from '$lib/analytics/pageViewTracker.js';
 import { shouldMeasureHostname } from '$lib/analytics/measurementEnvironment.js';
 import { CONTENT_SURFACE } from '$lib/analytics/surfaces.js';
+import { detectAppWebview } from '$lib/analytics/appWebview.js';
 
 const SCRIPT_ID = 'ga4-gtag-script';
 const INLINE_SCRIPT_ID = `${SCRIPT_ID}-inline-bootstrap`;
@@ -33,6 +34,14 @@ const getMeasurementId = (): string | undefined => {
 /** プレビュー / ローカル開発では計測しない（本番プロパティを汚さないため） */
 const isMeasurableEnvironment = (): boolean =>
   typeof window !== 'undefined' && shouldMeasureHostname(window.location.hostname);
+
+/**
+ * このページを開いたアプリ内ブラウザ。
+ * 「アプリ内ビューアか本体サイトか」はイベント名で確実に分かるので、これは
+ * 本体サイト PV の内訳（SmartNews のアプリ内ブラウザで開いた PV など）を見るための補助。
+ */
+const getAppWebview = (): string =>
+  detectAppWebview(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
 export const loadGtagOnce = () => {
   if (typeof window === 'undefined' || isInitialized || !isMeasurableEnvironment()) {
@@ -56,13 +65,13 @@ export const loadGtagOnce = () => {
     const inlineScript = document.createElement('script');
     inlineScript.id = INLINE_SCRIPT_ID;
     // send_page_view: false にして、初回表示も SPA 遷移も sendPageView() の1経路に統一する。
-    // content_surface はここで既定値として持たせ、page_view 以外のイベントにも付ける。
+    // content_surface / app_webview はここで既定値として持たせ、page_view 以外のイベントにも付ける。
     inlineScript.text = `
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments);}
       window.gtag = gtag;
       gtag('js', new Date());
-      gtag('config', ${JSON.stringify(measurementId)}, {"send_page_view": false, "content_surface": ${JSON.stringify(CONTENT_SURFACE.website)}});
+      gtag('config', ${JSON.stringify(measurementId)}, {"send_page_view": false, "content_surface": ${JSON.stringify(CONTENT_SURFACE.website)}, "app_webview": ${JSON.stringify(getAppWebview())}});
     `;
     document.head.appendChild(inlineScript);
   }
@@ -84,6 +93,10 @@ const pageViewTracker = createPageViewTracker({
       // 「本体サイトのページをロードした閲覧」であることの目印。
       // SmartView / グノシー系アプリ内ビューアの閲覧と GA4 上で区別するために使う。
       content_surface: CONTENT_SURFACE.website,
+      // 本体サイト PV の内訳。どのアプリのアプリ内ブラウザで開かれたか（推定）。
+      // セッションの参照元と違ってイベント単位なので、SmartView からの遷移で
+      // セッションが続いていても、この1 PV 単独で判定できる。
+      app_webview: getAppWebview(),
       send_to: measurementId,
     });
   },

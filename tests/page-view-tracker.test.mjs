@@ -13,6 +13,7 @@ import {
   shouldMeasureHostname,
 } from '../src/lib/analytics/measurementEnvironment.js';
 import { CONTENT_SURFACE } from '../src/lib/analytics/surfaces.js';
+import { APP_WEBVIEW, detectAppWebview } from '../src/lib/analytics/appWebview.js';
 
 const createHarness = () => {
   const sent = [];
@@ -97,4 +98,41 @@ test('本番ホスト名でだけ計測する（プレビュー・ローカル�
 
 test('本体サイトの content_surface は website', () => {
   assert.equal(CONTENT_SURFACE.website, 'website');
+});
+
+// ── 本体サイト PV の内訳（どのアプリ内ブラウザで開かれたか）────────
+
+test('SmartNews のアプリ内ブラウザを判定できる', () => {
+  const ua =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 ' +
+    '(KHTML, like Gecko) Mobile/15E148 SmartNews/25.3.0';
+  assert.equal(detectAppWebview(ua), APP_WEBVIEW.smartnews);
+});
+
+test('グノシー系3アプリを区別できる（個別アプリを優先する）', () => {
+  assert.equal(detectAppWebview('Mozilla/5.0 ... Gunosy-Servicetoday/1.0'), 'au_service_today');
+  assert.equal(detectAppWebview('Mozilla/5.0 ... Gunosy-Newspass/1.0'), 'newspass');
+  assert.equal(detectAppWebview('Mozilla/5.0 ... Gunosy/1.0'), 'gunosy');
+});
+
+test('判定は大文字小文字を問わない', () => {
+  assert.equal(detectAppWebview('... SMARTNEWS/25.3.0'), APP_WEBVIEW.smartnews);
+  assert.equal(detectAppWebview('... GUNOSY/1.0'), APP_WEBVIEW.gunosy);
+});
+
+test('通常のブラウザは browser になる', () => {
+  const chrome =
+    'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+    'Chrome/127.0.0.0 Mobile Safari/537.36';
+  const safari =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 ' +
+    '(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+  assert.equal(detectAppWebview(chrome), APP_WEBVIEW.browser);
+  assert.equal(detectAppWebview(safari), APP_WEBVIEW.browser);
+});
+
+test('UA が取れなくても値は必ず入る（(not set) を作らない）', () => {
+  assert.equal(detectAppWebview(''), APP_WEBVIEW.browser);
+  assert.equal(detectAppWebview(undefined), APP_WEBVIEW.browser);
+  assert.equal(detectAppWebview(null), APP_WEBVIEW.browser);
 });
