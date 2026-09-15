@@ -3,6 +3,7 @@ import { urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_FEED_SAFE_FILTER } from '$lib/queries/quizVisibility.js';
+import { buildSmartViewAnalyticsSnippet } from '$lib/rss/feedAnalytics.js';
 import {
 	MATCHSTICK_SLUG_PREFIX,
 	SMARTNEWS_RECIRCULATION_CONTENT,
@@ -16,6 +17,9 @@ const siteLink = 'https://noutorebiyori.com/';
 const siteDescription =
 	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = 'https://noutorebiyori.com/logo.png';
+// SmartView（アプリ内ビューア）に置く GA4 の測定ID。本体サイトと同じプロパティに送る。
+// 面の区別は content_surface / 専用イベント名で行うため、測定IDは分けない。
+const GA_MEASUREMENT_ID = 'G-855Y7S6M95';
 
 // 回遊枠で使う記事の共通射影。どのプールから来ても同じ形で扱えるようにする。
 const RECIRCULATION_PROJECTION = /* groq */ `{
@@ -275,6 +279,22 @@ export async function GET({ request }) {
 			// CDATAセクションが壊れるのを防ぐ
 			const safeContentHtml = contentHtml.replace(/]]>/g, ']]&gt;');
 
+			// SmartView（アプリ内ビューア）での閲覧を計測するタグ。
+			// SmartView は noutorebiyori.com をロードせずに本文を描画するため、
+			// 通常の page_view ではなく専用イベント smartview_page_view を送る。
+			// （理由と GA4 側の見方は $lib/rss/feedAnalytics.js のコメント参照）
+			const analyticsSnippet = buildSmartViewAnalyticsSnippet({
+				measurementId: GA_MEASUREMENT_ID,
+				articleUrl: articleLink,
+				articleTitle: article.title,
+				articleSlug: article.slug,
+				articleCategory: article.category?.title || article.category?.name || ''
+			});
+			// 測定IDが未設定のときは空要素を出さず、要素ごと省略する
+			const analyticsXml = analyticsSnippet
+				? `<snf:analytics><![CDATA[${analyticsSnippet}]]></snf:analytics>`
+				: '';
+
 			return `
 		<item>
 			<title>${escapeXml(article.title)}</title>
@@ -288,7 +308,7 @@ export async function GET({ request }) {
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
 			${advertisementXml}
 			${relatedLinksXml}
-			<snf:analytics><![CDATA[<script>(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-855Y7S6M95';document.head.appendChild(s);window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-855Y7S6M95');})();</script>]]></snf:analytics>
+			${analyticsXml}
 		</item>
 		`.trim();
 		};
