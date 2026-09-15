@@ -54,7 +54,9 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     "slug": slug.current
   },
 
-  // 関連記事
+  // 同カテゴリの新着プール。
+  // 記事下の回遊枠（広告枠2 + 本文末リンク3）へ $lib/rss/smartnewsRecirculation.js が
+  // 先頭から順に割り当てる。最大5件使うため、スキップが出ても枠が空かないよう8件取る。
   "relatedLinks": *[
     _type == 'quiz' &&
     !(_id in path("drafts.**")) &&
@@ -64,7 +66,7 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     category._ref == ^.category._ref && // 同じカテゴリ (展開前の参照IDと比較)
     ${QUIZ_NOT_RETRACTED_CONDITION} && // 是正対象の記事は関連記事からも除外
     ${EXCLUDE_NULL_TEXT_FILTER} // 本文に "null" が出る記事は関連記事からも除外
-  ] | order(publishedAt desc)[0...3]{
+  ] | order(publishedAt desc)[0...8]{
     title,
     "slug": slug.current,
     _type,

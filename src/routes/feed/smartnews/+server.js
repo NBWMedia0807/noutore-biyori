@@ -3,6 +3,13 @@ import { urlFor } from '$lib/sanity/client';
 import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_FEED_SAFE_FILTER } from '$lib/queries/quizVisibility.js';
+import {
+	MATCHSTICK_SLUG_PREFIX,
+	SMARTNEWS_RECIRCULATION_CONTENT,
+	allocateRecirculationSlots,
+	buildRecirculationUrl,
+	escapeHtmlAttr
+} from '$lib/rss/smartnewsRecirculation.js';
 
 const siteTitle = '脳トレ日和';
 const siteLink = 'https://noutorebiyori.com/';
@@ -10,15 +17,28 @@ const siteDescription =
 	'脳トレ日和は、間違い探しや計算問題などの脳トレクイズを通じて、毎日の習慣づくりをサポートする無料のWebメディアです。高齢者の方でも安心して楽しめるシンプルな操作性と見やすいデザインが特徴です。';
 const siteLogo = 'https://noutorebiyori.com/logo.png';
 
-// 最新クイズリスト（広告枠用）。
-// 是正対象（reviewStatus）と本文に "null" が出る記事は広告リンクからも除外する。
-const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_FEED_SAFE_FILTER}] | order(publishedAt desc)[0...8]{
+// 回遊枠で使う記事の共通射影。どのプールから来ても同じ形で扱えるようにする。
+const RECIRCULATION_PROJECTION = /* groq */ `{
+  _type,
   title,
   "slug": slug.current,
   "categorySlug": category->slug.current,
   problemImage,
   mainImage
 }`;
+
+// サイト全体の新着プール。カテゴリやマッチ棒のプールが浅いときの最終フォールバック。
+// 是正対象（reviewStatus）と本文に "null" が出る記事は回遊枠からも除外する。
+const globalLatestQuizzesQuery = /* groq */ `*[_type == "quiz" ${QUIZ_FEED_SAFE_FILTER}]
+  | order(publishedAt desc)[0...12]${RECIRCULATION_PROJECTION}`;
+
+// マッチ棒クイズの新着プール。媒体の売りなので関連記事枠（snf:relatedLink）の固定枠に使う。
+// マッチ棒記事自身を表示しているときは、広告枠・本文末も含めて8件をここから取る。
+const matchstickQuizzesQuery = /* groq */ `*[
+  _type == "quiz"
+  && string::startsWith(slug.current, "${MATCHSTICK_SLUG_PREFIX}")
+  ${QUIZ_FEED_SAFE_FILTER}
+] | order(publishedAt desc)[0...12]${RECIRCULATION_PROJECTION}`;
 
 // クイズの canonical URL（カテゴリ別 URL）を生成するヘルパー。
 // サイト側 (/quiz/[...slug]) は単一セグメントのスラッグを
@@ -32,6 +52,12 @@ const buildQuizUrl = (slug, categorySlug) => {
 	}
 	return `${siteLink}quiz/${slug}`;
 };
+
+// 回遊枠のリンクURL生成に canonical URL の組み立てを渡す。
+// URL の作り方（308リダイレクト回避のためのカテゴリ別URL）は配信側の事情なので、
+// 純粋モジュール側には持たせず注入する。
+const recirculationUrl = (quiz, content, fallbackCategorySlug) =>
+	buildRecirculationUrl(quiz, content, { buildQuizUrl, fallbackCategorySlug });
 
 // 画像オブジェクトからURLを生成するヘルパー関数（安全対策版）
 const getImageUrl = (imageObject) => {
@@ -92,9 +118,10 @@ export async function GET({ request }) {
 	console.log(`[SmartNews Feed] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
 	try {
 		// 並列でデータを取得
-		const [articles, globalLatestQuizzes] = await Promise.all([
+		const [articles, globalLatestQuizzes, matchstickQuizzes] = await Promise.all([
 			client.fetch(RSS_SMARTNEWS_QUERY),
-			client.fetch(globalLatestQuizzesQuery)
+			client.fetch(globalLatestQuizzesQuery),
+			client.fetch(matchstickQuizzesQuery)
 		]);
 
 		if (!articles) {
@@ -116,7 +143,16 @@ export async function GET({ request }) {
 			return true;
 		});
 
-		const buildItem = async (article, globalLatestQuizzes) => {
+		const buildItem = async (article, globalLatestQuizzes, matchstickQuizzes) => {
+			// 記事下の回遊枠（合計8枠）への割り当て。
+			// 表示中の記事と枠をまたいだ重複は $lib/rss/smartnewsRecirculation.js 側で排除される。
+			const { adSlots, bodyLinks, relatedSlots } = allocateRecirculationSlots({
+				article,
+				categoryPool: article.relatedLinks,
+				matchstickPool: matchstickQuizzes,
+				globalPool: globalLatestQuizzes
+			});
+
 			// 記事URL（クイズはカテゴリ別 canonical URL を使用）
 			let articleLink;
 			if (article._type === 'quiz') {
@@ -170,19 +206,22 @@ export async function GET({ request }) {
 			// 本文内に画像付きの外部リンクを置くと NG事例4（最終パラグラフ以降に画像でクイズを
 			// 出題し遷移させる）に該当し違反となるため、画像は付けない。
 			// SmartNews が許可する「最終パラグラフ以降の関連記事扱い・最大3本・テキストリンク」
-			// の形で出力する（relatedLinks クエリ側で最大3件に制限済み）。
+			// の形で出力する（BODY_LINK_COUNT = 3 を超えない割り当てになっている）。
 			// ※ この RSS は SmartNews・ママテナ・イチオシ共通で、いずれもこの準拠版を配信する。
-			if (article._type === 'quiz' && article.relatedLinks && article.relatedLinks.length > 0) {
+			if (article._type === 'quiz' && bodyLinks.length > 0) {
 				let relatedHtml = '<br /><br /><h3>関連記事</h3>';
 
-				for (const post of article.relatedLinks) {
-					if (!post || !post.slug || !post.title) continue;
-
-					const postUrl = buildQuizUrl(post.slug, post.categorySlug ?? article.category?.slug);
+				for (const post of bodyLinks) {
+					const postUrl = recirculationUrl(
+						post,
+						SMARTNEWS_RECIRCULATION_CONTENT.bodyLink,
+						article.category?.slug
+					);
 					const title = escapeXml(post.title);
 
-					// テキストリンクのみ（画像なし）
-					relatedHtml += `<p>▶ <a href="${postUrl}">${title}</a></p>`;
+					// テキストリンクのみ（画像なし）。
+					// CDATA 内の HTML なので、href の & は HTML として &amp; にしておく。
+					relatedHtml += `<p>▶ <a href="${escapeHtmlAttr(postUrl)}">${title}</a></p>`;
 				}
 				contentHtml += relatedHtml;
 			}
@@ -192,15 +231,18 @@ export async function GET({ request }) {
 			// 日付
 			const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
-			// 広告枠の生成
-			const advertisementLinks = (globalLatestQuizzes || [])
-				.filter((quiz) => quiz.slug !== article.slug)
-				.slice(0, 2)
+			// 広告枠の生成（サムネイル付き・記事下で最も目立つ枠）
+			const advertisementLinks = adSlots
 				.map((quiz) => {
-					const link = buildQuizUrl(quiz.slug, quiz.categorySlug);
+					const link = recirculationUrl(
+						quiz,
+						SMARTNEWS_RECIRCULATION_CONTENT.sponsoredLink,
+						article.category?.slug
+					);
 					const thumbnailUrl = getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage) || siteLogo;
 					const title = escapeXml(quiz.title);
-					return `<snf:sponsoredLink link="${link}" thumbnail="${thumbnailUrl}" title="${title}" advertiser="${siteTitle}"/>`;
+					// UTM 付きURLには & が入るため、XML 属性としてエスケープする
+					return `<snf:sponsoredLink link="${escapeXml(link)}" thumbnail="${escapeXml(thumbnailUrl)}" title="${title}" advertiser="${siteTitle}"/>`;
 				})
 				.join('\n\t\t\t\t');
 
@@ -212,22 +254,22 @@ export async function GET({ request }) {
 			`
 				: '';
 
-			// 関連記事のXMLを生成（マーキースタイル対策：thumbnail属性維持）
-			const relatedLinksXml = (article.relatedLinks || [])
+			// 関連記事のXMLを生成（マーキースタイル対策：thumbnail属性維持）。
+			// マッチ棒クイズの「推し枠」。本文末テキストリンクとは別の記事が入る。
+			const relatedLinksXml = relatedSlots
 				.map((related) => {
-					if (!related.slug || !related.title) return null;
-					const relatedUrl =
-						related._type === 'quiz'
-							? buildQuizUrl(related.slug, related.categorySlug ?? article.category?.slug)
-							: `${siteLink}${related.slug}`;
+					const relatedUrl = recirculationUrl(
+						related,
+						SMARTNEWS_RECIRCULATION_CONTENT.relatedLink,
+						article.category?.slug
+					);
 
 					// 関連リンクの画像URL
 					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
-					const thumbAttr = relatedThumb ? ` thumbnail="${relatedThumb}"` : '';
+					const thumbAttr = relatedThumb ? ` thumbnail="${escapeXml(relatedThumb)}"` : '';
 
-					return `<snf:relatedLink link="${relatedUrl}" title="${escapeXml(related.title)}"${thumbAttr} />`;
+					return `<snf:relatedLink link="${escapeXml(relatedUrl)}" title="${escapeXml(related.title)}"${thumbAttr} />`;
 				})
-				.filter(Boolean)
 				.join('\n\t\t\t');
 
 			// CDATAセクションが壊れるのを防ぐ
@@ -252,7 +294,9 @@ export async function GET({ request }) {
 		};
 
 		const itemsArray = await Promise.all(
-			dedupedArticles.map((article) => buildItem(article, globalLatestQuizzes))
+			dedupedArticles.map((article) =>
+				buildItem(article, globalLatestQuizzes, matchstickQuizzes)
+			)
 		);
 		const items = itemsArray.join('\n');
 
