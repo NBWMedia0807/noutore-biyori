@@ -132,6 +132,11 @@ const buildInAppAnalyticsSnippet = ({
   ]);
 
   // 専用イベント: 記事単位で閲覧数を集計できるように記事の識別情報も持たせる。
+  //
+  // send_to を必ず付ける。window.dataLayer はページ全体で共有されるので、
+  // アプリ内ビューアのページが媒体自身の GA4 を動かしていた場合、
+  // send_to が無いイベントはそちらのプロパティにも送られてしまう。
+  // 送信先をこちらの測定IDに限定して、他社プロパティを汚さないようにする。
   const eventParams = toJsObject([
     ['content_surface', contentSurface],
     ['distribution_platform', distributionPlatform],
@@ -141,6 +146,7 @@ const buildInAppAnalyticsSnippet = ({
     ['article_category', articleCategory],
     ['page_location', articleUrl],
     ['page_title', articleTitle],
+    ['send_to', measurementId],
   ]);
 
   return (
@@ -149,8 +155,9 @@ const buildInAppAnalyticsSnippet = ({
     `s.src='https://www.googletagmanager.com/gtag/js?id='+${id};` +
     `document.head.appendChild(s);` +
     `window.dataLayer=window.dataLayer||[];` +
+    // gtag は IIFE 内のローカル関数に留める。window.gtag へ代入すると、
+    // アプリ内ビューアのページが自前の GA を動かしていた場合にそれを壊す。
     `function gtag(){window.dataLayer.push(arguments);}` +
-    `window.gtag=gtag;` +
     `gtag('js',new Date());` +
     `gtag('config',${id},${configParams});` +
     `gtag('event',${toJsString(eventName)},${eventParams});` +
