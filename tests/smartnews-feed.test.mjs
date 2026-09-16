@@ -6,17 +6,21 @@
 //
 //   pnpm run test:smartnews
 //
-// ここでの主眼は「GA4 計測の修正で配信仕様に手が入っていないこと」の固定。
-// link / guid / 本文 / 画像 / 件数 / 並び順が変わったらテストで落ちる。
+// ここでの主眼は2つ。
+//   1. 30枠の配分（マッチ棒22 + デイリー生成の8カテゴリ各1）が意図どおりであること
+//   2. 配信仕様（link / guid / 本文 / 画像 / 回遊枠 / 計測タグ）が壊れていないこと
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { GET } from '../src/routes/feed/smartnews/+server.js';
 import {
+  ACTIVE_CATEGORIES,
+  DORMANT_CATEGORIES,
   createSmartnewsFixtureArticles,
   createSmartnewsFixtureLatestQuizzes,
 } from '../scripts/fixtures/smartnews-feed-docs.mjs';
+import { LEAD_MATCHSTICK_ITEMS, MAX_CATEGORY_SLOTS, MAX_ITEMS } from '../src/lib/rss/feedSlots.js';
 
 const GA_ID = 'G-855Y7S6M95';
 const SITE = 'https://noutorebiyori.com/';
@@ -36,8 +40,24 @@ const tagValues = (xml, tag) =>
 const analyticsSnippets = (xml) =>
   [...xml.matchAll(/<snf:analytics><!\[CDATA\[([\s\S]*?)\]\]><\/snf:analytics>/g)].map((m) => m[1]);
 
+const linkOf = (item) => item.match(/<link>([^<]+)<\/link>/)?.[1];
+
+/** 記事の canonical URL（+server.js の buildQuizUrl と同じ規則） */
+const canonicalUrl = (article) => {
+  if (article._type !== 'quiz') return `${SITE}${article.slug}`;
+  return article.category?.slug && !article.slug.includes('/')
+    ? `${SITE}category/${article.category.slug}/${article.slug}`
+    : `${SITE}quiz/${article.slug}`;
+};
+
 const feed = await fetchFeed();
 const articles = createSmartnewsFixtureArticles();
+
+// フィードは候補から30件を選ぶので、サンプル記事の並びとは一致しない。
+// item の link から元の記事を引いて突き合わせる。
+const byUrl = new Map(articles.map((article) => [canonicalUrl(article), article]));
+const feedArticles = itemBlocks(feed).map((item) => byUrl.get(linkOf(item)));
+const isMatchstick = (article) => Boolean(article?.slug?.startsWith('matchstick-quiz/'));
 
 // ── XML としての健全性 ─────────────────────────────────────
 
@@ -80,30 +100,56 @@ test('CDATA の外に未エスケープの & < > が無い', () => {
 
 // ── 配信仕様（今回の計測修正で変えてはいけない部分）────────
 
-test('記事件数と並び順がクエリの結果どおり', () => {
+test('30件を配信する', () => {
   const items = itemBlocks(feed);
-  assert.equal(items.length, articles.length);
-  const titles = tagValues(feed, 'title').slice(1); // 先頭は channel/title
-  assert.equal(titles.length, articles.length);
+  assert.equal(items.length, MAX_ITEMS);
+  assert.equal(tagValues(feed, 'title').slice(1).length, MAX_ITEMS); // 先頭は channel/title
+  assert.ok(
+    feedArticles.every(Boolean),
+    'サンプルに無い記事が入っている（link の組み立てが変わった可能性）'
+  );
+});
+
+test('1〜10位はマッチ棒、11〜18位は他カテゴリ、19〜30位はマッチ棒', () => {
+  const lead = feedArticles.slice(0, LEAD_MATCHSTICK_ITEMS);
+  const explore = feedArticles.slice(
+    LEAD_MATCHSTICK_ITEMS,
+    LEAD_MATCHSTICK_ITEMS + MAX_CATEGORY_SLOTS
+  );
+  const tail = feedArticles.slice(LEAD_MATCHSTICK_ITEMS + MAX_CATEGORY_SLOTS);
+  assert.ok(lead.every(isMatchstick), '先頭10件にマッチ棒以外が入っている');
+  assert.ok(!explore.some(isMatchstick), '探索枠にマッチ棒が混ざっている');
+  assert.ok(tail.every(isMatchstick), '末尾にマッチ棒以外が入っている');
+  assert.equal(feedArticles.filter(isMatchstick).length, 22);
+});
+
+test('デイリー生成の8カテゴリが1本ずつ入る', () => {
+  const explore = feedArticles.slice(
+    LEAD_MATCHSTICK_ITEMS,
+    LEAD_MATCHSTICK_ITEMS + MAX_CATEGORY_SLOTS
+  );
+  const slugs = explore.map((article) => article.category.slug);
+  assert.equal(new Set(slugs).size, slugs.length, '同じカテゴリが2本入っている');
+  assert.deepEqual([...slugs].sort(), ACTIVE_CATEGORIES.map(([slug]) => slug).sort());
+});
+
+test('生成が止まったカテゴリとカテゴリ無しの記事は配信しない', () => {
+  for (const [slug] of DORMANT_CATEGORIES) {
+    assert.ok(!feed.includes(`/${slug}/`), `休止カテゴリが配信されている: ${slug}`);
+  }
+  // コラム（_type: 'post'）はカテゴリ枠を取らない。枠配分の前も
+  // マッチ棒が30枠を占めていたため、従来から配信されていなかった。
+  assert.ok(!feed.includes('column-001'), 'カテゴリ無しのコラムが配信されている');
 });
 
 test('link と guid は canonical URL で一致し、UTM が付いていない', () => {
-  const items = itemBlocks(feed);
-  const expected = articles.map((article) => {
-    if (article._type !== 'quiz') return `${SITE}${article.slug}`;
-    return article.category?.slug && !article.slug.includes('/')
-      ? `${SITE}category/${article.category.slug}/${article.slug}`
-      : `${SITE}quiz/${article.slug}`;
-  });
-
-  items.forEach((item, index) => {
-    const link = item.match(/<link>([^<]+)<\/link>/)?.[1];
+  itemBlocks(feed).forEach((item, index) => {
+    const link = linkOf(item);
     const guid = item.match(/<guid isPermaLink="true">([^<]+)<\/guid>/)?.[1];
-    assert.equal(link, expected[index], 'item.link が canonical URL と違う');
-    assert.equal(guid, expected[index], 'item.guid が link と一致しない');
+    assert.equal(link, canonicalUrl(feedArticles[index]), 'item.link が canonical URL と違う');
+    assert.equal(guid, link, 'item.guid が link と一致しない');
     // SmartFormat 仕様: canonical 相当のURLに計測パラメータを付けない
     assert.ok(!link.includes('utm_'), `link に UTM が付いている: ${link}`);
-    assert.ok(!guid.includes('utm_'), `guid に UTM が付いている: ${guid}`);
   });
 });
 
@@ -113,16 +159,22 @@ test('本文・画像・関連記事・広告枠の構造が維持されてい�
   // 画像がある記事は本文冒頭に img、無い記事は img を出さない
   const withImage = items[0];
   assert.ok(/<content:encoded><!\[CDATA\[<img src="https:\/\/cdn\.sanity\.io\//.test(withImage));
-  const noImage = items.find((item) => item.includes('画像が1枚も無いクイズ'));
-  assert.ok(noImage && !noImage.includes('<img '), '画像が無い記事に img が出ている');
+  const noImageIndex = feedArticles.findIndex((a) => a.category?.slug === 'mushikui-quiz');
+  assert.ok(noImageIndex >= 0, '画像なしカテゴリの記事が配信されていない');
+  assert.ok(
+    !items[noImageIndex].includes('<img src="https://cdn.sanity.io/'),
+    '画像が無い記事に img が出ている'
+  );
 
   // クイズは【問題】【解説】の見出しを持つ
   assert.ok(withImage.includes('<h2>【問題】</h2>'));
   assert.ok(withImage.includes('<h2>【解説】</h2>'));
 
   // 関連記事は本文末尾のテキストリンク + snf:relatedLink
-  assert.ok(withImage.includes('<h3>関連記事</h3>'));
-  assert.ok(withImage.includes('<snf:relatedLink link="https://noutorebiyori.com/'));
+  const withRelated = items.find((item) => item.includes('<snf:relatedLink '));
+  assert.ok(withRelated, 'snf:relatedLink が1件も無い');
+  assert.ok(withRelated.includes('<h3>関連記事</h3>'));
+  assert.ok(withRelated.includes('<snf:relatedLink link="https://noutorebiyori.com/'));
   // snf:relatedLink は記事ごとに最大3件（マッチ棒の推し枠）。
   // 以前は article.relatedLinks の件数と一致していたが、本文末リンクと枠を分けたため
   // 「同カテゴリの関連記事の件数」とは独立になった。
@@ -187,7 +239,7 @@ test('SmartView の閲覧は page_view ではなく smartview_page_view で送�
 test('SmartView イベントに記事の識別情報が入っている', () => {
   const snippets = analyticsSnippets(feed);
   snippets.forEach((snippet, index) => {
-    const article = articles[index];
+    const article = feedArticles[index];
     const path = snippet.match(/article_path:"([^"]+)"/)?.[1];
     const slug = snippet.match(/article_slug:"([^"]+)"/)?.[1];
     assert.ok(path?.startsWith('/'), 'article_path がパスになっていない');
@@ -200,8 +252,8 @@ test('SmartView イベントに記事の識別情報が入っている', () => {
 });
 
 test('タイトルに特殊文字がある記事でも計測タグが壊れない', () => {
-  const index = articles.findIndex((article) => article.title.includes('<'));
-  assert.ok(index >= 0, 'テスト用の特殊文字入り記事が見つからない');
+  const index = feedArticles.findIndex((article) => article.title.includes('<'));
+  assert.ok(index >= 0, '特殊文字入りの記事が配信されていない');
   const snippet = analyticsSnippets(feed)[index];
   assert.ok(!snippet.includes(']]>'));
   assert.ok(snippet.includes('\\u003c'), '< がエスケープされていない');
@@ -287,12 +339,16 @@ test('XML 属性の UTM は & がエスケープされている', () => {
   }
 });
 
-test('コラム記事（post）にも本文末の回遊リンクが出る', () => {
-  const postArticle = articles.find((article) => article._type === 'post');
-  assert.ok(postArticle, 'テスト用の post 記事が見つからない');
-
-  const item = itemBlocks(feed).find((block) => block.includes(`/${postArticle.slug}</link>`));
-  assert.ok(item, 'post の item が無い');
+test('同カテゴリのプールが浅い記事でも回遊枠が8枠埋まる', () => {
+  // コラム（_type: 'post'）はカテゴリ枠を取らないため配信されない。
+  // 同じ経路（relatedLinks が空で globalPool へフォールバックする）を通るのは
+  // カテゴリ枠で入った記事なので、そちらで検証する。
+  // post 固有の分岐は tests/smartnews-recirculation.test.mjs が単体で押さえている。
+  const index = feedArticles.findIndex(
+    (article) => !isMatchstick(article) && (article.relatedLinks?.length ?? 0) === 0
+  );
+  assert.ok(index >= 0, '関連記事プールが空の記事が配信されていない');
+  const item = itemBlocks(feed)[index];
 
   const { ad, body, related } = slotPaths(item);
   assert.equal(body.length, 3, 'post の本文末リンクが3本出ていない');

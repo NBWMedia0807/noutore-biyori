@@ -7,22 +7,23 @@ import {
 // 本文の「null」除外フィルタと是正対象の除外条件は quizVisibility.js に集約した
 // （サイト本体・sitemap・他フィードにも同じ判定を適用するため）。
 
-// 公開済みの記事のみを取得するクエリ
-export const RSS_SMARTNEWS_QUERY = /* groq */ `
-*[
+// マッチ棒クイズのスラッグは必ず "matchstick-quiz/..." で始まる。
+// カテゴリ slug はナビとテストスタブで揺れているため、判定はスラッグ前方一致で揃える
+// （$lib/rss/smartnewsRecirculation.js と同じ規則）。
+const IS_MATCHSTICK = `string::startsWith(slug.current, "matchstick-quiz/")`;
+
+// 公開してよい記事を通す条件。下の2本のクエリで完全に同じものを使う。
+const PUBLISHED_FILTER = /* groq */ `
   (_type == "quiz" || _type == "post") &&
   !(_id in path("drafts.**")) &&
   defined(slug.current) &&
   publishedAt < now() &&
   ${QUIZ_NOT_RETRACTED_CONDITION} &&
   ${EXCLUDE_NULL_TEXT_FILTER}
-]
-// マッチ棒クイズを必ずフィード先頭に固定する。
-// 配信先（SmartNews/ママテナ/イチオシ）が「上位N件のみ取り込む」挙動でも、
-// マッチ棒が取り込み枠から漏れないようにするため。マッチ棒のスラッグは
-// 必ず "matchstick-quiz/..." で始まるので、それを 0（先頭）に寄せる。
-// 同一グループ内は従来どおり公開日の新しい順。全体上限は30件。
-| order(select(string::startsWith(slug.current, "matchstick-quiz/") => 0, 1) asc, publishedAt desc)[0...30]{
+`;
+
+// item の組み立てに必要なフィールド。下の2本のクエリで共通。
+const ARTICLE_PROJECTION = /* groq */ `{
   _id,
   _type,
   publishedAt,
@@ -76,5 +77,33 @@ export const RSS_SMARTNEWS_QUERY = /* groq */ `
     mainImage{asset->},
     problemImage{asset->}
   }
-}
+}`;
+
+// ── なぜクエリを2本に分けるのか ──────────────────────────────
+// 以前は1本のクエリで「マッチ棒を先頭に寄せてから上位30件」を取っていた。
+// マッチ棒は1日5本生成＋毎日2本を再公開しており在庫が常に30本を超えるため、
+// 30枠すべてがマッチ棒で埋まり、他カテゴリが構造的に1本も配信されない状態だった
+// （2026-09 の GA4 実測でも、配信の93%がマッチ棒に集中していた）。
+//
+// 枠の配分は $lib/rss/feedSlots.js の selectSmartnewsItems() が決める。
+// ここでは「マッチ棒の候補」と「それ以外の候補」を別々に渡すだけにして、
+// 配分ロジックをテスト可能な純粋関数側に寄せている。
+// 絞り込み条件（PUBLISHED_FILTER）と投影（ARTICLE_PROJECTION）は2本で同一。
+
+/** マッチ棒クイズの候補（公開日の新しい順）。フィードの大半を占める。 */
+export const RSS_SMARTNEWS_MATCHSTICK_QUERY = /* groq */ `
+*[
+  ${PUBLISHED_FILTER} &&
+  ${IS_MATCHSTICK}
+] | order(publishedAt desc)[0...30]${ARTICLE_PROJECTION}
+`;
+
+// 非マッチ棒は1日16本（8カテゴリ×2本）生成されているので、
+// 40件あれば全カテゴリの最新記事が確実に含まれる。
+/** マッチ棒以外の候補（公開日の新しい順）。カテゴリごとの枠を埋めるのに使う。 */
+export const RSS_SMARTNEWS_OTHERS_QUERY = /* groq */ `
+*[
+  ${PUBLISHED_FILTER} &&
+  !(${IS_MATCHSTICK})
+] | order(publishedAt desc)[0...40]${ARTICLE_PROJECTION}
 `;
