@@ -1,9 +1,13 @@
 import { client } from '$lib/sanity.server.js';
 import { urlFor } from '$lib/sanity/client';
-import { RSS_SMARTNEWS_QUERY } from '$lib/queries/rssSmartnews.groq';
+import {
+	RSS_SMARTNEWS_MATCHSTICK_QUERY,
+	RSS_SMARTNEWS_OTHERS_QUERY
+} from '$lib/queries/rssSmartnews.groq';
 import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_FEED_SAFE_FILTER } from '$lib/queries/quizVisibility.js';
 import { buildSmartViewAnalyticsSnippet } from '$lib/rss/feedAnalytics.js';
+import { dedupeBySlug, selectSmartnewsItems } from '$lib/rss/feedSlots.js';
 import {
 	MATCHSTICK_SLUG_PREFIX,
 	SMARTNEWS_RECIRCULATION_CONTENT,
@@ -121,31 +125,40 @@ const safePortableTextToHtml = (blocks) => {
 export async function GET({ request }) {
 	console.log(`[SmartNews Feed] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
 	try {
-		// 並列でデータを取得
-		const [articles, globalLatestQuizzes, matchstickQuizzes] = await Promise.all([
-			client.fetch(RSS_SMARTNEWS_QUERY),
-			client.fetch(globalLatestQuizzesQuery),
-			client.fetch(matchstickQuizzesQuery)
-		]);
+		// 並列でデータを取得。
+		// 配信する記事はマッチ棒と他カテゴリを別々に取る。30枠の配分は feedSlots.js が決める
+		// （以前は GROQ の並び替えだけで決めており、マッチ棒が30枠すべてを占めていた）。
+		const [matchstickArticles, otherArticles, globalLatestQuizzes, matchstickQuizzes] =
+			await Promise.all([
+				client.fetch(RSS_SMARTNEWS_MATCHSTICK_QUERY),
+				client.fetch(RSS_SMARTNEWS_OTHERS_QUERY),
+				client.fetch(globalLatestQuizzesQuery),
+				client.fetch(matchstickQuizzesQuery)
+			]);
 
-		if (!articles) {
+		if (!matchstickArticles?.length && !otherArticles?.length) {
 			console.warn('No articles fetched for SmartNews RSS');
 		}
 
 		// 同一スラッグの記事（再公開記事などスラッグが重複したドキュメント）が複数存在すると、
 		// item.link が同一 URL を指して重複したり、リンク先が別ドキュメントに解決されて
 		// 「item.link と記事内容が一致しない」事象につながる。スラッグ単位で最新の1件のみに絞り込む。
-		// （order(publishedAt desc) 済みのため先頭が最新）
-		const seenSlugs = new Set();
-		const dedupedArticles = (articles || []).filter((article) => {
-			if (!article?.slug) return false;
-			if (seenSlugs.has(article.slug)) {
-				console.warn(`[SmartNews Feed] Duplicate slug skipped: ${article.slug} (_id: ${article._id})`);
-				return false;
-			}
-			seenSlugs.add(article.slug);
-			return true;
+		// （dedupeBySlug は selectSmartnewsItems の中でも実行されるが、
+		//   どのスラッグを捨てたかをログに残すためここでも通す）
+		const warnDuplicate = (article) => {
+			console.warn(`[SmartNews Feed] Duplicate slug skipped: ${article.slug} (_id: ${article._id})`);
+		};
+		const dedupedArticles = selectSmartnewsItems({
+			matchstick: dedupeBySlug(matchstickArticles || [], warnDuplicate),
+			others: dedupeBySlug(otherArticles || [], warnDuplicate)
 		});
+
+		const categoryCounts = dedupedArticles.reduce((acc, article) => {
+			const key = article.category?.slug || '(no-category)';
+			acc[key] = (acc[key] ?? 0) + 1;
+			return acc;
+		}, {});
+		console.log(`[SmartNews Feed] items=${dedupedArticles.length} ${JSON.stringify(categoryCounts)}`);
 
 		const buildItem = async (article, globalLatestQuizzes, matchstickQuizzes) => {
 			// 記事下の回遊枠（合計8枠）への割り当て。
