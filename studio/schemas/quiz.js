@@ -188,6 +188,13 @@ export default defineType({
       group: 'content',
       validation: (Rule) => Rule.required()
     }),
+    // Pinterest 用の縦長問題画像（1000x1500・答えなし）。マッチ棒クイズのみ自動生成。
+    defineField({
+      name: 'pinterestImage',
+      title: 'Pinterest用画像（縦長・問題のみ）',
+      type: 'image',
+      group: 'content'
+    }),
     defineField({
       name: 'answerExplanation',
       title: '正解への補足テキスト',
