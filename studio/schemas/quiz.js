@@ -277,6 +277,14 @@ export default defineType({
         }).warning()
     }),
     defineField({
+      name: 'pinterestImage',
+      title: 'Pinterest用画像（縦長）',
+      description:
+        '1000×1500px の縦長画像です。マッチ棒クイズは公開後に GitHub Actions（scripts/pinterest_image.py）が問題画像から自動生成します。答えは入れず、下部に「答えはサイトで」と表示します。設定されている問題だけが /feed/pinterest.xml に載ります。',
+      type: 'image',
+      group: 'seo'
+    }),
+    defineField({
       name: 'imageType',
       title: '画像種別',
       description:

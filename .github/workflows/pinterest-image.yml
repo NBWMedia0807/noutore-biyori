@@ -1,0 +1,59 @@
+name: マッチ棒クイズ Pinterest 画像生成
+
+# 公開済みの新着マッチ棒クイズ（作成から72時間以内・pinterestImage 未設定）について、
+# 1000×1500 の縦長画像を作って Sanity の pinterestImage に保存する。
+# 対象がなければ何もしない（何度実行しても同じ問題を二重に処理しない）ので、
+# 公開時刻のずれを吸収するため定期的に実行している。
+
+on:
+  schedule:
+    # 3時間おき（UTC）。毎日の公開後、遅くとも3時間以内に画像ができる
+    - cron: "17 */3 * * *"
+  # Sanity の公開 Webhook などから即時に起動したい場合用
+  repository_dispatch:
+    types: [matchstick-published]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "1回で処理する最大件数"
+        required: false
+        default: "5"
+      dry_run:
+        description: "1 にすると Sanity に書き込まず、画像を Artifact に保存するだけ"
+        required: false
+        default: "0"
+
+concurrency:
+  group: pinterest-image
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 日本語フォントを入れる
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+      - run: pip install pillow requests
+      - name: 縦長画像を生成して Sanity に保存
+        env:
+          SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_TOKEN: ${{ secrets.SANITY_EDITOR_TOKEN }}
+          PINTEREST_LIMIT: ${{ github.event.inputs.limit || '5' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: python scripts/pinterest_image.py
+      - name: DRY_RUN の画像を保存
+        if: ${{ github.event.inputs.dry_run == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinterest-images
+          path: scripts/out/
+          if-no-files-found: ignore
