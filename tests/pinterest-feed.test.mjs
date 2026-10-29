@@ -59,3 +59,18 @@ test('サイズ不明でも length 属性は必ず出す', () => {
   const item = toPinterestItem({ ...DOC, pinterestImage: { url: DOC.pinterestImage.url } });
   assert.deepEqual(item.enclosure, { url: DOC.pinterestImage.url, length: 0, type: 'image/png' });
 });
+
+test('公開日時が未来（翌日公開の入稿済み）の記事は出さない', () => {
+  const now = new Date('2026-10-30T10:00:00Z'); // 2026-10-30 19:00 JST
+  const tomorrow = { ...DOC, publishedAt: '2026-10-30T15:00:00Z' }; // 2026-10-31 0:00 JST
+  assert.equal(toPinterestItem(tomorrow, { now }), null);
+  assert.doesNotMatch(buildPinterestFeed([tomorrow], { now }), /<item>/);
+  // 公開時刻を過ぎたら出る
+  const later = new Date('2026-10-30T15:00:00Z');
+  assert.match(buildPinterestFeed([tomorrow], { now: later }), /<item>/);
+});
+
+test('公開日時が読めない記事は出さない', () => {
+  assert.equal(toPinterestItem({ ...DOC, publishedAt: undefined, _createdAt: undefined }), null);
+  assert.equal(toPinterestItem({ ...DOC, publishedAt: 'not-a-date' }), null);
+});
