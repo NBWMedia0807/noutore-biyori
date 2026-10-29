@@ -50,6 +50,7 @@ test('配信フィードごとの utm_source が定義されている', () => {
   assert.equal(FEED_UTM_SOURCE.gunosy, 'gunosy');
   assert.equal(FEED_UTM_SOURCE.trill, 'trill');
   assert.equal(FEED_UTM_SOURCE.merkystyle, 'merkystyle');
+  assert.equal(FEED_UTM_SOURCE.pinterest, 'pinterest');
   // SmartNews は SmartFormat 仕様により <link> へ UTM を付けないので定義しない
   assert.equal(FEED_UTM_SOURCE.smartnews, undefined);
 });

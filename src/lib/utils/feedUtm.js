@@ -40,6 +40,8 @@ export const FEED_UTM_SOURCE = {
   gunosy: 'gunosy',
   trill: 'trill',
   merkystyle: 'merkystyle',
+  // Pinterest は自前ブラウザで開くことがあり Referer が欠けるため、同様に付与する。
+  pinterest: 'pinterest',
 };
 
 /**
