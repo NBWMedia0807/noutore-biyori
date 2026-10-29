@@ -57,10 +57,16 @@ const buildDescription = (doc, title) => {
  * @param {{ decorateLink?: (url: string) => string }} [options]
  *   decorateLink: <link> に UTM などを付ける（guid は正規URLのまま）
  */
-export const toPinterestItem = (doc, { decorateLink = (u) => u } = {}) => {
+export const toPinterestItem = (doc, { decorateLink = (u) => u, now = new Date() } = {}) => {
   const slug = typeof doc?.slug === 'string' ? doc.slug.trim().replace(/^\/+/, '') : '';
   const image = doc?.pinterestImage;
   if (!slug || typeof image?.url !== 'string' || !image.url) return null;
+
+  // マッチ棒クイズは前日に入稿して翌日0時(JST)公開。公開前の問題がピンになると
+  // サイトでは見られない（答えも見られない）ので、公開日時が過ぎたものだけ出す。
+  // クエリ側でも絞っているが、ここでも必ず弾く（二重の安全策）。
+  const published = new Date(doc?.publishedAt || doc?._createdAt || NaN);
+  if (Number.isNaN(published.getTime()) || published.getTime() > now.getTime()) return null;
 
   const canonicalLink = `${SITE_URL}/quiz/${slug}`;
   const title =
@@ -102,7 +108,7 @@ const buildItemXml = (item) =>
 export const buildPinterestFeed = (docs, { now = new Date(), decorateLink } = {}) => {
   const nowRfc = toRfc822(now);
   const items = (Array.isArray(docs) ? docs : [])
-    .map((doc) => toPinterestItem(doc, { decorateLink }))
+    .map((doc) => toPinterestItem(doc, { decorateLink, now }))
     .filter(Boolean)
     .map(buildItemXml);
 
