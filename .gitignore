@@ -145,3 +145,8 @@ vite.config.ts.timestamp-*
 # Sanity Studio
 studio/schemas/sanity.config.ts
 studio/sanity.cli.mjs
+
+# Cloudflare Wrangler（ローカル状態・ビルド出力）
+.wrangler/
+.dev.vars
+.dev.vars.*

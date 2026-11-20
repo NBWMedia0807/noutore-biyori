@@ -25,6 +25,20 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 - Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
 - 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
+### Cloudflare Workers 移行用ビルド（移行準備中・本番は Vercel のまま）
+
+アダプターは環境変数 `DEPLOY_TARGET` で切り替えます。未設定なら従来どおり Vercel です。
+
+```bash
+pnpm build                        # Vercel（既定）
+SKIP_SANITY=1 pnpm build:cloudflare  # Cloudflare Workers（DEPLOY_TARGET=cloudflare）
+pnpm exec wrangler dev --var SKIP_SANITY:1 --var ENABLE_QUIZ_STUB:1  # ローカルで workerd 実行
+pnpm run test:edge-cache          # Cloudflare 用キャッシュ・リダイレクト処理のテスト
+```
+
+- 設定は `wrangler.jsonc`（秘密でない値だけ）。シークレットは `wrangler secret put <NAME>` で登録し、リポジトリに書かないでください。
+- ISR の代替キャッシュ、`/api/revalidate` のパージ、www→apex・HSTS、お問い合わせメールの方針は [docs/cloudflare-migration.md](docs/cloudflare-migration.md) を参照。
+
 ### Sanity 予約公開と ISR 再検証の設定
 
 1. Vercel の Environment Variables に以下を追加します（Production / Preview 両方）。値は十分な長さのランダム文字列を推奨します。

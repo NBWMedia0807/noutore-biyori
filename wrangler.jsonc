@@ -1,0 +1,24 @@
+// Cloudflare Workers 設定（移行用）。ビルド: DEPLOY_TARGET=cloudflare pnpm build
+// - シークレット（SANITY_*・SMTP_*・CF_PURGE_API_TOKEN 等）はここに書かず、
+//   `wrangler secret put <NAME>` または Cloudflare ダッシュボードで登録する。
+// - routes / custom_domain は未設定（workers.dev のみ）。本番ドメインの割り当ては切替当日に別途行う。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "noutore-biyori",
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare"
+  },
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  // 秘密でない値だけを置く
+  "vars": {
+    "PUBLIC_SITE_URL": "https://noutorebiyori.com",
+    "CF_ARTICLE_CACHE_TTL": "86400"
+  }
+}
