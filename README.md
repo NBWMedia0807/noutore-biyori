@@ -36,8 +36,9 @@ pnpm exec wrangler dev --var SKIP_SANITY:1 --var ENABLE_QUIZ_STUB:1  # ローカ
 pnpm run test:edge-cache          # Cloudflare 用キャッシュ・リダイレクト処理のテスト
 ```
 
-- 設定は `wrangler.jsonc`（秘密でない値だけ）。シークレットは `wrangler secret put <NAME>` で登録し、リポジトリに書かないでください。
-- ISR の代替キャッシュ、`/api/revalidate` のパージ、www→apex・HSTS、お問い合わせメールの方針は [docs/cloudflare-migration.md](docs/cloudflare-migration.md) を参照。
+- 試験 Worker の名前は `noutore-biyori-staging`（`wrangler.jsonc`）。本番 Worker とは別で、routes は付けません。
+- `*.workers.dev` では `X-Robots-Tag: noindex` と全拒否の robots.txt を返します。canonical / sitemap / RSS の URL は `https://noutorebiyori.com` のままです。
+- シークレットはリポジトリに書かず、Cloudflare のこの Worker の Variables and Secrets に登録します。手順は [docs/cloudflare-migration.md](docs/cloudflare-migration.md)。
 
 ### Sanity 予約公開と ISR 再検証の設定
 

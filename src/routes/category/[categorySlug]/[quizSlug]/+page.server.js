@@ -8,7 +8,8 @@
 
 import { env } from '$env/dynamic/private';
 import { error, redirect } from '@sveltejs/kit';
-import { client } from '$lib/sanity.server.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { getQuizStubDocument, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
@@ -111,12 +112,21 @@ const buildSeo = ({ doc, path }) => {
 export async function load({ params, url, setHeaders }) {
   const { categorySlug, quizSlug } = params;
 
-  let doc;
-  try {
-    doc = await client.fetch(Q, { slug: quizSlug });
-  } catch (err) {
-    console.error('[category/quiz] Sanity fetch error:', err);
-    throw error(503, 'データ取得に失敗しました。しばらくしてから再度お試しください。');
+  let doc = null;
+  if (shouldSkipSanityFetch()) {
+    console.info(`[category/quiz] SKIP_SANITY active; skipping Sanity fetch for slug:${quizSlug}`);
+  } else {
+    try {
+      doc = await client.fetch(Q, { slug: quizSlug });
+    } catch (err) {
+      console.error('[category/quiz] Sanity fetch error:', err);
+      throw error(503, 'データ取得に失敗しました。しばらくしてから再度お試しください。');
+    }
+  }
+
+  // ローカル確認用。ENABLE_QUIZ_STUB が無い本番では到達しない。
+  if (!doc && isQuizStubEnabled()) {
+    doc = getQuizStubDocument(quizSlug);
   }
 
   // 非公開化された記事は 410 Gone、本当に存在しない場合のみ 404

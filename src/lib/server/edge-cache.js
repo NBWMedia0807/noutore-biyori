@@ -16,6 +16,8 @@
 //
 // Vercel 実行時は platform.caches が存在しないため、ここの処理は一切動かない。
 
+import { applyWorkersDevRobots } from '../staging-host.js';
+
 export const CANONICAL_HOST = 'noutorebiyori.com';
 export const WWW_HOST = `www.${CANONICAL_HOST}`;
 
@@ -171,9 +173,10 @@ export const withHsts = (response, url) => {
  */
 export const handleCloudflareEdge = async ({ event, resolve, articleTtl = DEFAULT_ARTICLE_TTL }) => {
   const url = event.url;
+  const finish = (response) => applyWorkersDevRobots(withHsts(response, url), url?.hostname);
   const redirectTo = resolveWwwRedirect(url);
   if (redirectTo) {
-    return withHsts(new Response(null, { status: 308, headers: { location: redirectTo } }), url);
+    return finish(new Response(null, { status: 308, headers: { location: redirectTo } }));
   }
 
   const method = event.request.method;
@@ -188,7 +191,7 @@ export const handleCloudflareEdge = async ({ event, resolve, articleTtl = DEFAUL
       if (hit) {
         const res = new Response(hit.body, hit);
         res.headers.set(EDGE_CACHE_STATUS_HEADER, 'HIT-CANONICAL');
-        return withHsts(res, url);
+        return finish(res);
       }
     } catch (error) {
       console.error('[edge-cache] canonical match failed', error);
@@ -196,7 +199,7 @@ export const handleCloudflareEdge = async ({ event, resolve, articleTtl = DEFAUL
   }
 
   const response = await resolve(event);
-  return withHsts(applyEdgeCacheHeaders(response, { method, url, isDataRequest, articleTtl }), url);
+  return finish(applyEdgeCacheHeaders(response, { method, url, isDataRequest, articleTtl }));
 };
 
 /** パージ対象の絶対 URL 一覧（現在のオリジンと本番ドメインの両方） */

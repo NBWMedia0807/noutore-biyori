@@ -218,6 +218,28 @@ test('handleCloudflareEdge: www は 308（SvelteKit を呼ばない）', async (
   assert.equal(www.headers.get('strict-transport-security'), HSTS_VALUE);
 });
 
+test('handleCloudflareEdge: *.workers.dev は noindex、本番ホストには付けない', async () => {
+  const staging = await handleCloudflareEdge({
+    event: makeEvent('https://noutore-biyori-staging.workers.dev/quiz', { platform: cfPlatform() }),
+    resolve: async () => new Response('<html>quiz</html>', { status: 200, headers: { 'content-type': 'text/html' } })
+  });
+  assert.equal(staging.headers.get('x-robots-tag'), 'noindex');
+  assert.equal(staging.headers.get('strict-transport-security'), HSTS_VALUE);
+
+  const prod = await handleCloudflareEdge({
+    event: makeEvent('https://noutorebiyori.com/quiz', { platform: cfPlatform() }),
+    resolve: async () => new Response('ok', { status: 200 })
+  });
+  assert.equal(prod.headers.get('x-robots-tag'), null);
+
+  const www = await handleCloudflareEdge({
+    event: makeEvent('https://www.noutorebiyori.com/quiz', { platform: cfPlatform() }),
+    resolve: async () => assert.fail('resolve must not be called')
+  });
+  assert.equal(www.status, 308);
+  assert.equal(www.headers.get('x-robots-tag'), null);
+});
+
 test('handleCloudflareEdge: http（ローカル）では HSTS を付けない', async () => {
   const res = await handleCloudflareEdge({
     event: makeEvent('http://localhost:8787/about', { platform: cfPlatform() }),

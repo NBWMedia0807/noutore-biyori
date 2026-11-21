@@ -1,16 +1,19 @@
-// Cloudflare Workers 設定（移行用）。ビルド: DEPLOY_TARGET=cloudflare pnpm build
+// Cloudflare Workers 設定（試験フェーズ）。ビルド: DEPLOY_TARGET=cloudflare pnpm build
+// - name は試験用 Worker `noutore-biyori-staging`。本番 Worker `noutore-biyori` とは別スクリプト。
+//   このファイルに本番の name / routes / custom_domain は置かない（切替当日に別設定で足す）。
 // - シークレット（SANITY_*・SMTP_*・CF_PURGE_API_TOKEN 等）はここに書かず、
-//   `wrangler secret put <NAME>` または Cloudflare ダッシュボードで登録する。
-// - routes / custom_domain は未設定（workers.dev のみ）。本番ドメインの割り当ては切替当日に別途行う。
+//   Cloudflare ダッシュボードのこの Worker の Variables and Secrets で NOBU が登録する。
+// - routes / custom_domain は未設定（workers.dev のみ）。本番 DNS には触れない。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "noutore-biyori",
-  "main": ".svelte-kit/cloudflare/_worker.js",
+  "name": "noutore-biyori-staging",
+  "main": "src/cloudflare-entry.js",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
-    "directory": ".svelte-kit/cloudflare"
+    "directory": ".svelte-kit/cloudflare",
+    "run_worker_first": true
   },
   "workers_dev": true,
   "observability": {
