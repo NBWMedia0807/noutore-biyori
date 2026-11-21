@@ -162,7 +162,7 @@ GitHub Actions の Secrets（Worker の中では使わない）: `CLOUDFLARE_API
 ### A. 本番 Worker を別につくる
 
 1. 試験 Worker の名前は変えない。本番は新しい Worker **`noutore-biyori`**。
-2. 切替用の変更で、本番用の設定を足す（このブランチには置いていない）。routes は、カスタムドメインをダッシュボードで付けるなら設定ファイルに書かなくてよい。
+2. 切替用の変更で、本番用の設定を足す（このブランチには置いていない）。routes は、カスタムドメインをダッシュボードで付けるなら設定ファイルに書かなくてよい。試験ビルドが `_headers` に足す `/*` の noindex は本番 Worker では実行しない（`scripts/append-staging-asset-headers.mjs` は試験ワークフローだけ）。
 3. 本番 Worker 用のトークンは試験用と分ける。権限は同じ 2 つでよく、スクリプト名を絞るなら `noutore-biyori`。
 4. 変数は試験で足りたものに加え、上の「入れない」リストのうち必要なもの（`INDEXNOW_KEY`、メール、`CF_ZONE_ID`、`CF_PURGE_API_TOKEN`）を **本番 Worker だけ** に入れる。値は Vercel の環境変数から NOBU が写す。Vercel で Sensitive になって読めないものは、発行元で再発行する。
 
@@ -246,7 +246,7 @@ Sanity に繋がらないときは `SKIP_SANITY=1` と `ENABLE_QUIZ_STUB=1` を 
 | `/api/revalidate` の `x-prerender-revalidate` | Cloudflare ではその拠点の `cache.delete`。`CF_ZONE_ID` と `CF_PURGE_API_TOKEN` があればゾーンの purge（URL とタグ）。Vercel の経路は従来どおり | `src/routes/api/revalidate/+server.js` |
 | `vercel.json` の www → apex 308 | Worker 内で 308（パスとクエリを保持） | `edge-cache.js` |
 | Vercel の HSTS | `Strict-Transport-Security: max-age=63072000`（https のとき） | `edge-cache.js` |
-| 試験ホストのインデックス | `X-Robots-Tag: noindex` と Disallow の robots.txt。静的ファイル（ads.txt など）も含め、入口の Worker で付ける | `src/lib/staging-host.js`、`src/cloudflare-entry.js`、`src/routes/robots.txt/+server.js` |
+| 試験ホストのインデックス | HTML と robots.txt は Worker が `X-Robots-Tag: noindex`。静的ファイル（ads.txt、画像）はアセット配信で Worker を通らないため、試験ビルドの `_headers` で同じヘッダーと HSTS を付ける | `src/lib/staging-host.js`、`src/cloudflare-entry.js`、`scripts/append-staging-asset-headers.mjs` |
 
 キャッシュする記事は `/category/<カテゴリ>/<記事>` と `/quiz/<記事>/answer`。`/quiz/<記事>` は canonical への 308 なので対象外です。
 
@@ -276,6 +276,6 @@ Sanity に繋がらないときは `SKIP_SANITY=1` と `ENABLE_QUIZ_STUB=1` を 
 
 - Account › **Workers Scripts** › **Edit**
 
-Wrangler 4.165 は、新規 Worker を `workers.dev` に出すとき `GET /accounts/{account_id}/workers/subdomain` を呼びます。この読み取りが 403 になる場合だけ、Account › **Account Settings** › **Read** を足します。KV・R2・Durable Objects・D1・Queues・カスタムドメイン・DNS・ゾーンの Cache Purge・Workers Tail は、このデプロイでは使いません。`observability.enabled` はスクリプト設定として同じアップロードに含まれます。アップロードが Observability 権限不足で落ちた場合だけ、Account › Workers Observability › Edit を足します。
+2026-11-21 の初回デプロイ（Actions run 44878319469）は、この 1 権限だけで `noutore-biyori-staging.nbwmedia-jp.workers.dev` まで成功しました。Account Settings Read は不要でした。KV・R2・Durable Objects・D1・Queues・カスタムドメイン・DNS・ゾーンの Cache Purge・Workers Tail も使っていません。
 
 テンプレート「Edit Cloudflare Workers」は使いません。トークンの値はリポジトリにもログにも出しません。
