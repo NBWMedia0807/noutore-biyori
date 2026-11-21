@@ -56,7 +56,8 @@ jobs:
       - name: Build (Cloudflare)
         run: pnpm run build:cloudflare
         env:
-          VITE_GA_ID: ${{ vars.VITE_GA_ID }}
+          # 公開の GA4 測定 ID。*.workers.dev では shouldMeasureHostname が計測しない。
+          VITE_GA_ID: ${{ vars.VITE_GA_ID || 'G-855Y7S6M95' }}
 
       # 静的ファイル（ads.txt など）は Worker を通らない。試験 Worker だけ _headers で noindex にする。
       - name: Staging headers for static assets

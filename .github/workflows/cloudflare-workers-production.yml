@@ -70,7 +70,9 @@ jobs:
       - name: Build (Cloudflare)
         run: pnpm run build:cloudflare
         env:
-          VITE_GA_ID: ${{ vars.VITE_GA_ID }}
+          # 公開の GA4 測定 ID（プロパティ 498385647）。リポジトリ変数が空でも本番バンドルに入れる。
+          # workers.dev では shouldMeasureHostname が計測しない。
+          VITE_GA_ID: ${{ vars.VITE_GA_ID || 'G-855Y7S6M95' }}
 
       - name: Refuse routes and staging noindex headers
         run: node scripts/check-cloudflare-production-config.mjs
