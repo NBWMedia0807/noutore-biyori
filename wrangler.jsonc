@@ -1,19 +1,19 @@
-// Cloudflare Workers 設定（試験フェーズ）。ビルド: DEPLOY_TARGET=cloudflare pnpm build
-// - name は試験用 Worker `noutore-biyori-staging`。本番 Worker `noutore-biyori` とは別スクリプト。
-//   このファイルに本番の name / routes / custom_domain は置かない（切替当日に別設定で足す）。
-// - シークレット（SANITY_*・SMTP_*・CF_PURGE_API_TOKEN 等）はここに書かず、
-//   Cloudflare ダッシュボードのこの Worker の Variables and Secrets で NOBU が登録する。
-// - routes / custom_domain は未設定（workers.dev のみ）。本番 DNS には触れない。
+// Cloudflare Workers 設定（本番スクリプト。このブランチのデプロイ先）。
+// - name は本番 Worker `noutore-biyori`。試験 Worker `noutore-biyori-staging` とは別。
+// - routes / custom_domain は置かない。noutorebiyori.com の割り当ては、NOBU が変数を入れてから別作業。
+// - シークレットは書かない。ダッシュボードのこの Worker の Variables and Secrets に NOBU が入れる。
+// - run_worker_first は全パスを Worker に通す。*.workers.dev だけ noindex（静的ファイル含む）。
+//   本番ホストの静的ファイルには noindex を付けない（試験用の _headers は使わない）。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "noutore-biyori-staging",
+  "name": "noutore-biyori",
   "main": "src/cloudflare-entry.js",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare",
-    "run_worker_first": true
+    "run_worker_first": ["/*"]
   },
   "workers_dev": true,
   "observability": {

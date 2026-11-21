@@ -153,64 +153,106 @@ GitHub Actions の Secrets（Worker の中では使わない）: `CLOUDFLARE_API
 
 ---
 
-## 本番切替（試験が合格し、NOBU が承認してから）
+## 本番 Worker（ドメインはまだ付けない）
 
-ここから先は **今はやらない**。試験 URL の確認と、切り戻せる状態の確認が先です。作業当日まで Vercel の本番はそのまま残します。
+2026-11-21 16:15 に NOBU が本番 Worker の作成を承認した。この段階でやるのは Worker `noutore-biyori` を `*.workers.dev` に出すことだけ。`noutorebiyori.com` のカスタムドメインと routes は、変数を入れたあとの別作業。
 
-避ける時間帯: 08:00、09:00、12:30、22:00（自動投稿・公開）。平日の 14〜16 時が無難です。
+試験 Worker `noutore-biyori-staging` はそのまま残す。ブランチ `deploy/cloudflare-production` への push だけが本番スクリプトをデプロイする（`.github/workflows/cloudflare-workers-production.yml`）。`main` にはマージしない。
 
-### A. 本番 Worker を別につくる
+避ける時刻（日本時間）: 08:00、09:00、12:30、22:00 の前後 15 分。ワークフローもこの時刻なら止まる。
 
-1. 試験 Worker の名前は変えない。本番は新しい Worker **`noutore-biyori`**。
-2. 切替用の変更で、本番用の設定を足す（このブランチには置いていない）。routes は、カスタムドメインをダッシュボードで付けるなら設定ファイルに書かなくてよい。試験ビルドが `_headers` に足す `/*` の noindex は本番 Worker では実行しない（`scripts/append-staging-asset-headers.mjs` は試験ワークフローだけ）。
-3. 本番 Worker 用のトークンは試験用と分ける。権限は同じ 2 つでよく、スクリプト名を絞るなら `noutore-biyori`。
-4. 変数は試験で足りたものに加え、上の「入れない」リストのうち必要なもの（`INDEXNOW_KEY`、メール、`CF_ZONE_ID`、`CF_PURGE_API_TOKEN`）を **本番 Worker だけ** に入れる。値は Vercel の環境変数から NOBU が写す。Vercel で Sensitive になって読めないものは、発行元で再発行する。
+### 2026-11-21 16:20 時点の DNS（公開情報）
 
-### B. DNS を写してからネームサーバーを変える
+お名前.com のネームサーバー変更は不要。すでに Cloudflare になっている。
 
-1. お名前.com で、いまのレコードを画面のまま控える（スクリーンショットでよい）。公開情報では次のとおり（切替前にもう一度見ること）。
-   - apex: A `216.198.79.1`（Vercel）
-   - www: CNAME `cname.vercel-dns.com`
-   - TXT: Google の確認が 2 件、TikTok が 1 件
-   - MX は無し。他にサブドメインや確認用レコードがあればそれも写す
-2. Cloudflare でゾーン `noutorebiyori.com` を追加する（Full setup）。
-3. 控えたレコードを **プロキシ OFF（DNS only、グレー雲）** で同じ向き先のまま入れる。TXT は 3 件とも必須。まだサイトは Vercel のままになる。
-4. お名前.com Navi → ネームサーバー設定 → 対象ドメイン → その他のサービス → その他のネームサーバー → Cloudflare が表示した NS を入れて確認。
-5. Cloudflare のゾーンが **Active** になるまで待つ（最大 48 時間）。外部から `noutorebiyori.com` が今までどおり開き、証明書エラーが無いことを確認してから次へ進む。NS を変えても、中のレコードが Vercel を向いていればこの間は落ちない。
+- ネームサーバー: `cullen.ns.cloudflare.com` / `dahlia.ns.cloudflare.com`
+- レジストラ: Cloudflare, Inc.（RDAP の最終変更 2026-11-20T21:57Z）
+- サイトの応答はまだ Vercel（`server: Vercel`）
+- apex: A `216.198.79.1`
+- www: CNAME `cname.vercel-dns.com`
+- TXT 3 件（Google の確認 2、TikTok 1）
+- MX / AAAA / CAA は無し
 
-### C. ドメインを本番 Worker に付ける
+Vercel は 11/21 に Hobby へ下げ済み。プロジェクトは消さない。切り戻し先として残す。急がない。
 
-1. NOBU が「切り替えてよい」と明示してから。
-2. Workers & Pages → **noutore-biyori**（staging ではない）→ Settings → **Domains & Routes**。
-3. `noutorebiyori.com` と `www.noutorebiyori.com` をカスタムドメインとして追加する。既存の A / CNAME とぶつかる案内が出たら、その画面の手順で Worker 側に寄せる。試験 Worker にはドメインを付けない。
-4. 反映は Cloudflare 内なので数分。次を確認する。
-   - `https://www.noutorebiyori.com/` が **308** で `https://noutorebiyori.com/` へ（パスとクエリは残る）
-   - `Strict-Transport-Security: max-age=63072000`
-   - トップ、記事、一覧、404、末尾スラッシュ
-   - `/sitemap.xml` の件数、`/robots.txt` は Allow と本番 sitemap（試験用の Disallow ではない）
-   - `/ads.txt` が 200 で同じ本文。広告スクリプトが **読み込まれる**（試験ホストとは逆）
-   - フィード（SmartNews、Gunosy、Pinterest、Trill、merkystyle）が取得できる
-   - 問い合わせメールが届く
-   - Sanity の Webhook の向き先を `https://noutorebiyori.com/api/revalidate` にし、更新が 200 で記事に反映される
-   - GA4 のリアルタイム、Search Console の TXT が残っていること
-5. Cloudflare の Rocket Loader、Email Obfuscation、Bot Fight Mode は OFF（広告とフィードのクローラーを止めない）。
+### 本番 Worker に入れる変数
 
-### D. 監視してから Vercel を下げる
+値は書かない。Vercel の同じ名前から NOBU が写す。Vercel で Sensitive になって見えないものは、発行元で作り直す。
 
-1. 48〜72 時間見る。見るもの: 5xx、Workers の CPU とエラー、Sanity の呼び出し数、AdSense の ads.txt 状態と翌日の収益、Search Console のクロール、各フィードの取得失敗。
-2. このあいだ Vercel のプロジェクトと最後のデプロイは消さない。切り戻し先である。
-3. 問題が無ければ NOBU が Vercel の Settings → Billing → Plan → Downgrade を行う。AdSense を出しているこのサイトは Hobby の利用条件を満たさない。ダウングレード後は Vercel へすぐ戻せないことがある。だから解約・ダウングレードは監視のあと。
-4. レジストラ（お名前.com）の移管は、安定してから別作業にする。
+Vercel の画面（PR #587 の Vercel チェックが指していたプロジェクト。ログイン後の画面の中身は未確認）:
 
-### E. Vercel へ戻す
+`https://vercel.com/nbwmedias-projects-f609a963/noutore-biyori/settings/environment-variables`
 
-カスタムドメインを付けたあとなら:
+チームが違って開けないときは、ダッシュボードでプロジェクト名 **noutore-biyori** → Settings → Environment Variables。
 
-1. Cloudflare で本番 Worker のカスタムドメイン（apex と www）を外す。
-2. DNS を元に戻す。プロキシ OFF のまま、apex の A を `216.198.79.1`、www の CNAME を `cname.vercel-dns.com`。
-3. 反映の目安は 5〜10 分。Vercel 側に動いているデプロイがあることが前提。
-4. ネームサーバーを戻す必要は、レコードが Vercel を向いていれば無い。
-5. Vercel をすでに Hobby へ下げたあと、またはプロジェクトを消したあとは、この戻し方は使えない。その場合は Worker の直前の版を残し、別の受け皿を NOBU と決めてから下げる。
+Cloudflare の画面（アカウント ID は GitHub がマスクするため、ここには書かない。未確認）:
+
+`https://dash.cloudflare.com/<account_id>/workers/services/view/noutore-biyori/production/settings`
+
+スマホでは Workers & Pages → **noutore-biyori**（staging ではない）→ Settings → Variables and Secrets。アドレス欄の `dash.cloudflare.com/` の次がアカウント ID。
+
+`PUBLIC_SITE_URL`（`https://noutorebiyori.com`）と `CF_ARTICLE_CACHE_TTL`（`86400`）は `wrangler.jsonc` からデプロイ時に入る。ダッシュボードで重ねなくてよい。
+
+| Worker の名前 | 種別 | Vercel の名前 | いつ |
+| --- | --- | --- | --- |
+| `SANITY_PROJECT_ID` | Text | `SANITY_PROJECT_ID` | 初日推奨。空でもコードの既定 `quljge22` で公開データは読める |
+| `SANITY_DATASET` | Text | `SANITY_DATASET` | 同上。既定は `production` |
+| `SANITY_API_VERSION` | Text | `SANITY_API_VERSION` | 同上。既定は `2024-01-01` |
+| `SANITY_READ_TOKEN` | Secret | `SANITY_READ_TOKEN` | データセットが公開のあいだは任意。非公開にしたら必須 |
+| `SANITY_REVALIDATE_SECRET` | Secret | `SANITY_REVALIDATE_SECRET` | ドメインを付けて Webhook を向ける日に必須。この workers.dev 段階では任意 |
+| `SMTP_HOST` | Text | `SMTP_HOST` | 問い合わせを動かす日に必須。下記 |
+| `SMTP_PORT` | Text | `SMTP_PORT` | 同上。Workers では **465** |
+| `SMTP_USER` | Secret | `SMTP_USER` | 同上 |
+| `SMTP_PASS` | Secret | `SMTP_PASS` | 同上 |
+| `MAIL_TO` | Text | `MAIL_TO` | 同上。届く先はこのアドレス |
+| `INDEXNOW_KEY` | Secret | `INDEXNOW_KEY` | 任意。入れると公開 URL を IndexNow に通知する。ドメインを付ける前は空のまま |
+| `CF_ZONE_ID` | Text | Vercel には無い | 任意。ゾーンのキャッシュ削除を使うとき。Cloudflare のゾーン画面の Zone ID |
+| `CF_PURGE_API_TOKEN` | Secret | Vercel には無い。新規 | 任意。権限は Zone › Cache Purge › Purge、ゾーンは `noutorebiyori.com` だけ。デプロイ用トークンとは別 |
+| `PUBLIC_PUBLISHER_CENTER_VERIFICATION` | Text | `PUBLIC_PUBLISHER_CENTER_VERIFICATION` | 任意。Publisher Center の確認メタ |
+| `LANDING_LOG` | Text | `LANDING_LOG` | 任意。`off` で着地ログを止める。空なら出る |
+| `VITE_GA_ID` | ビルド時（Worker の実行時変数ではない） | `VITE_GA_ID` | ドメインを付けるビルドの前に GitHub の Actions Variables へ。workers.dev では計測しない |
+
+入れない: `SANITY_WRITE_TOKEN` / `SANITY_AUTH_TOKEN` / `SANITY_DEPLOY_TOKEN` / `SANITY_API_TOKEN`（書き込み）、`SANITY_PREVIEW` / `SANITY_PREVIEW_DRAFTS`、`SKIP_SANITY`、`ENABLE_QUIZ_STUB`、`VERCEL_REVALIDATE_TOKEN`（`SANITY_REVALIDATE_SECRET` があれば Worker では不要）。
+
+`VITE_SANITY_PROJECT_ID` / `VITE_SANITY_DATASET` / `VITE_SANITY_API_VERSION` はビルド時。空でもコードの既定値を使う。
+
+### ドメインを付ける（変数のあと。今はしない）
+
+1. 上の必須項目を本番 Worker に入れ、Workers の画面で再デプロイするか、`deploy/cloudflare-production` へ空でない push をする。試験 Worker にはドメインを付けない。
+2. 時刻が 08:00 / 09:00 / 12:30 / 22:00 の前後でないことを確認する。
+3. DNS 画面で、apex の A が `216.198.79.1`、www の CNAME が `cname.vercel-dns.com`、TXT が 3 件残っていることを見る。ネームサーバーは変えない。
+4. Workers & Pages → **noutore-biyori** → Settings → Domains & Routes。`noutorebiyori.com` と `www.noutorebiyori.com` をカスタムドメインとして追加する。`wrangler.jsonc` には書かない。
+5. 数分後に確認する。
+   - `https://www.noutorebiyori.com/` が **308** で `https://noutorebiyori.com/` へ
+   - HSTS `max-age=63072000`
+   - トップ、記事、`/robots.txt` は Allow と `Sitemap: https://noutorebiyori.com/sitemap.xml`（Disallow ではない）
+   - `/ads.txt` が 200 で同じ本文。広告スクリプトが **読み込まれる**
+   - sitemap とフィード
+   - 下の問い合わせテスト
+   - Sanity Webhook を `https://noutorebiyori.com/api/revalidate` へ。更新が 200
+   - GA4 のリアルタイム。TXT の確認が残っていること
+6. Rocket Loader、Email Obfuscation、Bot Fight Mode は OFF。
+7. 48〜72 時間見る。Vercel のプロジェクトは消さない。
+
+### 問い合わせの確認（ドメインを付けたあと）
+
+送る人: NOBU。スマホのブラウザで `https://noutorebiyori.com/contact` を開き、名前、自分のメール、件名、本文を入れて送信する。
+
+届く先: Worker の `MAIL_TO` のアドレス。届いた件名は `【お問い合わせ】` で始まる。
+
+成功すると画面は「お問い合わせいただきありがとうございます。」失敗すると「サーバーエラーにより、お問い合わせを送信できませんでした。」または設定不足の文言。500 のときは送れたことにしない。
+
+ログ: Cloudflare → Workers & Pages → **noutore-biyori** → Logs（または Observability）。失敗は `Error sending email:`。変数が空なら `One or more SMTP environment variables are not set.` パスワードはログに出ない。
+
+### 戻す
+
+カスタムドメインを付けたあと:
+
+1. 本番 Worker の Domains & Routes から apex と www を外す。
+2. DNS を Vercel のままにする。プロキシ OFF で、apex の A は `216.198.79.1`、www の CNAME は `cname.vercel-dns.com`。TXT 3 件は残す。
+3. 反映の目安は 5〜10 分。応答の `server` が Vercel に戻ることを見る。
+4. ネームサーバーは Cloudflare のまま戻さない（レコードが Vercel を向いていればサイトは Vercel）。
+5. Vercel はすでに Hobby。商用（AdSense）の受け皿としては規約上使えないことがあり、戻したあとに 402 や 503 になり得る。プロジェクトは残している。Hobby で表示できないときは、Worker のドメインを外す前の版を優先し、別の受け皿を NOBU が決める。急いで消さない。
 
 ---
 
@@ -262,13 +304,15 @@ Sanity に繋がらないときは `SKIP_SANITY=1` と `ENABLE_QUIZ_STUB=1` を 
 
 ## お問い合わせメール
 
-- nodemailer を Workers（`nodejs_compat`）で使います。ポート 25 は使えません。`SMTP_PORT` は **465**。
-- 失敗すると 500 を返し、ログに `Error sending email:` が出ます。
-- 動かなかったときの次の案（実装は結果を見てから。秘密はリポジトリに書かない）:
-  1. HTTP のメール API（Resend など）。キーは Worker の Secret。
-  2. ゾーン移管後の Cloudflare Email Routing（`send_email`）。
-  3. それまでのあいだ、問い合わせページに連絡先を出す。
-- どの案にするか、費用が要るかは NOBU が決めます。
+コードが読む名前は `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_TO` だけ。ほかのメール用の名前は無い。
+
+`src/routes/contact/+page.server.js` は `secure` を `SMTP_PORT` が 465 のときだけ true にする。465 は接続の最初から TLS。それ以外（587 を含む）は `secure: false` で、nodemailer 7.0.11 がサーバの STARTTLS 案内を見ると `STARTTLS` コマンドのあと `tls.connect({ socket, host })` で平文ソケットを TLS に上げる。
+
+Workers の外向きではポート 25 は使えない。465 と 587 は、その禁止リストには入っていない。
+
+このリポジトリの nodemailer は **7.0.11**。上流が Cloudflare Workers（`nodejs_compat`）で STARTTLS の送信を確認したのは 2026-09-02 の commit `8b03240` 以降で、7.0.11 には入っていない。その修正は `os.networkInterfaces()` が空オブジェクトのとき DNS のアドレス族判定が失敗する問題向けで、465 も 587 もホスト名の解決で先に失敗し得る。Workers の `node:tls` は公式に一部対応。STARTTLS は既存ソケットのアップグレードなので、465 の最初からの TLS より失敗しやすい。`tls.rejectUnauthorized: false` は Workers が拒否する。この環境では実際の SMTP 送信はまだしていない（未確認）。
+
+方針: `SMTP_PORT` は **465**。プロバイダが 587 しか無いときは `SMTP_PORT=587` のまま入れる（コードは STARTTLS を試す）。届かずログが `Error sending email:` / `ETLS` / `ECONNECTION` / 名前解決失敗なら、nodemailer を `8b03240` 以降へ上げて再試験するか、HTTP のメール API に切り替える。秘密はリポジトリに書かない。
 
 ## デプロイ用トークン（再掲）
 
