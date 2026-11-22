@@ -183,17 +183,22 @@ export const createIndexNowScheduler = (options = {}) => {
 
   const drain = async (submit) => {
     let last = { ok: true, skipped: true, reason: 'empty', submitted: 0, queued: pending.length };
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
       if (pending.length === 0) return last;
       const at = now();
       if (at < backoffUntil) return flushOnce(submit);
+      // 通常の送信間隔は数十秒を超えない。残り時間を待ってから送る。
+      // この drain は waitUntil に載るので、webhook の応答は待たせない。
       if (lastSubmitAt && at - lastSubmitAt < cfg.minIntervalMs) {
-        return flushOnce(submit);
+        await sleep(cfg.minIntervalMs - (at - lastSubmitAt));
       }
+      if (pending.length === 0) return last;
+      if (now() < backoffUntil) return flushOnce(submit);
       last = await flushOnce(submit);
-      if (last.throttled || last.reason === 'backoff' || last.reason === 'error-backoff')
+      if (last.throttled || last.reason === 'backoff' || last.reason === 'error-backoff') {
         return last;
-      if (last.reason === 'interval') return last;
+      }
+      if (last.reason === 'interval') continue;
     }
     return last;
   };

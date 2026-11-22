@@ -5,8 +5,10 @@
 // ここでは次のように分割する。
 // - 変えるのは公開ドキュメントのカテゴリだけ（全データセットは走査しない）
 // - 1 リクエストでは先頭ウィンドウか、最大 PAGE_SIZE 件だけを書く
-// - 続きは waitUntil から自分自身を呼び、呼び出しごとに CPU 予算を分ける
+// - 続きは通常の fetch で次のリクエストにする。Service binding の自己呼び出しは
+//   チェーン全体が 32 回で切れるため使わない。応答を返してから次を待つ
 // - 同じカテゴリのバーストはロックで 1 本にまとめ、公開ドキュメントだけは先に直す
+// - 続きが途切れたときは保存した位置から再開する
 // ルールは従来どおり「同じカテゴリの新しい順 5 件（自分以外）」。
 
 export const RELATED_LIMIT = 5;
@@ -15,6 +17,7 @@ export const PAGE_SIZE = 40;
 export const MAX_PAGES = 500;
 export const MAX_OFFSET = 20000;
 export const LOCK_TTL_MS = 180_000;
+export const RUN_STALE_MS = 20_000;
 export const MAX_CATEGORY_KEYS = 4;
 export const MAX_DOCUMENT_IDS = 8;
 
@@ -309,7 +312,7 @@ const cacheUsable = (cache) =>
   Boolean(cache && typeof cache.match === 'function' && typeof cache.put === 'function');
 
 export const claimCategoryRun = async (cache, lockKey, now = Date.now()) => {
-  if (!cacheUsable(cache)) return { start: true, gen: 1, coalesced: false };
+  if (!cacheUsable(cache)) return { start: true, gen: 1, coalesced: false, offset: 0 };
   try {
     const genReq = lockRequest('gen', lockKey);
     const runReq = lockRequest('run', lockKey);
@@ -317,12 +320,29 @@ export const claimCategoryRun = async (cache, lockKey, now = Date.now()) => {
     const running = await readLock(cache, runReq, now);
     const gen = (genState?.gen ?? 0) + 1;
     await writeLock(cache, genReq, { gen, touchedAt: now });
-    if (running?.running) return { start: false, gen, coalesced: true };
-    await writeLock(cache, runReq, { running: true, touchedAt: now });
-    return { start: true, gen, coalesced: false };
+    const age = running ? now - running.touchedAt : RUN_STALE_MS;
+    if (running?.running && age < RUN_STALE_MS) {
+      return { start: false, gen, coalesced: true, offset: running.offset ?? 0 };
+    }
+    const offset = running?.running ? (running.offset ?? 0) : 0;
+    await writeLock(cache, runReq, { running: true, offset, touchedAt: now });
+    return { start: true, gen, coalesced: false, offset };
   } catch (error) {
     console.error('[update-related] lock claim failed', error);
-    return { start: true, gen: 1, coalesced: false };
+    return { start: true, gen: 1, coalesced: false, offset: 0 };
+  }
+};
+
+export const heartbeatCategoryRun = async (cache, lockKey, offset, now = Date.now()) => {
+  if (!cacheUsable(cache)) return;
+  try {
+    await writeLock(cache, lockRequest('run', lockKey), {
+      running: true,
+      offset,
+      touchedAt: now,
+    });
+  } catch (error) {
+    console.error('[update-related] lock heartbeat failed', error);
   }
 };
 
@@ -333,13 +353,13 @@ export const finishCategoryRun = async (cache, lockKey, startGen, now = Date.now
     const runReq = lockRequest('run', lockKey);
     const genNow = (await readLock(cache, genReq, now))?.gen ?? startGen;
     if (genNow !== startGen) {
-      await writeLock(cache, runReq, { running: true, touchedAt: now });
+      await writeLock(cache, runReq, { running: true, offset: 0, touchedAt: now });
       return { again: true, gen: genNow };
     }
-    await writeLock(cache, runReq, { running: false, touchedAt: now });
+    await writeLock(cache, runReq, { running: false, offset: 0, touchedAt: now });
     const genAfter = (await readLock(cache, genReq, now))?.gen ?? startGen;
     if (genAfter !== startGen) {
-      await writeLock(cache, runReq, { running: true, touchedAt: now });
+      await writeLock(cache, runReq, { running: true, offset: 0, touchedAt: now });
       return { again: true, gen: genAfter };
     }
     return { again: false, gen: startGen };
@@ -352,7 +372,11 @@ export const finishCategoryRun = async (cache, lockKey, startGen, now = Date.now
 export const releaseCategoryRun = async (cache, lockKey, now = Date.now()) => {
   if (!cacheUsable(cache)) return;
   try {
-    await writeLock(cache, lockRequest('run', lockKey), { running: false, touchedAt: now });
+    await writeLock(cache, lockRequest('run', lockKey), {
+      running: false,
+      offset: 0,
+      touchedAt: now,
+    });
   } catch (error) {
     console.error('[update-related] lock release failed', error);
   }
@@ -368,12 +392,10 @@ const resolveWaitUntil = (platform) => {
   return null;
 };
 
-const resolveInvoke = (event, deps) => {
+const resolveInvoke = (deps) => {
   if (typeof deps.invoke === 'function') return deps.invoke;
-  const binding = event.platform?.env?.SELF;
-  if (binding && typeof binding.fetch === 'function') {
-    return (request) => binding.fetch(request);
-  }
+  // Service binding の自己呼び出しは 1 本のチェーンが 32 回で切れる。
+  // 通常の fetch は次のリクエストを別の呼び出しとして始める。
   const fetchImpl = deps.fetchImpl ?? globalThis.fetch;
   return (request) => fetchImpl(request);
 };
@@ -413,6 +435,7 @@ const continuePages = async ({ job, client, cache, waitUntil, invoke, origin, se
   const offset = Number.isInteger(job.offset) && job.offset >= 0 ? job.offset : 0;
   const page = Number.isInteger(job.page) && job.page >= 0 ? job.page : 0;
   const lockKey = lockIdOf(job);
+  await heartbeatCategoryRun(cache, lockKey, offset);
   if (page > MAX_PAGES || offset > MAX_OFFSET) {
     await releaseCategoryRun(cache, lockKey);
     console.error('[update-related] stopped at cap', { lockKey, page, offset });
@@ -434,6 +457,7 @@ const continuePages = async ({ job, client, cache, waitUntil, invoke, origin, se
   });
 
   if (!result.done && result.nextOffset > offset) {
+    await heartbeatCategoryRun(cache, lockKey, result.nextOffset);
     await scheduleJob(
       { ...job, v: 1, phase: 'page', offset: result.nextOffset, page: page + 1 },
       { origin, secret, invoke, waitUntil }
@@ -471,8 +495,8 @@ const handleJob = async ({ job, client, cache, waitUntil, invoke, origin, secret
         v: 1,
         phase: 'page',
         ...key,
-        offset: 0,
-        page: 0,
+        offset: claim.offset || 0,
+        page: Math.floor((claim.offset || 0) / PAGE_SIZE),
         gen: claim.gen,
         pageSize: job.pageSize,
       },
@@ -560,7 +584,7 @@ export const handleUpdateRelatedPost = async (event, deps = {}) => {
 
   const waitUntil = deps.waitUntil ?? resolveWaitUntil(event.platform);
   const cache = deps.cache ?? event.platform?.caches?.default ?? null;
-  const invoke = resolveInvoke(event, deps);
+  const invoke = resolveInvoke(deps);
   const origin = event.url.origin;
   const job = payload._updateRelated;
 
@@ -606,7 +630,14 @@ export const handleUpdateRelatedPost = async (event, deps = {}) => {
       started += 1;
       tasks.push(
         scheduleJob(
-          { v: 1, phase: 'page', ...key, offset: 0, page: 0, gen: claim.gen },
+          {
+            v: 1,
+            phase: 'page',
+            ...key,
+            offset: claim.offset || 0,
+            page: Math.floor((claim.offset || 0) / PAGE_SIZE),
+            gen: claim.gen,
+          },
           { origin, secret, invoke, waitUntil }
         )
       );

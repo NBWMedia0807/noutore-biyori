@@ -5,11 +5,13 @@ import {
   DOC_QUERY,
   LOCK_TTL_MS,
   PAGE_SIZE,
+  RUN_STALE_MS,
   categorySliceQuery,
   claimCategoryRun,
   extractUpdateTargets,
   finishCategoryRun,
   handleUpdateRelatedPost,
+  heartbeatCategoryRun,
   relatedForDocument,
   runRelatedHead,
   runRelatedPage,
@@ -228,6 +230,18 @@ test('a running category coalesces the next publish and still records a newer ge
   assert.equal(quiet.again, false);
   const restarted = await claimCategoryRun(cache, 'ref:catA', now + LOCK_TTL_MS + 5);
   assert.equal(restarted.start, true);
+});
+
+test('a stalled walk resumes from the saved offset instead of the start', async () => {
+  const cache = createMemoryCache();
+  const started = await claimCategoryRun(cache, 'ref:catA', 1_000);
+  assert.equal(started.offset, 0);
+  await heartbeatCategoryRun(cache, 'ref:catA', 80, 2_000);
+  const live = await claimCategoryRun(cache, 'ref:catA', 5_000);
+  assert.equal(live.coalesced, true);
+  const resumed = await claimCategoryRun(cache, 'ref:catA', 2_000 + RUN_STALE_MS + 1);
+  assert.equal(resumed.start, true);
+  assert.equal(resumed.offset, 80);
 });
 
 const call = (body, { headers = {}, search = '', cache, invoke, waitUntil, client } = {}) => {

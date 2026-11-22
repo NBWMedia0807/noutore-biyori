@@ -21,9 +21,6 @@
   "observability": {
     "enabled": true
   },
-  // 関連記事の続きを、公開インターネットを経由せず次のリクエストとして自分に渡す。
-  // 各リクエストが自分の CPU 予算を使う。秘密や vars はここへ書かない。
-  "services": [{ "binding": "SELF", "service": "noutore-biyori" }],
   // 秘密でない値だけ。次の deploy でダッシュボードの同名平文が消えないようにここへ置く。
   "vars": {
     "PUBLIC_SITE_URL": "https://noutorebiyori.com",

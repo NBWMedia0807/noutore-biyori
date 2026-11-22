@@ -140,10 +140,32 @@ test('a burst is one submission, repeats are dropped, and 429 backs off without 
   assert.equal(after.submitted, 4);
   assert.equal(calls.length, 2);
 
-  const repeated = scheduler.enqueue(calls[0]);
+  const repeated = scheduler.enqueue(calls[1]);
   assert.equal(repeated.accepted.length, 0);
   assert.equal(repeated.deduped.length, 4);
   const skipped = await scheduler.kick(submit);
   assert.equal(skipped.reason, 'empty');
   assert.equal(calls.length, 2);
+});
+
+test('a url that arrives inside the minimum interval is sent after that wait', async () => {
+  const clock = { now: NOW };
+  const scheduler = schedulerAt(clock);
+  const calls = [];
+  const submit = async (batch) => {
+    calls.push([...batch]);
+    return { ok: true, status: 200 };
+  };
+
+  scheduler.enqueue(['https://noutorebiyori.com/quiz/a']);
+  await scheduler.kick(submit);
+  scheduler.enqueue(['https://noutorebiyori.com/quiz/b']);
+  const second = await scheduler.kick(submit);
+
+  assert.equal(second.submitted, 1);
+  assert.deepEqual(calls, [
+    ['https://noutorebiyori.com/quiz/a'],
+    ['https://noutorebiyori.com/quiz/b'],
+  ]);
+  assert.ok(clock.now - NOW >= 10_000);
 });
