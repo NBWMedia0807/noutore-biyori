@@ -23,6 +23,8 @@
     "test:feed-slots": "node --test tests/feed-slots.test.mjs",
     "test:pinterest": "node --test tests/pinterest-feed.test.mjs",
     "test:edge-cache": "node --test tests/edge-cache.test.mjs tests/staging-host.test.mjs",
+    "test:update-related": "node --test tests/update-related.test.mjs",
+    "test:indexnow": "node --import ./tests/helpers/register-kit-alias.mjs --test tests/indexnow.test.mjs",
     "test:analytics": "pnpm run test:feed-analytics && pnpm run test:smartnews && pnpm run test:smartnews-recirculation && pnpm run test:gunosy && pnpm run test:page-view && pnpm run test:feed-utm && pnpm run test:feed-slots && pnpm run test:pinterest",
     "validate:gunosy": "node scripts/validate-gunosy-feed.mjs",
     "lint": "pnpm run format:check && pnpm run check:conflicts",
