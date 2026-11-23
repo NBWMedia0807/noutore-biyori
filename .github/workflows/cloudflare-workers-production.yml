@@ -64,8 +64,8 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Unit tests (edge cache)
-        run: pnpm run test:edge-cache
+      - name: Unit tests (edge cache, related articles, IndexNow)
+        run: pnpm run test:edge-cache && pnpm run test:update-related && pnpm run test:indexnow
 
       - name: Build (Cloudflare)
         run: pnpm run build:cloudflare
