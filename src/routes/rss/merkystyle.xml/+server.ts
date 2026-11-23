@@ -7,6 +7,7 @@ import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
 import { resolveImage } from '$lib/rss/images';
 import { toRfc822 } from '$lib/rss/toRfc822';
+import { buildMerkystyleDescription } from '$lib/rss/merkystyleDescription.js';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
 import { withFeedUtm, FEED_UTM_SOURCE } from '$lib/utils/feedUtm.js';
@@ -70,43 +71,6 @@ const wrapCdata = (value: string): string => {
   return `<![CDATA[${sanitized.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 };
 
-const compactWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const dedupeFragments = (text: string): string[] => {
-  const fragments = text
-    .split(/(?<=[。！？!?])/u)
-    .map((fragment) => compactWhitespace(fragment))
-    .filter(Boolean);
-  const seen = new Set<string>();
-  const unique: string[] = [];
-  for (const fragment of fragments) {
-    const key = fragment.replace(/[\s。、,.!?！？]/gu, '');
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    unique.push(fragment);
-  }
-  return unique;
-};
-
-const buildDescription = (plain: string, fallback: string, extras: string[] = []): string => {
-  const candidates = [plain, ...extras, fallback].filter(Boolean);
-  const raw = candidates.join(' ').trim();
-  if (!raw) return '';
-  const normalized = compactWhitespace(raw);
-  const fragments = dedupeFragments(normalized);
-  const title = fallback ? compactWhitespace(fallback) : '';
-  const merged = fragments.length > 0 ? fragments.join(' ') : normalized;
-  const withoutTitle = title ? merged.replace(new RegExp(`^${escapeRegExp(title)}\s*`), '') : merged;
-  const cleaned = compactWhitespace(withoutTitle || merged);
-  const limit = 180;
-  if (cleaned.length <= limit) return cleaned;
-  const sliced = cleaned.slice(0, limit - 1);
-  const trimmed = sliced.replace(/[\s、。,.!?！？]+$/u, '') || sliced;
-  return `${trimmed}…`;
-};
-
 const pickThumbnail = (doc: any): string | null => {
   if (typeof doc?.thumbnailUrl === 'string' && doc.thumbnailUrl.trim()) {
     return getAbsoluteUrl(doc.thumbnailUrl.trim());
@@ -162,9 +126,13 @@ const toItem = (doc: any) => {
   const plain = toPlainText(doc?.body);
   const plainDescription = toPlainText(doc?.problemDescription);
   const plainHints = toPlainText(doc?.hints);
-  const plainAnswer = toPlainText(doc?.answerExplanation);
-  const plainClosing = toPlainText(doc?.closingMessage);
-  const description = buildDescription(plain, title, [plainDescription, plainHints, plainAnswer, plainClosing]);
+  // 紹介文は問題文＋ヒントだけ（解答・締めは入れない。タイトルは末尾に足さない）。
+  const description = buildMerkystyleDescription({
+    problemDescription: plainDescription,
+    hints: plainHints,
+    body: plain,
+    title
+  });
 
   const contentParts: string[] = [];
   if (mainImageHtml) {
