@@ -134,24 +134,7 @@
 
   <p class="answer-note">※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>
 
-  <nav class="back-nav">
-    <a class="action-button secondary" href={questionPath}>
-      <span aria-hidden="true">←</span>
-      問題ページに戻る
-    </a>
-  </nav>
-
-  <SnsFollowCard />
-
-  <section class="closing">
-    <div class="closing-card">
-      <p>{closingText || closingDefault}</p>
-    </div>
-  </section>
-
-  <!-- 正解ページ: もう一問上の広告 -->
-  <AdSense slot="5428887502" />
-
+  <!-- さらにもう一問: 解説の直後へ移動（広告で挟まない） -->
   {#if nextChallengePosts.length > 0}
     <section class="next-challenge">
       <h2 class="next-challenge__title">さらにもう一問！</h2>
@@ -180,14 +163,36 @@
     </section>
   {/if}
 
-  <!-- 正解ページ: 関連記事上の広告 -->
-  <AdSense slot="1724332823" />
+  <nav class="back-nav">
+    <a class="action-button secondary" href={questionPath}>
+      <span aria-hidden="true">←</span>
+      問題ページに戻る
+    </a>
+  </nav>
+
+  <SnsFollowCard />
+
+  <section class="closing">
+    <div class="closing-card">
+      <p>{closingText || closingDefault}</p>
+    </div>
+  </section>
+
+  <!-- 正解ページ: 締めの後の広告（ボタン・次問カードから離す） -->
+  <div class="ad-buffer">
+    <AdSense slot="5428887502" />
+  </div>
 
   <RelatedQuizSection
     quizzes={relatedQuizzes}
     fallbackImageUrl={relatedFallback}
     headingId="related-answer-heading"
   />
+
+  <!-- 正解ページ: ページ末の広告（下にボタンを置かない） -->
+  <div class="ad-buffer">
+    <AdSense slot="1724332823" />
+  </div>
 </main>
 
 <style>
@@ -352,6 +357,8 @@
     padding: 28px 24px 32px;
     box-shadow: 0 18px 45px rgba(249, 115, 22, 0.14);
     border: 1px solid rgba(248, 196, 113, 0.35);
+    /* 画像下広告・解説が空でも「さらにもう一問」が広告に密着しないよう余白 */
+    margin-top: 24px;
   }
 
   .next-challenge__title {
@@ -421,9 +428,20 @@
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
      上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
-  .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+  .answer-page > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
   }
+
+  /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も
+     適用しない（表示後に広告がボタンやカードへ寄るのを防ぐ）。未配信なら枠ごと畳む */
+  .ad-buffer {
+    padding-block: 24px;
+  }
+
+  .ad-buffer:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
+    display: none;
+  }
+
 
   @media (max-width: 640px) {
     .answer-page {
@@ -431,7 +449,7 @@
       gap: 20px;
     }
 
-    .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+    .answer-page > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 

@@ -291,10 +291,13 @@
     </a>
   </nav>
 
-  <!-- 記事下: 関連記事上の広告 -->
-  <AdSense slot="1724332823" />
-
+  <!-- 誤クリック対策: 「正解ページへ進む」の直後に広告を置かず、SNSカードを挟む -->
   <SnsFollowCard />
+
+  <!-- 記事下: 関連記事上の広告（前後に余白を確保してボタンと密着させない） -->
+  <div class="ad-buffer">
+    <AdSense slot="1724332823" />
+  </div>
 
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
@@ -443,8 +446,23 @@
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
      上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
-  .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+  .quiz-detail > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
+  }
+
+  /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も
+     適用しない（表示後に広告がボタンへ寄るのを防ぐ）。未配信なら枠ごと畳む */
+  .ad-buffer {
+    padding-block: 24px;
+  }
+
+  .ad-buffer:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
+    display: none;
+  }
+
+  /* カテゴリ一覧ボタンは直前の広告・関連記事と密着させない */
+  .category-nav {
+    margin-top: 24px;
   }
 
   .hints-toggle,
@@ -560,7 +578,7 @@
       gap: 20px;
     }
 
-    .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+    .quiz-detail > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 
