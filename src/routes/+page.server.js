@@ -1,3 +1,4 @@
+import { resolveRequestedPage } from '$lib/server/pagination.js';
 // src/routes/+page.server.js
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
@@ -28,13 +29,6 @@ export const prerender = false;
 export const config = { runtime: 'nodejs22.x' };
 
 const HOME_PAGE_SIZE = 12;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  const integer = Math.trunc(parsed);
-  return integer >= 1 ? integer : 1;
-};
 
 const HOME_QUERY = /* groq */ `
 {
@@ -208,7 +202,7 @@ export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
 
   const path = url.pathname;
-  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const requestedPage = resolveRequestedPage(url);
   const pageSize = HOME_PAGE_SIZE;
   const offset = Math.max(0, (requestedPage - 1) * pageSize);
 
