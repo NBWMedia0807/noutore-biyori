@@ -27,7 +27,7 @@
   let intersectionObs = null;
   let adPushed = false;
 
-  /** 実際に push 済みのパス（同じパスでの二重 push 防止） */
+  /** ポーリング開始済みのパス（同じパスでの二重 push 防止） */
   let pushedPath = '';
   /** 遷移ごとに増やす世代番号。古い遷移の tick 待ちを捨てるために使う */
   let navToken = 0;
@@ -73,7 +73,7 @@
     intersectionObs = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !adPushed) {
-          // push できたときだけ監視を外す。ins 未接続なら次の交差で再試行する
+          // ポーリング開始時に監視を外す。ins 未接続なら次の交差で再試行する
           if (pushAd()) {
             intersectionObs?.disconnect();
           }
@@ -86,15 +86,16 @@
 
   function pushAd() {
     if (!adRef || destroyed || !adsenseRequestsAllowed()) return false;
-    // 古い <ins>（切り離し済み）や、既に AdSense が処理した <ins> には push しない
-    if (!adRef.isConnected || adRef.dataset.adsbygoogleStatus) return false;
+    if (!adRef.isConnected) return false;
     // 同じパスで二重 push しない
     if (pushedPath === currentPath) return false;
     pushedPath = currentPath;
     adPushed = true;
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (_) {}
+    if (!adRef.hasAttribute('data-adsbygoogle-status')) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (_) {}
+    }
     startPolling();
     return true;
   }
