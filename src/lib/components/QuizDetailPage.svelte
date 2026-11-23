@@ -4,7 +4,6 @@
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import InlineCta from '$lib/components/InlineCta.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
-  import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
   import { quizHref, quizAnswerHref } from '$lib/utils/quizLinks.js';
 
   export let data;
@@ -291,8 +290,8 @@
     </a>
   </nav>
 
-  <!-- 誤クリック対策: 「正解ページへ進む」の直後に広告を置かず、SNSカードを挟む -->
-  <SnsFollowCard />
+  <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
+  <div class="cta-ad-spacer" aria-hidden="true"></div>
 
   <!-- 記事下: 関連記事上の広告（前後に余白を確保してボタンと密着させない） -->
   <div class="ad-buffer">
@@ -448,6 +447,10 @@
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
   .quiz-detail > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
+  }
+
+  .cta-ad-spacer {
+    min-height: 48px;
   }
 
   /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も
