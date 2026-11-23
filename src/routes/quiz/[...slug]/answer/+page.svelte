@@ -1,7 +1,6 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
-  import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { quizHref } from '$lib/utils/quizLinks.js';
 
@@ -170,7 +169,8 @@
     </a>
   </nav>
 
-  <SnsFollowCard />
+  <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
+  <div class="cta-ad-spacer" aria-hidden="true"></div>
 
   <section class="closing">
     <div class="closing-card">
@@ -430,6 +430,10 @@
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
   .answer-page > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
+  }
+
+  .cta-ad-spacer {
+    min-height: 48px;
   }
 
   /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も

@@ -142,7 +142,7 @@ after(async () => {
   }
 });
 
-test('quiz detail and answer pages respond with 200', async () => {
+test('quiz detail and answer pages retain navigation and ad slots without follow buttons', async () => {
   const slugs = await resolveSlugs();
   assert.ok(slugs.length >= 2, 'At least two slugs are required for the smoke test');
 
@@ -169,8 +169,21 @@ test('quiz detail and answer pages respond with 200', async () => {
       return result;
     };
 
-    await verifyResponse(`/quiz/${encodeURIComponent(slug)}`, `/quiz/${slug}`);
-    await verifyResponse(`/quiz/${encodeURIComponent(slug)}/answer`, `/quiz/${slug}/answer`);
+    const questionPath = `/quiz/${encodeURIComponent(slug)}`;
+    for (const [path, cta, slots] of [
+      [questionPath, '正解ページへ進む', ['4170928887', '3921249196', '1724332823']],
+      [`${questionPath}/answer`, '問題ページに戻る', ['4170928887', '3921249196', '5428887502', '1724332823']]
+    ]) {
+      const { response } = await verifyResponse(path, path);
+      const html = await response.text();
+      assert.doesNotMatch(html, /フォローする|SNSも毎日更新中/, path);
+      assert.ok(html.includes(cta), `${path} should include ${cta}`);
+      assert.deepEqual(
+        [...html.matchAll(/data-ad-slot="([0-9]+)"/g)].map((match) => match[1]),
+        slots,
+        `${path} should retain its ad slots in order`
+      );
+    }
   }
 });
 
