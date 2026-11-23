@@ -6,6 +6,7 @@ import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
 import { resolveImage } from '$lib/rss/images';
+import { resizeSanityThumbnail } from '$lib/rss/thumbnailUrl.js';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { buildMerkystyleDescription } from '$lib/rss/merkystyleDescription.js';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
@@ -73,11 +74,11 @@ const wrapCdata = (value: string): string => {
 
 const pickThumbnail = (doc: any): string | null => {
   if (typeof doc?.thumbnailUrl === 'string' && doc.thumbnailUrl.trim()) {
-    return getAbsoluteUrl(doc.thumbnailUrl.trim());
+    return resizeSanityThumbnail(getAbsoluteUrl(doc.thumbnailUrl.trim()));
   }
-  const resolved = resolveImage([doc?.mainImage, doc?.problemImage, doc?.answerImage], { minWidth: 300 });
+  const resolved = resolveImage([doc?.mainImage, doc?.problemImage, doc?.answerImage], { minWidth: 640 });
   if (!resolved?.url) return null;
-  return resolved.url;
+  return resizeSanityThumbnail(resolved.url);
 };
 
 const pickEnclosure = (doc: any) =>
