@@ -24,17 +24,25 @@ const STUBS = new Map([
 const resolveLibPath = (specifier) => {
   const relative = specifier.slice('$lib/'.length);
   const base = new URL(`src/lib/${relative}`, ROOT);
-  const candidates = [base, new URL(`${base.href}.js`), new URL(`${base.href}/index.js`)];
+  const candidates = [base, new URL(`${base.href}.js`), new URL(`${base.href}.ts`), new URL(`${base.href}/index.js`)];
   return candidates.find((candidate) => existsSync(candidate))?.href;
 };
 
 export async function resolve(specifier, context, next) {
+  if (specifier === '$env/dynamic/public') {
+    return { url: 'data:text/javascript,export const env = {}', shortCircuit: true };
+  }
   const stub = STUBS.get(specifier);
   if (stub) return { url: stub, shortCircuit: true };
 
   if (specifier.startsWith('$lib/')) {
     const url = resolveLibPath(specifier);
     if (url) return { url, shortCircuit: true };
+  }
+
+  if (specifier.startsWith('./') && context.parentURL?.endsWith('.ts')) {
+    const url = new URL(`${specifier}.ts`, context.parentURL);
+    if (existsSync(url)) return { url: url.href, shortCircuit: true };
   }
 
   return next(specifier, context);
