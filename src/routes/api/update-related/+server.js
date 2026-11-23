@@ -1,6 +1,7 @@
 // src/routes/api/update-related/+server.js
 // Sanity webhook を受け取り、公開された quiz と同じカテゴリの relatedArticles を更新する。
-// 全件の書き換えは Worker の CPU 制限を超えるため、カテゴリ単位・ページ単位で行う。
+// 全件の書き換えは Worker の CPU 制限を超えるため、公開記事とカテゴリの先頭ウィンドウだけを、
+// このリクエスト内で更新してから応答する。
 //
 // Sanity webhook 設定:
 //   URL    : https://noutorebiyori.com/api/update-related?secret=<SANITY_REVALIDATE_SECRET>
@@ -18,20 +19,6 @@ import { createClient } from '@sanity/client';
 import { json } from '@sveltejs/kit';
 import { handleUpdateRelatedPost } from '$lib/server/update-related.js';
 
-const waitUntilFrom = (platform) => {
-  const ctx = platform?.ctx || platform?.context;
-  if (ctx && typeof ctx.waitUntil === 'function') {
-    return (promise) => ctx.waitUntil(promise);
-  }
-  return null;
-};
-
-export const POST = (event) =>
-  handleUpdateRelatedPost(event, {
-    env,
-    createClient,
-    cache: event.platform?.caches?.default ?? null,
-    waitUntil: waitUntilFrom(event.platform),
-  });
+export const POST = (event) => handleUpdateRelatedPost(event, { env, createClient });
 
 export const GET = () => json({ ok: false, message: 'Method Not Allowed' }, { status: 405 });

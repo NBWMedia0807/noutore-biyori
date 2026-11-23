@@ -2,24 +2,19 @@
 //
 // 以前は Sanity の publish webhook のたびに全 quiz を取得し、1 トランザクションで
 // 全件 patch していた。公開が続くと Worker の CPU 時間を使い切り HTTP 503 になる。
-// ここでは次のように分割する。
-// - 変えるのは公開ドキュメントのカテゴリだけ（全データセットは走査しない）
-// - 1 リクエストでは先頭ウィンドウか、最大 PAGE_SIZE 件だけを書く
-// - 続きは通常の fetch で次のリクエストにする。Service binding の自己呼び出しは
-//   チェーン全体が 32 回で切れるため使わない。応答を返してから次を待つ
-// - 同じカテゴリのバーストはロックで 1 本にまとめ、公開ドキュメントだけは先に直す
-// - 続きが途切れたときは保存した位置から再開する
+// ここでは 1 回の webhook で有界な範囲だけを処理し、終えてから応答する。
+// - 変えるのは公開ドキュメントと、そのカテゴリ（移動時は旧カテゴリも）の先頭ウィンドウだけ
+// - ウィンドウより古い記事は更新しない（意図した妥協）
+// - 続きのリクエスト・保存位置・ロックは持たない。失敗したら次の webhook が同じ処理をやり直す
+// - このモジュールから自分の origin へ fetch しない（secret を Worker の外へ出さない）
 // ルールは従来どおり「同じカテゴリの新しい順 5 件（自分以外）」。
 
 export const RELATED_LIMIT = 5;
-export const TOP_WINDOW = RELATED_LIMIT + 1;
-export const PAGE_SIZE = 40;
-export const MAX_PAGES = 500;
-export const MAX_OFFSET = 20000;
-export const LOCK_TTL_MS = 180_000;
-export const RUN_STALE_MS = 20_000;
+export const CATEGORY_WINDOW = 12;
+export const REFERENCING_LIMIT = 12;
+// この 2 つで 1 回の書き込みは最大 12 × 4 + 4 = 52 件に収まる。
 export const MAX_CATEGORY_KEYS = 4;
-export const MAX_DOCUMENT_IDS = 8;
+export const MAX_DOCUMENT_IDS = 4;
 
 const BASE_FILTER = `_type == "quiz" &&
   !(_id in path("drafts.**")) &&
@@ -31,18 +26,19 @@ const categoryPredicate = (keyType) =>
     ? `!defined(category._ref) && (slug.current == $categoryKey || string::startsWith(slug.current, $categoryKey + "/"))`
     : `category._ref == $categoryKey`;
 
-export const categorySliceQuery = (keyType) => `*[
+// publishedAt が同時刻・日付だけでも順序が揺れないよう _id を第 2 キーにする。
+const NEWEST_FIRST = 'order(publishedAt desc, _id desc)';
+
+export const categoryWindowQuery = (keyType) => `*[
   ${BASE_FILTER} &&
   ${categoryPredicate(keyType)}
-] | order(publishedAt desc) [$start...$end] {
+] | ${NEWEST_FIRST} [0...${CATEGORY_WINDOW}] {
   _id,
-  "slug": slug.current,
-  "categoryRef": category._ref,
-  publishedAt,
   "relatedRefs": relatedArticles[]._ref
 }`;
 
-export const DOC_QUERY = `*[_id == $id && _type == "quiz"][0]{
+// カテゴリは payload ではなく現在値を正とする。非公開になった記事の近傍も直すので BASE_FILTER は掛けない。
+export const TARGET_DOCS_QUERY = `*[_id in $ids && _type == "quiz"]{
   _id,
   _type,
   "slug": slug.current,
@@ -52,10 +48,27 @@ export const DOC_QUERY = `*[_id == $id && _type == "quiz"][0]{
 export const categoryMemberQuery = (keyType) => `*[
   ${BASE_FILTER} &&
   ${categoryPredicate(keyType)} &&
-  _id == $id
-][0]{
+  _id in $ids
+]{
   _id,
   "relatedRefs": relatedArticles[]._ref
+}`;
+
+// 現在のカテゴリを除かないと、同カテゴリの参照元だけで上限が埋まり旧カテゴリが見つからない。
+const outsideCategory = (keyType) =>
+  keyType === 'prefix'
+    ? `!(${categoryPredicate(keyType)})`
+    : `coalesce(category._ref, "") != $categoryKey`;
+
+export const referencingQuery = (keyType) => `*[
+  ${BASE_FILTER} &&
+  references($id) &&
+  $id in relatedArticles[]._ref${keyType ? ` &&\n  ${outsideCategory(keyType)}` : ''}
+] | ${NEWEST_FIRST} [0...${REFERENCING_LIMIT}] {
+  _id,
+  _type,
+  "slug": slug.current,
+  "categoryRef": category._ref
 }`;
 
 export const slugPrefix = (slug) => {
@@ -114,7 +127,7 @@ const collectIds = (payload, headers) => {
   };
 
   walk(payload);
-  for (const slot of ['document', 'after', 'current', 'previous', 'before', 'payload', 'result']) {
+  for (const slot of PAYLOAD_SLOTS) {
     walk(payload?.[slot]);
   }
   if (Array.isArray(payload?.ids)) {
@@ -147,32 +160,37 @@ const firstType = (payload) => {
   return '';
 };
 
+const PAYLOAD_SLOTS = ['document', 'after', 'current', 'previous', 'before', 'payload', 'result'];
+const PREVIOUS_SLOTS = ['previous', 'before'];
+
+const keyId = (key) => `${key.keyType}:${key.categoryKey}`;
+
+const uniqueKeys = (candidates) => {
+  const byId = new Map();
+  for (const key of candidates) {
+    if (key && !byId.has(keyId(key))) byId.set(keyId(key), key);
+  }
+  return [...byId.values()];
+};
+
 export const extractUpdateTargets = (payload, headers) => {
   const type = firstType(payload);
   if (type && type !== 'quiz') {
     return { skip: true, message: `Skipped: _type=${type}`, keys: [], ids: [] };
   }
 
-  const keys = [];
-  const seen = new Set();
-  const addKey = (key) => {
-    if (!key?.categoryKey || (key.keyType !== 'ref' && key.keyType !== 'prefix')) return;
-    const id = `${key.keyType}:${key.categoryKey}`;
-    if (seen.has(id)) return;
-    seen.add(id);
-    keys.push({ keyType: key.keyType, categoryKey: key.categoryKey });
-  };
-
-  addKey(categoryKeyFromDoc(payload));
-  for (const slot of ['document', 'after', 'current', 'previous', 'before', 'payload', 'result']) {
-    addKey(categoryKeyFromDoc(payload?.[slot]));
-  }
+  const keys = uniqueKeys(
+    [payload, ...PAYLOAD_SLOTS.map((slot) => payload?.[slot])].map(categoryKeyFromDoc)
+  );
+  const previous = PREVIOUS_SLOTS.map((slot) => payload?.[slot]);
 
   return {
     skip: false,
     keys: keys.slice(0, MAX_CATEGORY_KEYS),
+    previousKeys: uniqueKeys(previous.map(categoryKeyFromDoc)),
+    // slug だけの previous では旧カテゴリが分からないので、参照元の検索は省かない。
+    hasPreviousCategory: previous.some((doc) => doc?.categoryRef || doc?.category?._ref),
     ids: collectIds(payload, headers).slice(0, MAX_DOCUMENT_IDS),
-    truncated: keys.length > MAX_CATEGORY_KEYS,
   };
 };
 
@@ -190,16 +208,13 @@ export const relatedForDocument = (docId, orderedIds) => {
     picked.push(id);
     if (picked.length === RELATED_LIMIT) break;
   }
-  if (picked.length === 0) return null;
   return toRelatedReferences(picked);
 };
 
+// 未設定と空配列は同じ扱い。1 件しかないカテゴリへ移った記事の古い参照は空にする。
 export const sameRelated = (currentRefs, next) => {
-  if (!next || !Array.isArray(currentRefs) || currentRefs.length !== next.length) return false;
-  for (let index = 0; index < next.length; index += 1) {
-    if (currentRefs[index] !== next[index]._ref) return false;
-  }
-  return true;
+  const current = Array.isArray(currentRefs) ? currentRefs : [];
+  return current.length === next.length && next.every((ref, index) => current[index] === ref._ref);
 };
 
 const normalizeDocs = (value) => {
@@ -207,19 +222,11 @@ const normalizeDocs = (value) => {
   return value.filter((doc) => doc && typeof doc._id === 'string' && doc._id);
 };
 
-export const patchesForDocuments = (docs, orderedTopIds) => {
-  const topSet = new Set(orderedTopIds);
-  const tailIds = orderedTopIds.slice(0, RELATED_LIMIT);
-  const patches = [];
-  for (const doc of docs) {
-    if (!doc?._id) continue;
-    const context = topSet.has(doc._id) ? orderedTopIds : tailIds;
-    const related = relatedForDocument(doc._id, context);
-    if (!related || sameRelated(doc.relatedRefs, related)) continue;
-    patches.push({ id: doc._id, related });
-  }
-  return patches;
-};
+export const patchesForDocuments = (docs, orderedIds) =>
+  docs
+    .map((doc) => ({ doc, related: relatedForDocument(doc._id, orderedIds) }))
+    .filter(({ doc, related }) => !sameRelated(doc.relatedRefs, related))
+    .map(({ doc, related }) => ({ id: doc._id, related }));
 
 export const commitRelatedPatches = async (client, patches) => {
   if (!patches.length) return;
@@ -230,306 +237,72 @@ export const commitRelatedPatches = async (client, patches) => {
   await tx.commit();
 };
 
-const fetchSlice = async (client, keyType, categoryKey, start, end) => {
-  const rows = await client.fetch(categorySliceQuery(keyType), { categoryKey, start, end });
-  return normalizeDocs(rows);
+const resolveCategoryKeys = async (client, target, targetDocs) => {
+  const currentKeys = targetDocs.map(categoryKeyFromDoc);
+
+  let referencingKeys = [];
+  if (!target.hasPreviousCategory) {
+    const found = await Promise.all(
+      target.ids.map((id) => {
+        const current = categoryKeyFromDoc(targetDocs.find((doc) => doc._id === id));
+        const params = current ? { id, categoryKey: current.categoryKey } : { id };
+        return client.fetch(referencingQuery(current?.keyType), params);
+      })
+    );
+    referencingKeys = found.flatMap(normalizeDocs).map(categoryKeyFromDoc);
+  }
+
+  // 上限で切るので、現在 → previous → 参照元の順に優先する。
+  // payload のカテゴリは、ドキュメントを引けなかったとき（削除など）だけ使う。
+  const keys = uniqueKeys([
+    ...currentKeys,
+    ...target.previousKeys,
+    ...(targetDocs.length === 0 ? target.keys : []),
+    ...referencingKeys,
+  ]);
+  if (keys.length > MAX_CATEGORY_KEYS) {
+    console.warn('[update-related] categories truncated', { found: keys.length });
+  }
+  return keys.slice(0, MAX_CATEGORY_KEYS);
 };
 
-export const runRelatedPage = async (client, { keyType, categoryKey, offset, pageSize }) => {
-  const size = Math.min(PAGE_SIZE, Math.max(1, pageSize || PAGE_SIZE));
-  const start = Number.isInteger(offset) && offset >= 0 ? offset : 0;
-  // 先頭は常に取り直す。ページサイズよりカテゴリが長くても「新しい順 5 件」が欠けない。
-  const top = await fetchSlice(client, keyType, categoryKey, 0, TOP_WINDOW);
-  const orderedTopIds = top.map((doc) => doc._id);
-  if (orderedTopIds.length === 0) {
-    return { done: true, updated: 0, examined: 0, nextOffset: start };
-  }
+const planCategory = async (client, key, targetDocs) => {
+  const { keyType, categoryKey } = key;
+  const top = normalizeDocs(await client.fetch(categoryWindowQuery(keyType), { categoryKey }));
+  const orderedIds = top.map((doc) => doc._id);
 
-  const entireCategory = top.length < TOP_WINDOW;
-  const page =
-    start === 0 && entireCategory
-      ? top
-      : await fetchSlice(client, keyType, categoryKey, start, start + size);
+  const outside = targetDocs
+    .filter((doc) => !orderedIds.includes(doc._id))
+    .filter((doc) => {
+      const own = categoryKeyFromDoc(doc);
+      return own && keyId(own) === keyId(key);
+    })
+    .map((doc) => doc._id);
+  const members = outside.length
+    ? normalizeDocs(await client.fetch(categoryMemberQuery(keyType), { categoryKey, ids: outside }))
+    : [];
 
-  if (page.length === 0) {
-    return { done: true, updated: 0, examined: 0, nextOffset: start };
-  }
+  const docs = [...top, ...members];
+  return { examined: docs.length, patches: patchesForDocuments(docs, orderedIds) };
+};
 
-  const patches = patchesForDocuments(page, orderedTopIds);
+export const updateRelated = async (client, target) => {
+  const targetDocs = target.ids.length
+    ? normalizeDocs(await client.fetch(TARGET_DOCS_QUERY, { ids: target.ids }))
+    : [];
+  const keys = await resolveCategoryKeys(client, target, targetDocs);
+  const plans = await Promise.all(keys.map((key) => planCategory(client, key, targetDocs)));
+  const patches = plans.flatMap((plan) => plan.patches);
   await commitRelatedPatches(client, patches);
-  const done = start === 0 && entireCategory ? true : page.length < size;
+
   return {
-    done,
+    categories: keys.length,
+    examined: plans.reduce((total, plan) => total + plan.examined, 0),
     updated: patches.length,
-    examined: page.length,
-    nextOffset: start + page.length,
   };
 };
 
-export const runRelatedHead = async (client, { keyType, categoryKey, documentId }) => {
-  const top = await fetchSlice(client, keyType, categoryKey, 0, TOP_WINDOW);
-  const orderedTopIds = top.map((doc) => doc._id);
-  const docs = [...top];
-  if (documentId && !orderedTopIds.includes(documentId) && orderedTopIds.length > 0) {
-    const extra = await client.fetch(categoryMemberQuery(keyType), { categoryKey, id: documentId });
-    if (extra?._id) docs.push(extra);
-  }
-  const patches = patchesForDocuments(docs, orderedTopIds);
-  await commitRelatedPatches(client, patches);
-  return { updated: patches.length, examined: docs.length };
-};
-
-const lockRequest = (kind, lockKey) =>
-  new Request(`https://update-related.internal/${kind}/${encodeURIComponent(lockKey)}`);
-
-const readLock = async (cache, request, now) => {
-  const res = await cache.match(request);
-  if (!res) return null;
-  try {
-    const data = await res.json();
-    if (!data || typeof data.touchedAt !== 'number' || now - data.touchedAt > LOCK_TTL_MS) {
-      return null;
-    }
-    return data;
-  } catch {
-    return null;
-  }
-};
-
-const writeLock = async (cache, request, data) => {
-  await cache.put(
-    request,
-    new Response(JSON.stringify(data), {
-      headers: {
-        'content-type': 'application/json',
-        'cache-control': `public, max-age=${Math.ceil(LOCK_TTL_MS / 1000)}`,
-      },
-    })
-  );
-};
-
-const cacheUsable = (cache) =>
-  Boolean(cache && typeof cache.match === 'function' && typeof cache.put === 'function');
-
-export const claimCategoryRun = async (cache, lockKey, now = Date.now()) => {
-  if (!cacheUsable(cache)) return { start: true, gen: 1, coalesced: false, offset: 0 };
-  try {
-    const genReq = lockRequest('gen', lockKey);
-    const runReq = lockRequest('run', lockKey);
-    const genState = await readLock(cache, genReq, now);
-    const running = await readLock(cache, runReq, now);
-    const gen = (genState?.gen ?? 0) + 1;
-    await writeLock(cache, genReq, { gen, touchedAt: now });
-    const age = running ? now - running.touchedAt : RUN_STALE_MS;
-    if (running?.running && age < RUN_STALE_MS) {
-      return { start: false, gen, coalesced: true, offset: running.offset ?? 0 };
-    }
-    const offset = running?.running ? (running.offset ?? 0) : 0;
-    await writeLock(cache, runReq, { running: true, offset, touchedAt: now });
-    return { start: true, gen, coalesced: false, offset };
-  } catch (error) {
-    console.error('[update-related] lock claim failed', error);
-    return { start: true, gen: 1, coalesced: false, offset: 0 };
-  }
-};
-
-export const heartbeatCategoryRun = async (cache, lockKey, offset, now = Date.now()) => {
-  if (!cacheUsable(cache)) return;
-  try {
-    await writeLock(cache, lockRequest('run', lockKey), {
-      running: true,
-      offset,
-      touchedAt: now,
-    });
-  } catch (error) {
-    console.error('[update-related] lock heartbeat failed', error);
-  }
-};
-
-export const finishCategoryRun = async (cache, lockKey, startGen, now = Date.now()) => {
-  if (!cacheUsable(cache)) return { again: false, gen: startGen };
-  try {
-    const genReq = lockRequest('gen', lockKey);
-    const runReq = lockRequest('run', lockKey);
-    const genNow = (await readLock(cache, genReq, now))?.gen ?? startGen;
-    if (genNow !== startGen) {
-      await writeLock(cache, runReq, { running: true, offset: 0, touchedAt: now });
-      return { again: true, gen: genNow };
-    }
-    await writeLock(cache, runReq, { running: false, offset: 0, touchedAt: now });
-    const genAfter = (await readLock(cache, genReq, now))?.gen ?? startGen;
-    if (genAfter !== startGen) {
-      await writeLock(cache, runReq, { running: true, offset: 0, touchedAt: now });
-      return { again: true, gen: genAfter };
-    }
-    return { again: false, gen: startGen };
-  } catch (error) {
-    console.error('[update-related] lock finish failed', error);
-    return { again: false, gen: startGen };
-  }
-};
-
-export const releaseCategoryRun = async (cache, lockKey, now = Date.now()) => {
-  if (!cacheUsable(cache)) return;
-  try {
-    await writeLock(cache, lockRequest('run', lockKey), {
-      running: false,
-      offset: 0,
-      touchedAt: now,
-    });
-  } catch (error) {
-    console.error('[update-related] lock release failed', error);
-  }
-};
-
 const json = (body, status = 200) => Response.json(body, { status });
-
-const resolveWaitUntil = (platform) => {
-  const ctx = platform?.ctx || platform?.context;
-  if (ctx && typeof ctx.waitUntil === 'function') {
-    return (promise) => ctx.waitUntil(promise);
-  }
-  return null;
-};
-
-const resolveInvoke = (deps) => {
-  if (typeof deps.invoke === 'function') return deps.invoke;
-  // Service binding の自己呼び出しは 1 本のチェーンが 32 回で切れる。
-  // 通常の fetch は次のリクエストを別の呼び出しとして始める。
-  const fetchImpl = deps.fetchImpl ?? globalThis.fetch;
-  return (request) => fetchImpl(request);
-};
-
-const lockIdOf = (job) => `${job.keyType}:${job.categoryKey}`;
-
-const scheduleJob = async (job, { origin, secret, invoke, waitUntil }) => {
-  const target = new URL('/api/update-related', origin);
-  const request = new Request(target, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-sanity-webhook-secret': secret,
-    },
-    body: JSON.stringify({ _updateRelated: job }),
-  });
-  const run = Promise.resolve()
-    .then(() => invoke(request))
-    .then(async (res) => {
-      if (res && !res.ok) {
-        console.error('[update-related] continuation status', res.status);
-      }
-      await res?.body?.cancel?.().catch?.(() => {});
-    })
-    .catch((error) => {
-      console.error('[update-related] continuation failed', error);
-    });
-  if (typeof waitUntil === 'function') {
-    waitUntil(run);
-    return { deferred: true };
-  }
-  await run;
-  return { deferred: false };
-};
-
-const continuePages = async ({ job, client, cache, waitUntil, invoke, origin, secret }) => {
-  const offset = Number.isInteger(job.offset) && job.offset >= 0 ? job.offset : 0;
-  const page = Number.isInteger(job.page) && job.page >= 0 ? job.page : 0;
-  const lockKey = lockIdOf(job);
-  await heartbeatCategoryRun(cache, lockKey, offset);
-  if (page > MAX_PAGES || offset > MAX_OFFSET) {
-    await releaseCategoryRun(cache, lockKey);
-    console.error('[update-related] stopped at cap', { lockKey, page, offset });
-    return json({ ok: true, done: true, reason: 'cap' });
-  }
-
-  const result = await runRelatedPage(client, {
-    keyType: job.keyType,
-    categoryKey: job.categoryKey,
-    offset,
-    pageSize: job.pageSize,
-  });
-  console.log('[update-related] page', {
-    categoryKey: job.categoryKey,
-    offset,
-    examined: result.examined,
-    updated: result.updated,
-    done: result.done,
-  });
-
-  if (!result.done && result.nextOffset > offset) {
-    await heartbeatCategoryRun(cache, lockKey, result.nextOffset);
-    await scheduleJob(
-      { ...job, v: 1, phase: 'page', offset: result.nextOffset, page: page + 1 },
-      { origin, secret, invoke, waitUntil }
-    );
-    return json({ ok: true, ...result, offset });
-  }
-
-  const fin = await finishCategoryRun(cache, lockKey, job.gen);
-  if (fin.again) {
-    await scheduleJob(
-      { ...job, v: 1, phase: 'page', offset: 0, page: 0, gen: fin.gen },
-      { origin, secret, invoke, waitUntil }
-    );
-  }
-  return json({ ok: true, done: true, ...result });
-};
-
-const handleJob = async ({ job, client, cache, waitUntil, invoke, origin, secret }) => {
-  if (job.phase === 'resolve') {
-    const id = typeof job.documentId === 'string' ? job.documentId : '';
-    if (!id) return json({ ok: true, done: true, reason: 'no-document' });
-    const doc = await client.fetch(DOC_QUERY, { id });
-    const key = categoryKeyFromDoc(doc);
-    if (!key) return json({ ok: true, done: true, reason: 'no-category' });
-    const claim = await claimCategoryRun(cache, lockIdOf(key));
-    if (!claim.start) {
-      await scheduleJob(
-        { v: 1, phase: 'head', ...key, documentId: id },
-        { origin, secret, invoke, waitUntil }
-      );
-      return json({ ok: true, coalesced: true });
-    }
-    return continuePages({
-      job: {
-        v: 1,
-        phase: 'page',
-        ...key,
-        offset: claim.offset || 0,
-        page: Math.floor((claim.offset || 0) / PAGE_SIZE),
-        gen: claim.gen,
-        pageSize: job.pageSize,
-      },
-      client,
-      cache,
-      waitUntil,
-      invoke,
-      origin,
-      secret,
-    });
-  }
-
-  if (job.phase === 'head') {
-    if (!job.categoryKey || (job.keyType !== 'ref' && job.keyType !== 'prefix')) {
-      return json({ ok: true, done: true, reason: 'no-category' });
-    }
-    const result = await runRelatedHead(client, job);
-    console.log('[update-related] head', {
-      categoryKey: job.categoryKey,
-      updated: result.updated,
-    });
-    return json({ ok: true, ...result });
-  }
-
-  if (job.phase === 'page') {
-    if (!job.categoryKey || (job.keyType !== 'ref' && job.keyType !== 'prefix')) {
-      return json({ ok: true, done: true, reason: 'no-category' });
-    }
-    return continuePages({ job, client, cache, waitUntil, invoke, origin, secret });
-  }
-
-  return json({ ok: true, done: true, reason: 'unknown-phase' });
-};
 
 const createWriteClient = (deps, env) =>
   deps.createClient({
@@ -582,23 +355,6 @@ export const handleUpdateRelatedPost = async (event, deps = {}) => {
     return json({ ok: false, message: 'Server misconfiguration' }, 500);
   }
 
-  const waitUntil = deps.waitUntil ?? resolveWaitUntil(event.platform);
-  const cache = deps.cache ?? event.platform?.caches?.default ?? null;
-  const invoke = resolveInvoke(deps);
-  const origin = event.url.origin;
-  const job = payload._updateRelated;
-
-  if (job?.v === 1) {
-    const client = createWriteClient(deps, env);
-    try {
-      return await handleJob({ job, client, cache, waitUntil, invoke, origin, secret });
-    } catch (error) {
-      console.error('[update-related] failed', error);
-      if (job.categoryKey && job.keyType) await releaseCategoryRun(cache, lockIdOf(job));
-      return json({ ok: false, message: error?.message || 'Update failed' }, 500);
-    }
-  }
-
   const target = extractUpdateTargets(payload, event.request.headers);
   if (target.skip) return json({ ok: true, message: target.message });
   if (target.keys.length === 0 && target.ids.length === 0) {
@@ -606,52 +362,12 @@ export const handleUpdateRelatedPost = async (event, deps = {}) => {
     return json({ ok: true, skipped: true, reason: 'no-document' });
   }
 
-  let started = 0;
-  let coalesced = 0;
-  const tasks = [];
-  if (target.keys.length > 0) {
-    for (const key of target.keys) {
-      const claim = await claimCategoryRun(cache, lockIdOf(key));
-      if (!claim.start) {
-        coalesced += 1;
-        tasks.push(
-          scheduleJob(
-            {
-              v: 1,
-              phase: 'head',
-              ...key,
-              documentId: target.ids[0],
-            },
-            { origin, secret, invoke, waitUntil }
-          )
-        );
-        continue;
-      }
-      started += 1;
-      tasks.push(
-        scheduleJob(
-          {
-            v: 1,
-            phase: 'page',
-            ...key,
-            offset: claim.offset || 0,
-            page: Math.floor((claim.offset || 0) / PAGE_SIZE),
-            gen: claim.gen,
-          },
-          { origin, secret, invoke, waitUntil }
-        )
-      );
-    }
-  } else {
-    started = target.ids.length;
-    for (const documentId of target.ids) {
-      tasks.push(
-        scheduleJob({ v: 1, phase: 'resolve', documentId }, { origin, secret, invoke, waitUntil })
-      );
-    }
+  try {
+    const result = await updateRelated(createWriteClient(deps, env), target);
+    console.log('[update-related] completed', result);
+    return json({ ok: true, ...result });
+  } catch (error) {
+    console.error('[update-related] failed', error);
+    return json({ ok: false, message: error?.message || 'Update failed' }, 500);
   }
-
-  await Promise.all(tasks);
-  console.log('[update-related] queued', { started, coalesced });
-  return json({ ok: true, queued: true, started, coalesced });
 };

@@ -131,10 +131,10 @@ const resolveDocumentSlugs = async (payload) => {
     }
   };
 
-  const inspectDocumentLike = (value) => {
+  const inspectDocumentLike = (value, { withMeta = true } = {}) => {
     if (!value || typeof value !== 'object') return;
     const typeHint = typeof value._type === 'string' ? value._type.trim() : undefined;
-    const meta = publishMetaFrom(value);
+    const meta = withMeta ? publishMetaFrom(value) : null;
     if (value.slug !== undefined) {
       addFromValue(value.slug, typeHint, meta);
     } else {
@@ -147,7 +147,8 @@ const resolveDocumentSlugs = async (payload) => {
   inspectDocumentLike(payload);
   inspectDocumentLike(payload?.document);
   inspectDocumentLike(payload?.current);
-  inspectDocumentLike(payload?.previous);
+  // previous の publishedAt は古い値。公開判定に使うと、未来日へ変更した URL を送ってしまう。
+  inspectDocumentLike(payload?.previous, { withMeta: false });
   inspectDocumentLike(payload?.after);
   inspectDocumentLike(payload?.payload);
 

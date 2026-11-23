@@ -9,6 +9,7 @@
  *
  * バースト時は URL を 1 リクエストにまとめ、同じ URL は時間窓のあいだ再送しない。
  * 429 のときは Retry-After のあいだ送り直さず、呼び出し元には失敗を返さない。
+ * 400/403/422 のときは 1 件ずつ送り直し、それでも拒否された URL だけ捨てる。
  */
 
 import { env } from '$env/dynamic/private';
@@ -23,13 +24,14 @@ const validUrls = (urls) => {
   return list.filter((url) => typeof url === 'string' && url.startsWith('https://'));
 };
 
-export const postIndexNow = async (urls, { key, fetchImpl = fetch } = {}) => {
+export const postIndexNow = async (urls, { key, fetchImpl = fetch, signal } = {}) => {
   const body = buildIndexNowRequestBody({ urls, key, siteUrl: SITE.url });
 
   const response = await fetchImpl(INDEXNOW_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify(body),
+    signal,
   });
 
   if (response.ok || response.status === 202) {
@@ -71,7 +73,8 @@ export const notifyIndexNow = async (urls, options = {}) => {
     return { ok: true, skipped: true, reason: 'deduped', submitted: 0, deduped: deduped.length };
   }
 
-  const submit = (batch) => postIndexNow(batch, { key, fetchImpl: options.fetchImpl ?? fetch });
+  const submit = (batch, { signal } = {}) =>
+    postIndexNow(batch, { key, fetchImpl: options.fetchImpl ?? fetch, signal });
   try {
     const task = queue.kick(submit, options.waitUntil);
     if (typeof options.waitUntil === 'function') {
