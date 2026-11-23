@@ -1,3 +1,4 @@
+import { resolveRequestedPage } from '$lib/server/pagination.js';
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import {
@@ -29,13 +30,6 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 const CATEGORY_PAGE_SIZE = 12;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  const integer = Math.trunc(parsed);
-  return integer >= 1 ? integer : 1;
-};
 
 // カテゴリ参照あり（旧形式）とスラッグプレフィックス（新形式: kanji-quiz/71）の両方を拾う
 const KANJI_CATEGORY_FILTER = `(
@@ -139,7 +133,7 @@ const createFallbackResponse = (path) => {
 
 export const load = async (event) => {
   const { setHeaders, url, isDataRequest } = event;
-  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const requestedPage = resolveRequestedPage(url);
   const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 
   if (!isDataRequest) {

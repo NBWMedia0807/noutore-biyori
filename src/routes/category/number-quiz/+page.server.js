@@ -1,3 +1,4 @@
+import { resolveRequestedPage } from '$lib/server/pagination.js';
 import { error, redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import {
@@ -28,13 +29,6 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 const CATEGORY_PAGE_SIZE = 12;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  const integer = Math.trunc(parsed);
-  return integer >= 1 ? integer : 1;
-};
 
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
@@ -134,7 +128,7 @@ const createFallbackResponse = (path) => {
 
 export const load = async (event) => {
   const { setHeaders, url, isDataRequest } = event;
-  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const requestedPage = resolveRequestedPage(url);
   const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 
   if (!isDataRequest) {

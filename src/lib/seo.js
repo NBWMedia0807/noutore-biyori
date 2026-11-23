@@ -1,4 +1,4 @@
-import { HOME_BREADCRUMB, SITE } from '$lib/config/site.js';
+import { HOME_BREADCRUMB, SITE } from './config/site.js';
 
 const MIN_DESCRIPTION_LENGTH = 120;
 const MAX_DESCRIPTION_LENGTH = 160;
@@ -50,17 +50,14 @@ const composeDescription = (primary, extras = []) => {
 
   if (description.length > MAX_DESCRIPTION_LENGTH) {
     const truncated = description.slice(0, MAX_DESCRIPTION_LENGTH);
-    const punctuationMarks = ['。', '！', '!', '？', '?', '、', ',', '，', '．', '.'];
-    const cutIndex = punctuationMarks.reduce((maxIndex, mark) => {
-      const index = truncated.lastIndexOf(mark);
-      return index > maxIndex ? index : maxIndex;
-    }, -1);
+    const sentenceEnds = [...truncated.matchAll(/[。！？]|[.!?](?=\s|$)/g)];
+    const cutIndex = sentenceEnds.at(-1)?.index ?? -1;
 
     if (cutIndex >= MIN_DESCRIPTION_LENGTH / 2) {
       description = truncated.slice(0, cutIndex + 1);
     } else {
-      const withoutTrailingWord = truncated.replace(/\s+\S*$/, '').trim();
-      description = withoutTrailingWord || truncated.trim();
+      const excerpt = truncated.slice(0, -1).replace(/\s+[a-z0-9]+$/i, '').replace(/[、,，\s]+$/, '');
+      description = `${excerpt}…`;
     }
   }
 
@@ -211,14 +208,14 @@ export const createPageSeo = ({
   appendSiteName = true,
   additionalJsonLd = [],
   descriptionFallbacks = [],
+  appendSiteDescription = true,
   faqQuestion = '',
   faqAnswer = ''
 } = {}) => {
   const canonical = toAbsoluteUrl(path);
   const sanitizedDescription = composeDescription(description, [
     ...(Array.isArray(descriptionFallbacks) ? descriptionFallbacks : [descriptionFallbacks]),
-    SITE.tagline,
-    SITE.description
+    ...(appendSiteDescription ? [SITE.tagline, SITE.description] : [])
   ]);
   const resolvedTitle = (() => {
     const baseTitle = title ? sanitizeText(title) : `${SITE.name}｜${SITE.tagline}`;
@@ -291,6 +288,9 @@ export const createPageSeo = ({
       : null
   };
 };
+
+export const createMatchstickCategoryDescription = (totalCount) =>
+  `公開中のマッチ棒クイズ${totalCount}問の一覧です。マッチ棒を1本動かして、正しい式に直すパズルに挑戦できます。`;
 
 export const createCategoryDescription = (title, fallback) => {
   const customDescription = sanitizeText(fallback ?? '');
