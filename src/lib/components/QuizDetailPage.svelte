@@ -236,6 +236,14 @@
     <AdSense slot="3921249196" />
   </div>
 
+  <nav class="to-answer to-answer--mobile">
+    <a class="action-button primary" href={answerPath}>
+      正解ページへ進む
+      <span class="sr-only">次のページへ</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </nav>
+
   {#if bodyHtml}
     <section class="body content-card">
       <div class="section-header">
@@ -488,6 +496,18 @@
   .to-answer .action-button,
   .category-nav .action-button {
     width: 100%;
+  }
+
+  .to-answer.to-answer--mobile {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .to-answer.to-answer--mobile {
+      display: flex;
+      /* ページの gap 20px と合わせて、広告との距離を48px確保 */
+      margin-top: 28px;
+    }
   }
 
   .action-button {
