@@ -198,11 +198,6 @@
     {/if}
   </header>
 
-  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
-  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
-  <AdSense slot="4170928887" minHeight={250} />
-
   {#if problemImageSet?.src}
     <div class="problem-image">
       <picture>
@@ -235,8 +230,18 @@
     </div>
   {/if}
 
-  <!-- 記事内: 問題画像下の広告 -->
-  <AdSense slot="3921249196" />
+  <div class="image-ad">
+    <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
+    <AdSense slot="4170928887" minHeight={250} showLabel />
+  </div>
+
+  <nav class="to-answer to-answer--mobile">
+    <a class="action-button primary" href={answerPath}>
+      正解ページへ進む
+      <span class="sr-only">次のページへ</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </nav>
 
   {#if bodyHtml}
     <section class="body content-card">
@@ -292,6 +297,10 @@
 
   <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
   <div class="cta-ad-spacer" aria-hidden="true"></div>
+
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
 
   <!-- 記事下: 関連記事上の広告（前後に余白を確保してボタンと密着させない） -->
   <div class="ad-buffer">
@@ -390,6 +399,11 @@
     font-size: 0.95rem;
   }
 
+  .problem-image + .image-ad {
+    /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
+    padding-top: 28px;
+  }
+
   .problem-image {
     margin: 0 auto;
     text-align: center;
@@ -479,6 +493,18 @@
   .to-answer .action-button,
   .category-nav .action-button {
     width: 100%;
+  }
+
+  .to-answer.to-answer--mobile {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .to-answer.to-answer--mobile {
+      display: flex;
+      /* ページの gap 20px と合わせて、広告との距離を48px確保 */
+      margin-top: 28px;
+    }
   }
 
   .action-button {

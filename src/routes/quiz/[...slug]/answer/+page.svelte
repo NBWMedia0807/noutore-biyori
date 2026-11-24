@@ -99,11 +99,6 @@
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
   </header>
 
-  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
-  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
-  <AdSense slot="4170928887" minHeight={250} />
-
   {#if answerImageSet?.src}
     <div class="answer-image">
       <img
@@ -119,8 +114,10 @@
     </div>
   {/if}
 
-  <!-- 正解ページ: 画像下の広告 -->
-  <AdSense slot="3921249196" />
+  <div class="image-ad">
+    <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
+    <AdSense slot="4170928887" minHeight={250} showLabel />
+  </div>
 
   {#if answerHtml}
     <section class="answer-explanation content-card">
@@ -171,6 +168,10 @@
 
   <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
   <div class="cta-ad-spacer" aria-hidden="true"></div>
+
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
 
   <section class="closing">
     <div class="closing-card">
@@ -230,6 +231,11 @@
     margin-bottom: 12px;
     color: #7c2d12;
     font-weight: 800;
+  }
+
+  .answer-image + .image-ad {
+    /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
+    padding-top: 28px;
   }
 
   .answer-image {
