@@ -72,6 +72,9 @@ jobs:
           else
             opts="-1 ${AFTER}"
           fi
+          # マージコミットは git log -p では差分が出ないため、衝突解決で入った行が検査から漏れる。
+          # --diff-merges=first-parent でマージを1つ目の親との差分として出し、漏れを防ぐ（重複検出はあり得るが見逃しはない）。
+          opts="--diff-merges=first-parent ${opts}"
           echo "log-opts: $opts"
           echo "opts=$opts" >> "$GITHUB_OUTPUT"
 
