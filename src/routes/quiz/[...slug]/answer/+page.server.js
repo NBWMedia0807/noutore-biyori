@@ -1,13 +1,14 @@
 import { redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
-import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { QUIZ_PUBLISHED_FIELD, QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
-// ▼ 修正済み: 正しいインポート
-import { client } from '$lib/sanity/client.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { getQuizStubQuizzesByCategory, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
+import { selectNextChallenge } from '$lib/utils/nextChallenge.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -29,13 +30,39 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   _updatedAt
 }`;
 
-// ▼ 追加: 「さらにもう一問」用のクエリ
-const nextChallengeQuery = /* groq */ `*[_type == "quiz" && defined(slug.current) && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER} && isRepublished != true] | order(publishedAt desc)[0...3]{
+const publishedTime = `dateTime(${QUIZ_PUBLISHED_FIELD})`;
+const candidateFilter = /* groq */ `_type == "quiz" && defined(slug.current)
+  && slug.current != $slug && category._ref == $categoryId
+  ${QUIZ_PUBLISHED_FILTER}
+  && !(_id in path("drafts.**")) && ${publishedTime} <= dateTime(now())
+  && isRepublished != true`;
+const candidateFields = /* groq */ `{
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  "image": problemImage{ asset->{ _id, url, metadata } }
+  "publishedAt": ${QUIZ_PUBLISHED_FIELD}
 }`;
+const nextChallengeQuery = /* groq */ `{
+  "newer": *[${candidateFilter} && ${publishedTime} > dateTime($publishedAt)]
+    | order(${publishedTime} asc, slug.current asc)[0]${candidateFields},
+  "older": *[${candidateFilter} && ${publishedTime} < dateTime($publishedAt)]
+    | order(${publishedTime} desc, slug.current asc)[0]${candidateFields}
+}`;
+
+async function fetchNextChallenge(quiz) {
+  if (isQuizStubEnabled() || shouldSkipSanityFetch()) {
+    return selectNextChallenge(quiz, getQuizStubQuizzesByCategory(quiz.category?.slug), Date.now());
+  }
+
+  if (!quiz.categoryId || !quiz.category?.slug) return null;
+
+  const { newer, older } = await client.fetch(nextChallengeQuery, {
+    slug: quiz.slug,
+    categoryId: quiz.categoryId,
+    publishedAt: quiz.publishedAt,
+  });
+  return selectNextChallenge(quiz, [newer, older], Date.now());
+}
 
 export async function load({ params, setHeaders }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -52,18 +79,12 @@ export async function load({ params, setHeaders }) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
 
-  // ▼ 修正: 並行してデータ取得
-  const [related, nextChallengePosts] = await Promise.all([
+  const [related, nextChallenge] = await Promise.all([
     fetchRelatedQuizzes({
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    quiz.categoryId
-      ? client.fetch(nextChallengeQuery, {
-        slug: quiz.slug,
-        categoryId: quiz.categoryId
-      })
-      : Promise.resolve([])
+    fetchNextChallenge(quiz),
   ]);
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
@@ -120,7 +141,7 @@ export async function load({ params, setHeaders }) {
   return {
     quiz,
     related,
-    nextChallengePosts,
+    nextChallenge,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,

@@ -57,6 +57,15 @@ const STUB_QUIZZES = [
     _updatedAt: '2024-01-06T00:00:00Z'
   },
   {
+    _id: 'stub-quiz-next',
+    slug: 'sample-quiz-next',
+    title: 'サンプルクイズ 次の問題',
+    category: { title: 'サンプルカテゴリ', slug: 'sample-category' },
+    problemDescription: '図形の並びから次に来る図形を考えてください。',
+    answerExplanation: '同じ並びが繰り返されるので、次に来るのは最初の図形です。',
+    publishedAt: '2024-01-02T00:00:00Z',
+  },
+  {
     _id: 'stub-quiz-c',
     slug: 'spot-the-difference-sample',
     title: 'サンプル間違い探し',

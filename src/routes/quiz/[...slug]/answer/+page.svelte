@@ -2,10 +2,12 @@
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { sendEvent } from '$lib/ga';
   import { quizHref } from '$lib/utils/quizLinks.js';
 
   export let data;
-  const { quiz, nextChallengePosts = [] } = data;
+  const { quiz } = data;
+  $: nextChallenge = data.nextChallenge;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
 
@@ -20,16 +22,6 @@
   const answerImageDimensions =
     quiz?.answerImage?.asset?.metadata?.dimensions ?? { width: 960, height: 540 };
 
-  // 「さらにもう一問」サムネイルも変換URLに（CLS防止に width/height を付与）
-  const buildThumbSet = (image) =>
-    image?.asset
-      ? createSanityImageSet(image, {
-          width: 400,
-          height: 225,
-          quality: 75,
-          fallbackUrl: image.asset.url
-        })
-      : null;
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
@@ -133,32 +125,22 @@
 
   <p class="answer-note">※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>
 
-  <!-- さらにもう一問: 解説の直後へ移動（広告で挟まない） -->
-  {#if nextChallengePosts.length > 0}
+  {#if nextChallenge}
     <section class="next-challenge">
       <h2 class="next-challenge__title">さらにもう一問！</h2>
-      <div class="next-challenge__grid">
-        {#each nextChallengePosts as post}
-          {@const thumb = buildThumbSet(post.image)}
-          <a href={quizHref(post)} class="next-challenge__card">
-            {#if thumb?.src}
-              <div class="next-challenge__image">
-                <img
-                  src={thumb.src}
-                  srcset={thumb.srcset}
-                  sizes="(min-width: 768px) 220px, 45vw"
-                  alt={post.title}
-                  loading="lazy"
-                  decoding="async"
-                  width="400"
-                  height="225"
-                />
-              </div>
-            {/if}
-            <p class="next-challenge__card-title">{post.title}</p>
-          </a>
-        {/each}
-      </div>
+      <a
+        href={quizHref(nextChallenge)}
+        class="action-button next-challenge__button"
+        on:click={() =>
+          sendEvent('next_challenge_click', {
+            next_quiz_slug: nextChallenge.slug,
+            category_slug: nextChallenge.category.slug,
+            source: 'answer_page',
+          })}
+      >
+        {nextChallenge.title}
+        <span aria-hidden="true">→</span>
+      </a>
     </section>
   {/if}
 
@@ -369,60 +351,14 @@
     color: #9a3412;
   }
 
-  .next-challenge__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 14px;
-  }
-
-  .next-challenge__card {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: #fff;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(248, 196, 113, 0.35);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-  }
-
-  .next-challenge__card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 36px rgba(234, 88, 12, 0.18);
-  }
-
-  .next-challenge__image {
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #fff;
-  }
-
-  .next-challenge__image img {
-    display: block;
+  .next-challenge__button {
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-  }
-
-  .next-challenge__card:hover .next-challenge__image img {
-    transform: scale(1.04);
-  }
-
-  .next-challenge__card-title {
-    padding: 10px 12px 14px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #1f2937;
-    line-height: 1.4;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    min-height: 56px;
+    font-size: 1.125rem;
+    white-space: normal;
+    text-align: center;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #78350f;
   }
 
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
