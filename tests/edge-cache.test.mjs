@@ -80,11 +80,16 @@ test('resolveWwwRedirect: www だけ apex へ（パスとクエリを保持）',
   assert.equal(resolveWwwRedirect(new URL('https://noutore-biyori.example.workers.dev/')), null);
 });
 
-test('isArticlePath: canonical 記事と解答ページだけ', () => {
+const quizSlugs = ['abc-123', 'anagram-quiz/280', 'matchstick-quiz/article/4411'];
+
+test('isArticlePath: canonical 記事とクイズの問題・解答ページを対象にする', () => {
   assert.equal(isArticlePath('/category/matchstick/abc-123'), true);
-  assert.equal(isArticlePath('/quiz/abc-123/answer'), true);
+  for (const slug of quizSlugs) {
+    assert.equal(isArticlePath(`/quiz/${slug}`), true);
+    assert.equal(isArticlePath(`/quiz/${slug}/answer`), true);
+  }
   assert.equal(isArticlePath('/category/matchstick'), false);
-  assert.equal(isArticlePath('/quiz/abc-123'), false);
+  assert.equal(isArticlePath('/quiz'), false);
   assert.equal(isArticlePath('/category/a/b/c'), false);
   assert.equal(isArticlePath('/'), false);
 });
@@ -103,8 +108,6 @@ test('parseSharedMaxAge / parseTtl', () => {
 
 test('articleSlugFromPath / quizCacheTag', () => {
   assert.equal(articleSlugFromPath('/category/matchstick/abc-123'), 'abc-123');
-  assert.equal(articleSlugFromPath('/quiz/abc-123/answer'), 'abc-123');
-  assert.equal(articleSlugFromPath('/quiz/abc-123'), null);
   assert.equal(quizCacheTag('abc-123'), 'quiz-abc-123');
   assert.equal(quizCacheTag('漢字'), `quiz-${encodeURIComponent('漢字')}`);
   assert.equal(quizCacheTag(encodeURIComponent('漢字')), `quiz-${encodeURIComponent('漢字')}`);
@@ -112,6 +115,13 @@ test('articleSlugFromPath / quizCacheTag', () => {
 
 test('resolveCanonicalLookupKey: クエリ付きの記事 GET だけ、クエリなし URL を返す', () => {
   const base = { method: 'GET', isDataRequest: false };
+  for (const path of ['/quiz/anagram-quiz/280', '/quiz/anagram-quiz/280/answer']) {
+    const key = `https://noutorebiyori.com${path}`;
+    assert.equal(
+      resolveCanonicalLookupKey({ ...base, url: new URL(`${key}?utm_source=gunosy`) }),
+      key
+    );
+  }
   assert.equal(
     resolveCanonicalLookupKey({ ...base, url: new URL('https://noutorebiyori.com/category/m/abc?utm_source=gunosy') }),
     'https://noutorebiyori.com/category/m/abc'
@@ -126,6 +136,29 @@ test('resolveCanonicalLookupKey: クエリ付きの記事 GET だけ、クエリ
     resolveCanonicalLookupKey({ ...base, isDataRequest: true, url: new URL('https://noutorebiyori.com/category/m/abc?a=1') }),
     null
   );
+});
+
+test('クイズの問題・解答 HTML は再検証 URL と同じフル slug でタグ付けする', () => {
+  const origin = 'https://noutorebiyori.com';
+  const articleTtl = 604800;
+  for (const slug of quizSlugs) {
+    // revalidate が Sanity の slug から組み立てるパスとタグ。
+    const urls = buildPurgeUrls([`/quiz/${slug}`, `/quiz/${slug}/answer`], [origin]);
+    const tag = quizCacheTag(slug);
+    assert.equal(tag, `quiz-${encodeURIComponent(slug)}`);
+    for (const href of urls) {
+      const url = new URL(href);
+      assert.equal(articleSlugFromPath(url.pathname), slug);
+      const response = applyEdgeCacheHeaders(
+        new Response('quiz', {
+          headers: { 'content-type': 'text/html', 'cache-control': 'public, max-age=60, s-maxage=300' }
+        }),
+        { method: 'GET', url, isDataRequest: false, articleTtl }
+      );
+      assert.equal(response.headers.get('cache-control'), `public, max-age=60, s-maxage=${articleTtl}`);
+      assert.equal(response.headers.get('cache-tag'), `${ARTICLE_TAG},${tag}`);
+    }
+  }
 });
 
 test('applyEdgeCacheHeaders: 記事は長い s-maxage とタグ、一覧は PAGE_TAG、対象外はそのまま', () => {
