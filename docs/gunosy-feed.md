@@ -50,7 +50,7 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 | `link`                                                    | カテゴリ別 canonical URL（`/category/{cat}/{slug}`）+ UTM。256文字以上は配信しない   |
 | `guid`                                                    | `noutorebiyori-{Sanity の _id}`。`isPermaLink="false"`                               |
 | `content:encoded`                                         | 記事全文（CDATA）。問題・ヒント・解答をすべて含む                                    |
-| `media:status`                                            | `state="active"`                                                                     |
+| `media:status`                                            | 公開中は `state="active"`、取り下げは `state="deleted"`                                                                     |
 | `pubDate`                                                 | 公開日（RFC822 / +0900）                                                             |
 | `dc:creator`                                              | 記事の著者。未設定なら「脳トレ日和 編集部」                                          |
 | `gnf:modified`                                            | 更新日（RFC822 / +0900）。`max(_updatedAt, publishedAt)`                             |
@@ -76,7 +76,7 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
 - **エスケープ**: CDATA で囲まない箇所は `&` `"` `'` `<` `>` を実体参照に置換
 - **日付**: RFC822（`Mon, 15 Jun 2015 09:00:00 +0900`）。タイムゾーンは +0900 で統一
 - **guid**: Sanity の `_id` を使う。スラッグやカテゴリを変更しても値が変わらず、URL 形式でもない
-- **10日ルール**: `pubDate` が10日より過去の記事は取り込まれないため、フィードにも載せない。
+- **公開中の記事の10日ルール**: `pubDate` が10日より過去の記事は取り込まれないため、フィードにも載せない。
   ただし公開が途切れてフィードが空になるのを避けるため、10日以内が5件未満のときは
   新着5件までを残す（`MIN_ITEMS`）
 - **本文HTML**: 文章はすべて `<p>`、画像は `<figure><img><figcaption>`、
@@ -85,6 +85,10 @@ XML の組み立てを `+server.ts` から切り出しているのは、Sanity �
   公式バリデータが `<li>` 直下のテキストを
   「【注意】`<p>`タグで囲まれていないテキストが存在します」として指摘するため（実測で確認）。
   テキストが `<p>` / `<h1>`〜`<h6>` / `<figcaption>` のいずれかに収まっていれば指摘されない
+- **取り下げ**は `reviewStatus == "retracted"` で検出し、配信時と同じ guid と UTM 付き link で
+  `media:status state="deleted"` を出力する。保持期間は `retractedAt`（未設定時は `_updatedAt`）から
+  31日以内。FAQ の管理画面で削除できる期間（1ヶ月以内）を目安にした。公開日の10日ルールと
+  公開中の記事の30件上限は、削除通知に適用しない。取り下げ日時の新しい順に最大60件を取得する。
 - **画像**: サイトロゴや「NO IMAGE」など本文と補完関係のない画像は enclosure にも本文にも入れない。
   記事に画像が無い場合は `enclosure` ごと省略する（アプリ側の既定画像が使われる）
 - **`gnf:modified` は公開日でクランプ**: Sanity の `_updatedAt` は「最後に編集した時刻」なので、
