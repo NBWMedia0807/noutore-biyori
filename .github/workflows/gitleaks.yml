@@ -1,0 +1,83 @@
+# 鍵・トークンの書き込みを止めるための検査（gitleaks の CLI を直接使う）。
+# - push / pull_request のたびに「今回増えたコミットだけ」を検査する。
+#   昔の履歴にある検出（すでに無効な鍵）では失敗しない。
+# - 手動実行で full_history を選ぶと、全履歴を一度だけ検査できる。
+# - --redact を付けているので、ログには鍵の値は出ない（ファイル名・行・種類だけ）。
+# - gitleaks は版を固定し、SHA-256 を照合してから使う。
+name: gitleaks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full_history:
+        description: '全履歴を検査する'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitleaks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: '8.30.1'
+      GITLEAKS_SHA256: '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks (pinned + checksum)
+        run: |
+          set -euo pipefail
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL --retry 3 -o "$RUNNER_TEMP/gitleaks.tar.gz" "$url"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+
+      - name: Decide commit range
+        id: range
+        env:
+          EVENT: ${{ github.event_name }}
+          FULL: ${{ inputs.full_history }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$FULL" = "true" ]; then
+            opts="--all"
+          elif [ "$EVENT" = "pull_request" ]; then
+            opts="${PR_BASE}..${PR_HEAD}"
+          elif [ "$EVENT" = "push" ] && [ -n "${BEFORE:-}" ] \
+               && ! printf '%s' "$BEFORE" | grep -qE '^0+$' \
+               && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            opts="${BEFORE}..${AFTER}"
+          elif git rev-parse -q --verify "refs/remotes/origin/${DEFAULT_BRANCH}" >/dev/null \
+               && [ "$(git rev-parse "refs/remotes/origin/${DEFAULT_BRANCH}")" != "$AFTER" ]; then
+            # 新しいブランチ: 既定ブランチに無いコミットだけ
+            opts="refs/remotes/origin/${DEFAULT_BRANCH}..${AFTER}"
+          else
+            opts="-1 ${AFTER}"
+          fi
+          echo "log-opts: $opts"
+          echo "opts=$opts" >> "$GITHUB_OUTPUT"
+
+      - name: Scan (values are redacted)
+        env:
+          LOG_OPTS: ${{ steps.range.outputs.opts }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --exit-code 1 --log-opts="$LOG_OPTS" .
