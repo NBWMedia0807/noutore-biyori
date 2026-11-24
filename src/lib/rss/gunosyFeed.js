@@ -50,6 +50,10 @@ export const CHANNEL = {
 
 // pubDate が10日より過去の記事は取り込まれない（仕様書 item ※1）。
 export const MAX_ARTICLE_AGE_DAYS = 10;
+// FAQ の管理画面で削除できる期間（1ヶ月以内）を保持期間の目安にする。
+const DELETED_RETENTION_DAYS = 31;
+export const GUNOSY_CACHE_CONTROL =
+  'public, max-age=60, s-maxage=900, stale-while-revalidate=86400, stale-if-error=86400';
 // 10日以内の記事が極端に少ない場合でもフィードを空にしないための下限。
 export const MIN_ITEMS = 5;
 export const MAX_ITEMS = 30;
@@ -344,7 +348,7 @@ const buildContentHtml = (doc, title, buildImageUrl) => {
  * サムネイル付きを先に拾うのは、アプリ内の関連記事枠が画像ありきの
  * 見え方をするため（画像が無い行はクリック率が落ちる）。
  */
-const buildRelatedLinks = (doc, buildImageUrl) => {
+const buildRelatedLinks = (doc, buildImageUrl, fallbackRelated) => {
   const seen = new Set();
   const result = [];
 
@@ -374,9 +378,12 @@ const buildRelatedLinks = (doc, buildImageUrl) => {
   );
   // 同カテゴリの新着 → 全カテゴリの新着 の順に補充する。
   // 後者は、カテゴリの記事数が少ない・カテゴリ未設定で3枠が埋まらない記事の受け皿。
+  const fallback = Array.isArray(fallbackRelated)
+    ? fallbackRelated.filter((entry) => entry._id !== doc._id).slice(0, 8)
+    : doc.fallbackRelated;
   const supplements = [
     ...(Array.isArray(doc?.autoRelated) ? doc.autoRelated : []),
-    ...(Array.isArray(doc?.fallbackRelated) ? doc.fallbackRelated : []),
+    ...(Array.isArray(fallback) ? fallback : []),
   ];
 
   for (const entry of manual) push(entry);
@@ -406,7 +413,10 @@ export const resolveModifiedDate = (updatedAt, publishedAt) => {
  * Sanity ドキュメント1件をフィード item の中間表現へ変換する。
  * 配信できない記事（スラッグ無し・公開日不正・URLが長すぎる）は null を返す。
  */
-export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasurementId }) => {
+export const toGunosyItem = (
+  doc,
+  { buildImageUrl, resolvePublishedDate, gaMeasurementId, fallbackRelated }
+) => {
   const slug = normalizeSlug(doc?.slug);
   if (!slug) return null;
 
@@ -448,7 +458,8 @@ export const toGunosyItem = (doc, { buildImageUrl, resolvePublishedDate, gaMeasu
     creator: (typeof doc?.author?.name === 'string' && doc.author.name.trim()) || DEFAULT_CREATOR,
     enclosureUrl,
     enclosureCaption: typeof enclosureSource?.alt === 'string' ? enclosureSource.alt.trim() : '',
-    related: buildRelatedLinks(doc, buildImageUrl),
+    related: buildRelatedLinks(doc, buildImageUrl, fallbackRelated),
+    state: doc.reviewStatus === 'retracted' ? 'deleted' : 'active',
     // アプリ内ビューアで動く計測タグの page_location は UTM を付けない正規URLを渡す。
     // GA4 のページレポートにクエリ付きURLが並ぶのを避けるため。
     // アプリ内ビューアの閲覧は本体サイトの page_view とは別イベント
@@ -474,7 +485,7 @@ const buildItemXml = (item) => {
     `    <link>${escapeXml(item.link)}</link>`,
     `    <guid isPermaLink="false">${escapeXml(item.guid)}</guid>`,
     `    <content:encoded>${wrapCdata(item.contentHtml)}</content:encoded>`,
-    '    <media:status state="active" />',
+    `    <media:status state="${item.state}" />`,
     `    <pubDate>${escapeXml(item.pubDate)}</pubDate>`,
     `    <dc:creator>${escapeXml(item.creator)}</dc:creator>`,
   ];
@@ -525,14 +536,24 @@ export const selectGunosyItems = (items, nowMs) => {
 /**
  * GunosyFeed の XML 全体を組み立てる。
  * @param {Array<object>} docs Sanity から取得したクイズ記事
- * @param {{buildImageUrl: Function, resolvePublishedDate?: Function, gaMeasurementId?: string, now?: Date}} deps
+ * @param {{buildImageUrl: Function, resolvePublishedDate?: Function, gaMeasurementId?: string, now?: Date, fallbackRelated?: Array<object>}} deps
  * @returns {string} RSS 2.0 XML
  */
 export const buildGunosyFeed = (docs, deps) => {
   const now = deps?.now instanceof Date ? deps.now : new Date();
   const seenGuids = new Set();
 
+  const nowMs = now.getTime();
+  const deletedThreshold = nowMs - DELETED_RETENTION_DAYS * 24 * 60 * 60 * 1000;
   const items = (Array.isArray(docs) ? docs : [])
+    .filter((doc) => {
+      if (!doc || doc._id?.startsWith('drafts.')) return false;
+      if (doc.reviewStatus === 'retracted') {
+        const retractedAtMs = toDate(doc.retractedAt ?? doc._updatedAt)?.getTime();
+        return retractedAtMs !== undefined && retractedAtMs >= deletedThreshold && retractedAtMs <= nowMs;
+      }
+      return doc.reviewStatus == null || doc.reviewStatus === 'approved';
+    })
     .map((doc) => toGunosyItem(doc, deps))
     .filter(Boolean)
     // 同一記事の重複（再公開などでドキュメントが重なるケース）を1件に寄せる
@@ -542,7 +563,9 @@ export const buildGunosyFeed = (docs, deps) => {
       return true;
     });
 
-  const itemsXml = selectGunosyItems(items, now.getTime()).map(buildItemXml).join('\n');
+  const active = selectGunosyItems(items.filter((item) => item.state === 'active'), nowMs);
+  const deleted = items.filter((item) => item.state === 'deleted');
+  const itemsXml = [...active, ...deleted].map(buildItemXml).join('\n');
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
