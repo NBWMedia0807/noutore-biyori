@@ -13,7 +13,7 @@ import type { RequestHandler } from './$types';
 import { createClient } from '@sanity/client';
 import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
 import { buildImageUrl } from '$lib/rss/images';
-import { buildGunosyFeed, GUNOSY_CACHE_CONTROL } from '$lib/rss/gunosyFeed.js';
+import { buildGunosyFeed } from '$lib/rss/gunosyFeed.js';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_GUNOSY_QUERY } from '$lib/queries/rssGunosy.groq.js';
 
@@ -26,7 +26,6 @@ const sanityClient = createClient({
   dataset: import.meta.env?.VITE_SANITY_DATASET || SANITY_DEFAULTS.dataset,
   apiVersion: import.meta.env?.VITE_SANITY_API_VERSION || SANITY_DEFAULTS.apiVersion,
   useCdn: false,
-  maxRetries: 0,
 });
 
 const GA_MEASUREMENT_ID = import.meta.env?.VITE_GA_ID || 'G-855Y7S6M95';
@@ -37,24 +36,20 @@ const feedDeps = {
   gaMeasurementId: GA_MEASUREMENT_ID,
 };
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ request, setHeaders }) => {
   // 接続元の確認用（'Gunosy/1.0' / 'Gunosy-Newspass/1.0' / 'Gunosy-Servicetoday/1.0'）
   console.log(`[feed/gunosy] User-Agent: ${request.headers.get('user-agent') ?? 'unknown'}`);
 
   const headers = {
     'Content-Type': 'application/xml; charset=utf-8',
     // 取得間隔は最短1分。channel/ttl（15分）と揃える。
-    'Cache-Control': GUNOSY_CACHE_CONTROL,
+    'Cache-Control': 'public, max-age=300, s-maxage=900',
   };
+  setHeaders(headers);
 
   try {
-    // XML の生成・応答用に余裕を残し、Sanity の取得は8秒で打ち切る。
-    const { active, retracted, fallbackRelated } = await sanityClient.fetch<{
-      active: object[];
-      retracted: object[];
-      fallbackRelated: object[];
-    }>(RSS_GUNOSY_QUERY, {}, { signal: AbortSignal.timeout(8000) });
-    const feed = buildGunosyFeed([...active, ...retracted], { ...feedDeps, fallbackRelated });
+    const docs: unknown = await sanityClient.fetch(RSS_GUNOSY_QUERY);
+    const feed = buildGunosyFeed(Array.isArray(docs) ? docs : [], feedDeps);
     return new Response(feed, { status: 200, headers });
   } catch (err) {
     console.error('[feed/gunosy] fetch error:', (err as Error)?.message ?? String(err));
