@@ -4,8 +4,9 @@
 // - 平文の vars はデプロイのたびにこの一覧で置き換わる。ダッシュボードだけにある平文は消える。
 //   秘密（SMTP_USER / SMTP_PASS / SANITY_REVALIDATE_SECRET / INDEXNOW_KEY / SANITY_WRITE_TOKEN 等）は書かない。
 //   wrangler deploy は secret を keep する。このファイルに env ブロックは無い（試験 Worker は別ブランチの設定）。
-// - run_worker_first は全パスを Worker に通す。*.workers.dev だけ noindex（静的ファイル含む）。
-//   本番ホストの静的ファイルには noindex を付けない（試験用の _headers は使わない）。
+// - run_worker_first の除外パスは静的アセットを先に探し、一致すれば Worker を通さず配信する。
+//   *.workers.dev の静的ファイルには Worker による noindex が付かなくなる。
+//   /_app/* にはアダプターが生成する noindex が引き続き付く。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "noutore-biyori",
@@ -15,7 +16,18 @@
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare",
-    "run_worker_first": ["/*"]
+    "run_worker_first": [
+      "/*",
+      "!/_app/immutable/*",
+      "!/_app/version.json",
+      "!/logo.svg",
+      "!/logo.png",
+      "!/logo-wide.png",
+      "!/gunosy-channel-banner.png",
+      "!/x-banner.jpg",
+      "!/ads.txt",
+      "!/3534fb42af494faeb537efd6a63e2bec.txt"
+    ]
   },
   "workers_dev": true,
   "observability": {
