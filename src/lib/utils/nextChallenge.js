@@ -1,7 +1,12 @@
+export function normalizeChallengePublishedAt(quiz) {
+  const publishedAt = quiz.publishedAt || quiz._createdAt;
+  return /^\d{4}-\d{2}-\d{2}$/.test(publishedAt) ? `${publishedAt}T00:00:00Z` : publishedAt;
+}
+
 // now を引数で受け取り、ローカルと本番で同じ公開日時の比較を行う。
 export function selectNextChallenge(quiz, candidates, now) {
   const categorySlug = quiz.category?.slug;
-  const currentTime = Date.parse(quiz.publishedAt);
+  const currentTime = Date.parse(normalizeChallengePublishedAt(quiz));
   if (!categorySlug || !Number.isFinite(currentTime)) return null;
 
   let newer = null;
@@ -21,7 +26,7 @@ export function selectNextChallenge(quiz, candidates, now) {
       continue;
     }
 
-    const time = Date.parse(candidate.publishedAt);
+    const time = Date.parse(normalizeChallengePublishedAt(candidate));
     if (!Number.isFinite(time) || time > now) continue;
 
     if (time > currentTime && time < newerTime) {
