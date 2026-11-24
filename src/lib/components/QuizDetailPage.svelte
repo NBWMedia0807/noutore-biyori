@@ -363,9 +363,9 @@
     border: 1.5px solid rgba(245, 158, 11, 0.5);
     color: #78350f;
     font-weight: 800;
-    font-size: 0.88rem;
+    font-size: 1rem;
     text-decoration: none;
-    min-height: 34px;
+    min-height: 44px;
     letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.18);
     transition: background 0.2s ease, box-shadow 0.2s ease;

@@ -88,6 +88,9 @@
 <main class="answer-page hide-chrome">
   <header class="quiz-header">
     <p class="quiz-meta" aria-hidden="true">答え合わせ</p>
+    {#if quiz.category?.title && quiz.category?.slug}
+      <a class="category-chip" href={`/category/${quiz.category.slug}`}>{quiz.category.title}</a>
+    {/if}
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
   </header>
 
@@ -205,6 +208,26 @@
     color: #9a3412;
     font-weight: 700;
     margin-bottom: 8px;
+  }
+
+  .category-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 8px;
+    padding: 0.3rem 1rem;
+    border: 1px solid #f59e0b;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #78350f;
+    font-size: 1rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .category-chip:hover,
+  .category-chip:focus-visible {
+    text-decoration: underline;
   }
 
   .quiz-title {
