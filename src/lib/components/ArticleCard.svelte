@@ -1,7 +1,7 @@
 <script>
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { resolvePublishedDate, formatPublishedDateLabel } from '$lib/utils/publishedDate.js';
-  import { quizHref } from '$lib/utils/quizLinks.js';
+  import { quizHref, quizAnswerHref } from '$lib/utils/quizLinks.js';
 
   export let quiz = {};
   export let fallbackImageUrl = '/logo.svg';
@@ -48,17 +48,11 @@
     return source?.asset?.metadata?.dimensions ?? { width: 600, height: 360 };
   };
 
-  const normalizeSlug = (value) => {
-    if (typeof value === 'string') return value.trim();
-    if (value && typeof value.current === 'string') return value.current.trim();
-    return '';
-  };
-
   $: imageSet = buildImageSet(quiz);
   $: dimensions = pickDimensions(quiz);
-  $: slug = normalizeSlug(quiz?.slug);
   // canonical（/category/[cat]/[slug]）へ直接リンクし、308リダイレクトを回避する
   $: href = quizHref(quiz);
+  $: answerHref = quizAnswerHref(quiz);
   $: title = quiz?.title ?? '脳トレ問題';
   $: categoryTitle = quiz?.category?.title ?? quiz?.categoryTitle ?? '';
   $: publishContext = quiz?.slug ?? quiz?.id ?? 'article-card';
@@ -150,6 +144,11 @@
       {/if}
     </div>
   </a>
+  {#if answerHref !== '#'}
+    <a class="article-card__answer" href={answerHref} aria-label={`答えを見る：${title}`}>
+      答えを見る
+    </a>
+  {/if}
 </article>
 
 <style>
@@ -163,6 +162,7 @@
       transform 0.25s ease,
       box-shadow 0.25s ease;
     display: flex;
+    flex-direction: column;
   }
 
   .article-card:hover,
@@ -178,6 +178,25 @@
     flex-direction: column;
     gap: 0;
     width: 100%;
+    flex: 1;
+  }
+
+  .article-card__answer {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-height: 48px;
+    margin: 0 0.5rem 0.5rem;
+    padding-inline: 0.5rem;
+    color: #712b13;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-underline-offset: 0.2em;
+  }
+
+  .article-card__answer:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
   }
 
   .article-card__image {
