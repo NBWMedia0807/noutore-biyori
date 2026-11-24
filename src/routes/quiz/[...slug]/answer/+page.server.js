@@ -6,6 +6,7 @@ import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
+import { resolveArticleAdDisclosure } from '$lib/config/ad-disclosure.js';
 // ▼ 修正済み: 正しいインポート
 import { client } from '$lib/sanity/client.js';
 
@@ -24,6 +25,11 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   mainImage{ asset->{ url, metadata } },
   answerExplanation,
   closingMessage,
+  // 広告表記（スキーマ未追加・未入力の記事は null → 本文リンクの自動判定のみ）
+  adDisclosure,
+  sponsorName,
+  // 問題ページ側の本文。アフィリエイトリンクの判定にだけ使い、ページデータには載せない
+  "adLinkSources": { body, problemDescription, hint, hints },
   publishedAt,
   _createdAt,
   _updatedAt
@@ -51,6 +57,10 @@ export async function load({ params, setHeaders }) {
   if (typeof quiz.slug === 'string' && quiz.slug !== slug) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
+
+  // 記事の広告表記（問題ページと同じ判定）。判定用の本文はページデータから外す
+  const { adLinkSources, ...quizRest } = quiz;
+  const adDisclosure = resolveArticleAdDisclosure({ ...(adLinkSources ?? {}), ...quizRest });
 
   // ▼ 修正: 並行してデータ取得
   const [related, nextChallengePosts] = await Promise.all([
@@ -118,7 +128,8 @@ export async function load({ params, setHeaders }) {
   });
 
   return {
-    quiz,
+    quiz: quizRest,
+    adDisclosure,
     related,
     nextChallengePosts,
     ui: {

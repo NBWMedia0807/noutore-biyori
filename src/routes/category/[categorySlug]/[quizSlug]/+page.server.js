@@ -55,6 +55,9 @@ const Q = /* groq */ `*[
   closingMessage,
   answerImage{ asset->{ url, metadata } },
   answerExplanation,
+  // 広告表記（スキーマ未追加・未入力の記事は null → 本文リンクの自動判定のみ）
+  adDisclosure,
+  sponsorName,
   publishedAt,
   _createdAt,
   _updatedAt,

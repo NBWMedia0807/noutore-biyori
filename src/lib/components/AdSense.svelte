@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { isWorkersDevHost } from '$lib/staging-host.js';
+  import { AD_SLOT_LABEL } from '$lib/config/ad-disclosure.js';
 
   /** @type {string} */
   export let slot;
@@ -169,6 +170,9 @@
   style={minHeight > 0 ? `min-height:${minHeight}px` : null}
   bind:this={containerRef}
 >
+  <!-- 手動の広告枠の「広告」ラベル。枠の外側（上）に重ねるので、枠の高さ・位置・予約高さは変わらない。
+       枠と一緒に表示/非表示が切り替わる（読み込み前・未配信では見えない） -->
+  <p class="ad-label">{AD_SLOT_LABEL}</p>
   {#key currentPath}
     <ins
       bind:this={adRef}
@@ -207,6 +211,20 @@
      「未使用セレクタ」として出力から削除し、枠が hidden のままになる */
   .adsense-container:global(.revealed) {
     visibility: visible;
+  }
+
+  /* ラベルは枠の上に重ねる（直前の要素との余白に収まる大きさ） */
+  .ad-label {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    margin: 0 0 2px;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #4b5563;
+    text-align: center;
+    pointer-events: none;
   }
 
   .adsense-container :global(ins.adsbygoogle) {
