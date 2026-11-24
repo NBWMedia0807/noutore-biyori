@@ -23,6 +23,7 @@ import {
   isQuizStubEnabled
 } from '$lib/server/quiz-stub.js';
 import { mergeWithFallback } from '$lib/utils/quizPopularity.js';
+import { selectTodayQuizzes } from '$lib/utils/todayQuizzes.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 
 export const prerender = false;
@@ -158,6 +159,7 @@ const createStubHomePayload = ({ path, requestedPage, pageSize, offset }) => {
   return {
     newest,
     categories,
+    todayQuizzes: selectTodayQuizzes(requestedPage, newest, categories),
     seo,
     pagination: {
       currentPage: Math.min(requestedPage, totalPages),
@@ -246,6 +248,7 @@ export const load = async (event) => {
     return {
       newest,
       categories,
+      todayQuizzes: selectTodayQuizzes(requestedPage, newest, categories),
       seo,
       pagination: {
         currentPage: requestedPage,
@@ -262,6 +265,7 @@ export const load = async (event) => {
     return {
       newest: [],
       categories: [],
+      todayQuizzes: selectTodayQuizzes(requestedPage, [], []),
       seo,
       pagination: {
         currentPage: 1,
