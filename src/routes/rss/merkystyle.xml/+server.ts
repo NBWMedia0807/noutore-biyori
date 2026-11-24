@@ -5,7 +5,7 @@ import { shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
-import { resolveImage } from '$lib/rss/images';
+import { resolveImage, type ResolvedImage } from '$lib/rss/images';
 import { resizeSanityThumbnail } from '$lib/rss/thumbnailUrl.js';
 import { toRfc822 } from '$lib/rss/toRfc822';
 import { buildMerkystyleDescription } from '$lib/rss/merkystyleDescription.js';
@@ -59,12 +59,14 @@ const toPlainText = (value: unknown): string => {
   return portableTextToPlain(value);
 };
 
-const renderImageHtml = (source: any, alt: string): string => {
-  const resolved = resolveImage([source], { minWidth: 640 });
+const renderResolvedImageHtml = (resolved: ResolvedImage | null, alt: string): string => {
   if (!resolved?.url) return '';
   const safeAlt = resolved.alt || alt;
   return `<p><img src="${escapeAttribute(resolved.url)}" alt="${escapeAttribute(safeAlt)}" /></p>`;
 };
+
+const renderImageHtml = (source: any, alt: string): string =>
+  renderResolvedImageHtml(resolveImage([source], { minWidth: 640 }), alt);
 
 const wrapCdata = (value: string): string => {
   const sanitized = sanitizeXmlText(value);
@@ -123,7 +125,12 @@ const toItem = (doc: any) => {
   const problemImageHtml = renderImageHtml(doc?.problemImage ?? doc?.questionImage, `${title}の問題画像`);
   const answerImageHtml = renderImageHtml(doc?.answerImage, `${title}の解答画像`);
   const enclosure = pickEnclosure(doc);
-  const enclosureHtml = renderImageHtml(enclosure, `${doc?.title ?? '脳トレ問題'}の問題画像`);
+  // enclosure は解決済みの画像なので、もう一度 resolveImage に通さない
+  // （以前は通していたため、全記事で [rss/images] Failed to build image URL が出ていた）
+  const enclosureHtml = renderResolvedImageHtml(
+    enclosure,
+    `${doc?.title ?? '脳トレ問題'}の問題画像`
+  );
   const plain = toPlainText(doc?.body);
   const plainDescription = toPlainText(doc?.problemDescription);
   const plainHints = toPlainText(doc?.hints);
