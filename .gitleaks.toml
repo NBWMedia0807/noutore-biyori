@@ -1,0 +1,12 @@
+# gitleaks の設定。標準ルールに、Sanity の API トークン用ルールを足す。
+# 誤検出の除外（allowlist）は、確認済みのものだけをここに書く。
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "sanity-api-token"
+description = "Sanity API token"
+regex = '''\b(sk[A-Za-z0-9]{100,})\b'''
+keywords = ["sk"]
