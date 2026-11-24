@@ -201,3 +201,22 @@ test('quiz detail and answer pages retain navigation and ad slots without follow
   }
 });
 
+test(
+  'stub answer links to one next quiz in the same category after the explanation',
+  {
+    skip: !KNOWN_SLUGS.includes('sample-quiz-a'),
+  },
+  async () => {
+    const { response } = await fetchWithLog('/quiz/sample-quiz-a/answer');
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    const challenge = html.indexOf('さらにもう一問！');
+    const note = html.indexOf('※複数の正解');
+    assert.ok(note >= 0 && challenge > note);
+    assert.match(html.slice(challenge), /href="\/category\/sample-category\/sample-quiz-next"/);
+
+    const { response: single } = await fetchWithLog('/quiz/sample-quiz-b/answer');
+    assert.equal(single.status, 200);
+    assert.doesNotMatch(await single.text(), /さらにもう一問！/);
+  }
+);

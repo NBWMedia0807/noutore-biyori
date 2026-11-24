@@ -117,6 +117,23 @@ export const sendPageView = (path: string): boolean => {
   return pageViewTracker.track(path);
 };
 
+export const sendEvent = (name: string, params: Record<string, string | number | boolean>) => {
+  if (!isMeasurableEnvironment() || typeof window.gtag !== 'function') {
+    return;
+  }
+
+  const measurementId = getMeasurementId();
+  if (!measurementId) return;
+
+  window.gtag('event', name, {
+    ...params,
+    content_surface: CONTENT_SURFACE.website,
+    app_webview: getAppWebview(),
+    send_to: measurementId,
+    transport_type: 'beacon',
+  });
+};
+
 declare global {
   interface Window {
     dataLayer?: unknown[];
