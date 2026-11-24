@@ -198,11 +198,6 @@
     {/if}
   </header>
 
-  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
-  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
-  <AdSense slot="4170928887" minHeight={250} />
-
   {#if problemImageSet?.src}
     <div class="problem-image">
       <picture>
@@ -235,8 +230,11 @@
     </div>
   {/if}
 
-  <!-- 記事内: 問題画像下の広告 -->
-  <AdSense slot="3921249196" />
+  <div class="image-ads">
+    <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
+    <AdSense slot="4170928887" minHeight={250} showLabel />
+    <AdSense slot="3921249196" />
+  </div>
 
   {#if bodyHtml}
     <section class="body content-card">
@@ -388,6 +386,17 @@
     color: #92400e;
     font-weight: 600;
     font-size: 0.95rem;
+  }
+
+  .image-ads {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .problem-image + .image-ads {
+    /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
+    padding-top: 28px;
   }
 
   .problem-image {

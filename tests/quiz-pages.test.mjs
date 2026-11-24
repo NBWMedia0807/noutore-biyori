@@ -177,6 +177,12 @@ test('quiz detail and answer pages retain navigation and ad slots without follow
       const { response } = await verifyResponse(path, path);
       const html = await response.text();
       assert.doesNotMatch(html, /フォローする|SNSも毎日更新中/, path);
+      const reservedAd = html.indexOf('data-ad-slot="4170928887"');
+      assert.match(html, /<p class="ad-label[^"]*">広告<\/p>/, path);
+      if (slug === 'sample-quiz-a') {
+        const image = html.search(/<img[^>]+alt="(?:サンプルクイズAの問題イメージ|正解画像)"/);
+        assert.ok(image >= 0 && image < reservedAd, `${path} should show the image before the ad`);
+      }
       assert.ok(html.includes(cta), `${path} should include ${cta}`);
       assert.deepEqual(
         [...html.matchAll(/data-ad-slot="([0-9]+)"/g)].map((match) => match[1]),

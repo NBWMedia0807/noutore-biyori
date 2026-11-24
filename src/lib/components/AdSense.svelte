@@ -12,6 +12,7 @@
    * @type {number}
    */
   export let minHeight = 0;
+  export let showLabel = false;
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
@@ -169,6 +170,9 @@
   style={minHeight > 0 ? `min-height:${minHeight}px` : null}
   bind:this={containerRef}
 >
+  {#if showLabel}
+    <p class="ad-label">広告</p>
+  {/if}
   {#key currentPath}
     <ins
       bind:this={adRef}
@@ -183,6 +187,13 @@
 </div>
 
 <style>
+  .ad-label {
+    margin: 0 0 8px;
+    color: #475569;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
   .adsense-container {
     position: relative;
     width: 100%;

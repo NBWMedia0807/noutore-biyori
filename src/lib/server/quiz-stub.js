@@ -10,6 +10,9 @@ const fallbackTitleFromSlug = (value) => {
   return sanitized.replace(/[-_]+/g, ' ');
 };
 
+// ローカルのプレビューで画像と広告の順を確認するための仮画像。
+const previewImage = { asset: { url: '/logo.svg' } };
+
 const STUB_QUIZZES = [
   {
     _id: 'stub-quiz-a',
@@ -17,13 +20,13 @@ const STUB_QUIZZES = [
     title: 'サンプルクイズA',
     category: { title: 'サンプルカテゴリ', slug: 'sample-category' },
     mainImage: null,
-    problemImage: null,
+    problemImage: previewImage,
     problemDescription: '図形の位置関係から隠れた規則を見つけてください。',
     hints: [
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: 左右の並びに注目しましょう。' }] },
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 数字と図形の対応関係を確認してください。' }] }
     ],
-    answerImage: null,
+    answerImage: previewImage,
     answerExplanation: [
       { _type: 'block', children: [{ _type: 'span', text: '図形の位置を数字に置き換えると答えが導けます。' }] }
     ],
