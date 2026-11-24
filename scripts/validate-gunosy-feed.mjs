@@ -586,7 +586,6 @@ const checkItem = (report, item, index, seen, now) => {
     seen.guids.add(guid);
   }
 
-  const status = childNamed(item, 'media:status');
   const pubDateText = textOf(childNamed(item, 'pubDate'));
   let pubDate = null;
   if (!pubDateText) {
@@ -595,7 +594,7 @@ const checkItem = (report, item, index, seen, now) => {
     pubDate = checkRfc822(report, where, 'pubDate', pubDateText);
     if (pubDate) {
       const ageDays = (now.getTime() - pubDate.getTime()) / (24 * 60 * 60 * 1000);
-      if (status?.attrs.state !== 'deleted' && ageDays > MAX_ARTICLE_AGE_DAYS) {
+      if (ageDays > MAX_ARTICLE_AGE_DAYS) {
         report.warn(
           where,
           `pubDate が${MAX_ARTICLE_AGE_DAYS}日より前のため取り込まれません（約${Math.floor(ageDays)}日前）`
@@ -617,6 +616,7 @@ const checkItem = (report, item, index, seen, now) => {
     }
   }
 
+  const status = childNamed(item, 'media:status');
   if (!status) {
     report.error(where, 'media:status がありません（必須）');
   } else if (!['active', 'deleted'].includes(status.attrs.state)) {
