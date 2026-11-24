@@ -8,7 +8,7 @@ import { SITE } from '$lib/config/site.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { getQuizStubQuizzesByCategory, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
-import { selectNextChallenge } from '$lib/utils/nextChallenge.js';
+import { normalizeChallengePublishedAt, selectNextChallenge } from '$lib/utils/nextChallenge.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -30,7 +30,7 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   _updatedAt
 }`;
 
-const publishedTime = `dateTime(${QUIZ_PUBLISHED_FIELD})`;
+const publishedTime = `dateTime(select(length(${QUIZ_PUBLISHED_FIELD}) == 10 => ${QUIZ_PUBLISHED_FIELD} + "T00:00:00Z", ${QUIZ_PUBLISHED_FIELD}))`;
 const candidateFilter = /* groq */ `_type == "quiz" && defined(slug.current)
   && slug.current != $slug && category._ref == $categoryId
   ${QUIZ_PUBLISHED_FILTER}
@@ -55,11 +55,13 @@ async function fetchNextChallenge(quiz) {
   }
 
   if (!quiz.categoryId || !quiz.category?.slug) return null;
+  const publishedAt = normalizeChallengePublishedAt(quiz);
+  if (!publishedAt) return null;
 
   const { newer, older } = await client.fetch(nextChallengeQuery, {
     slug: quiz.slug,
     categoryId: quiz.categoryId,
-    publishedAt: quiz.publishedAt,
+    publishedAt,
   });
   return selectNextChallenge(quiz, [newer, older], Date.now());
 }
