@@ -10,10 +10,21 @@
   import { shouldNoindexForQuery } from '$lib/utils/trackingParams.js';
   import { isWorkersDevHost } from '$lib/staging-host.js';
   import { SIDE_RAIL_SLOT } from '$lib/config/ads.js';
+  import { AD_SLOT_LABEL, FOOTER_AD_TEXT } from '$lib/config/ad-disclosure.js';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
+
+  // フッターの固定リンク（ハンバーガーメニューと同じページ・同じ表記。メニューを開かなくても常に見える）
+  const FOOTER_LINKS = [
+    { href: '/about', label: '会社概要' },
+    { href: '/author/editorial-team', label: '著者情報' },
+    { href: '/privacy-policy', label: 'プライバシーポリシー' },
+    { href: '/terms', label: '利用規約' },
+    { href: '/disclaimer', label: '免責事項' },
+    { href: '/contact', label: 'お問い合わせ' }
+  ];
 
   /** @type {HTMLDivElement|null} */
   let leftRailRef = null;
@@ -28,6 +39,11 @@
 
   function mountSideRailAd(container) {
     if (!container) return;
+    // 手動の広告枠なので枠の上に「広告」ラベル（配信されたときだけ CSS で見せる）
+    const label = document.createElement('p');
+    label.className = 'ad-label';
+    label.textContent = AD_SLOT_LABEL;
+    container.appendChild(label);
     const ins = document.createElement('ins');
     ins.className = 'adsbygoogle';
     ins.style.cssText = 'display:block;width:160px;height:600px;';
@@ -391,6 +407,16 @@
 
 <footer google-side-rail-overlap="false" data-review-mode={reviewMode}>
   <div class="footer-content">
+    <nav class="footer-nav" aria-label="サイト情報">
+      <ul class="footer-links">
+        {#each FOOTER_LINKS as link (link.href)}
+          <li><a href={link.href}>{link.label}</a></li>
+        {/each}
+      </ul>
+    </nav>
+    {#if FOOTER_AD_TEXT}
+      <p class="footer-ad-text">{FOOTER_AD_TEXT}</p>
+    {/if}
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
     <p class="footer-rights">合同会社NBWMedia All Rights Reserved.</p>
@@ -402,6 +428,43 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
+  }
+
+  .footer-nav {
+    margin: 0 0 1rem;
+  }
+
+  /* スマホ（390px）でも折り返して並ぶ。タップしやすいよう行の高さを確保 */
+  .footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1.25rem;
+  }
+
+  .footer-links a {
+    display: inline-block;
+    padding: 0.35rem 0;
+    color: #f9fafb;
+    font-size: 0.95rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .footer-links a:hover,
+  .footer-links a:focus-visible {
+    color: #fcd34d;
+  }
+
+  .footer-ad-text {
+    margin: 0 0 1rem;
+    text-wrap: pretty;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #e5e7eb;
   }
 
   .footer-copy,
@@ -579,6 +642,22 @@
   }
 
   /* ── サイドレール広告 ────────────── */
+  /* 「広告」ラベルは配信された枠だけに出す（未配信・読み込み前は隠すが場所は取るので、配信時にずれない）。
+     枠の上に重ねると固定ナビに隠れるため、レールの中で 160×600 の枠の上に置く（レールの位置は変えない） */
+  .side-rail :global(.ad-label) {
+    margin: 0 0 2px;
+    height: 14px;
+    font-size: 0.75rem;
+    line-height: 14px;
+    color: #4b5563;
+    text-align: center;
+    visibility: hidden;
+  }
+
+  .side-rail:has(:global(ins.adsbygoogle[data-ad-status='filled'])) :global(.ad-label) {
+    visibility: visible;
+  }
+
   .side-rail {
     display: none;
     position: fixed;

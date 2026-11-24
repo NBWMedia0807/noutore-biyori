@@ -364,6 +364,45 @@ export default defineType({
       initialValue: false,
     }),
 
+    // ── 広告表記（ステマ規制） ─────────────────
+    // 未入力（既存記事）はサイト側で「本文リンクの自動判定」だけ行う。
+    // 文言は src/lib/config/ad-disclosure.js に集約（ここでは種類と会社名だけ持つ）。
+    defineField({
+      name: 'adDisclosure',
+      title: '広告表記',
+      description:
+        'タイトルのすぐ下に広告表記を出します。未入力なら本文のアフィリエイトリンクを自動判定します。「なし」を選ぶと自動判定もしません。',
+      type: 'string',
+      group: 'publish',
+      options: {
+        list: [
+          { title: 'なし', value: 'none' },
+          { title: 'アフィリエイト広告を含む', value: 'affiliate' },
+          { title: '企業の依頼で制作（PR）', value: 'sponsored' },
+          { title: '企業から商品の提供を受けて作成（PR）', value: 'provided' }
+        ],
+        layout: 'radio'
+      }
+    }),
+    defineField({
+      name: 'sponsorName',
+      title: '依頼・提供元の会社名',
+      description:
+        '「PR（広告）：この記事は〇〇社の…」の〇〇に入ります。「A」と入れると「A社」、「株式会社A」「A社」はそのまま表示します。',
+      type: 'string',
+      group: 'publish',
+      hidden: ({ document }) =>
+        document?.adDisclosure !== 'sponsored' && document?.adDisclosure !== 'provided',
+      validation: (Rule) =>
+        Rule.custom((value, context) => {
+          const type = context?.document?.adDisclosure;
+          if ((type === 'sponsored' || type === 'provided') && !String(value ?? '').trim()) {
+            return '依頼・提供の記事では会社名を入力してください。';
+          }
+          return true;
+        })
+    }),
+
     // ── 公開審査ステータス ─────────────────
     // 「非公開化」を実現するための単一の判定軸。
     // publishedAt は日付でしか制御できず記事を隠せないため、この項目で明示的に制御する。

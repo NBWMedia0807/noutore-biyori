@@ -5,8 +5,13 @@
   import InlineCta from '$lib/components/InlineCta.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
   import { quizHref, quizAnswerHref } from '$lib/utils/quizLinks.js';
+  import AdDisclosureNotice from '$lib/components/AdDisclosureNotice.svelte';
+  import { resolveArticleAdDisclosure } from '$lib/config/ad-disclosure.js';
 
   export let data;
+
+  // 記事の広告表記（フラグ優先、無ければ本文リンクから自動判定。該当なしなら null）
+  $: adDisclosure = resolveArticleAdDisclosure(data?.doc);
 
   let doc;
   let relatedQuizzes = [];
@@ -193,6 +198,7 @@
       </div>
     {/if}
     <h1 class="quiz-title">{doc.title}</h1>
+    <AdDisclosureNotice disclosure={adDisclosure} />
     {#if publishedLabel}
       <p class="quiz-date">公開日: {publishedLabel}</p>
     {/if}

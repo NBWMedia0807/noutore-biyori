@@ -3,9 +3,10 @@
   import AdSense from '$lib/components/AdSense.svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
   import { quizHref } from '$lib/utils/quizLinks.js';
+  import AdDisclosureNotice from '$lib/components/AdDisclosureNotice.svelte';
 
   export let data;
-  const { quiz, nextChallengePosts = [] } = data;
+  const { quiz, nextChallengePosts = [], adDisclosure = null } = data;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
 
@@ -97,6 +98,11 @@
   <header class="quiz-header">
     <p class="quiz-meta" aria-hidden="true">答え合わせ</p>
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
+    {#if adDisclosure}
+      <div class="answer-ad-disclosure">
+        <AdDisclosureNotice disclosure={adDisclosure} />
+      </div>
+    {/if}
   </header>
 
   <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
@@ -214,6 +220,10 @@
     box-shadow: 0 18px 45px rgba(251, 146, 60, 0.18);
     border: 1px solid rgba(253, 186, 116, 0.35);
     backdrop-filter: blur(4px);
+  }
+
+  .answer-ad-disclosure {
+    margin-top: 12px;
   }
 
   .quiz-meta {
