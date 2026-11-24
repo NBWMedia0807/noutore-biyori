@@ -183,9 +183,12 @@ test('quiz detail and answer pages retain navigation and ad slots without follow
         const image = html.search(/<img[^>]+alt="(?:サンプルクイズAの問題イメージ|正解画像)"/);
         assert.ok(image >= 0 && image < reservedAd, `${path} should show the image before the ad`);
       }
+      const secondAd = html.indexOf('data-ad-slot="3921249196"');
+      const ctaSpacer = html.indexOf('class="cta-ad-spacer');
+      assert.ok(ctaSpacer > html.lastIndexOf(cta) && secondAd > ctaSpacer, path);
       if (path === questionPath) {
         const mobileCta = html.indexOf('to-answer to-answer--mobile');
-        assert.ok(mobileCta > html.indexOf('data-ad-slot="3921249196"'), path);
+        assert.ok(mobileCta > reservedAd && mobileCta < secondAd, path);
         assert.equal([...html.matchAll(/正解ページへ進む/g)].length, 2, path);
       }
       assert.ok(html.includes(cta), `${path} should include ${cta}`);

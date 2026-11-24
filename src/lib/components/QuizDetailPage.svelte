@@ -230,10 +230,9 @@
     </div>
   {/if}
 
-  <div class="image-ads">
+  <div class="image-ad">
     <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
     <AdSense slot="4170928887" minHeight={250} showLabel />
-    <AdSense slot="3921249196" />
   </div>
 
   <nav class="to-answer to-answer--mobile">
@@ -298,6 +297,10 @@
 
   <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
   <div class="cta-ad-spacer" aria-hidden="true"></div>
+
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
 
   <!-- 記事下: 関連記事上の広告（前後に余白を確保してボタンと密着させない） -->
   <div class="ad-buffer">
@@ -396,13 +399,7 @@
     font-size: 0.95rem;
   }
 
-  .image-ads {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .problem-image + .image-ads {
+  .problem-image + .image-ad {
     /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
     padding-top: 28px;
   }

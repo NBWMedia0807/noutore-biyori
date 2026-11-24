@@ -114,10 +114,9 @@
     </div>
   {/if}
 
-  <div class="image-ads">
+  <div class="image-ad">
     <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
     <AdSense slot="4170928887" minHeight={250} showLabel />
-    <AdSense slot="3921249196" />
   </div>
 
   {#if answerHtml}
@@ -169,6 +168,10 @@
 
   <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
   <div class="cta-ad-spacer" aria-hidden="true"></div>
+
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
 
   <section class="closing">
     <div class="closing-card">
@@ -230,13 +233,7 @@
     font-weight: 800;
   }
 
-  .image-ads {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .answer-image + .image-ads {
+  .answer-image + .image-ad {
     /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
     padding-top: 28px;
   }
