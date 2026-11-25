@@ -1,0 +1,75 @@
+# Cloudflare Workers 試験デプロイ
+#
+# - feat/cloudflare-workers-migration への push で、試験 Worker だけを workers.dev に載せる。
+#   workflow_dispatch は default ブランチにこのファイルが無いと実行できないため、試験中の起動は push にする。
+# - main や他ブランチの push では動かない。schedule も無い。
+# - デプロイ先は wrangler.jsonc の noutore-biyori-staging（workers_dev: true、routes なし）。
+#   本番 Worker（noutore-biyori）・カスタムドメイン・DNS には触れない。
+# - GitHub Secrets（値はログに出さない。NOBU が登録済み）:
+#     CLOUDFLARE_API_TOKEN   … Account › Workers Scripts › Edit のみ、アカウント 1 つ
+#     CLOUDFLARE_ACCOUNT_ID
+#   Worker の実行時変数は Cloudflare の noutore-biyori-staging に NOBU が入れる。
+#   一覧は docs/cloudflare-migration.md。
+name: Cloudflare Workers deploy (staging)
+
+on:
+  push:
+    branches:
+      - feat/cloudflare-workers-migration
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'true のときだけ workers.dev へデプロイする（false はビルドと dry-run のみ）。default ブランチにこのファイルがあるときだけ選べます。'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-workers-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Refuse non-staging Wrangler config
+        run: node scripts/check-cloudflare-staging-config.mjs
+
+      - name: Unit tests (edge cache)
+        run: pnpm run test:edge-cache
+
+      - name: Build (Cloudflare)
+        run: pnpm run build:cloudflare
+        env:
+          # 公開の GA4 測定 ID。*.workers.dev では shouldMeasureHostname が計測しない。
+          VITE_GA_ID: ${{ vars.VITE_GA_ID || 'G-855Y7S6M95' }}
+
+      # 静的ファイル（ads.txt など）は Worker を通らない。試験 Worker だけ _headers で noindex にする。
+      - name: Staging headers for static assets
+        run: node scripts/append-staging-asset-headers.mjs
+
+      - name: Dry run
+        run: pnpm exec wrangler deploy --dry-run --outdir .wrangler/dry-run
+
+      # push はこのブランチのときだけ到達する。workflow_dispatch は ref が試験ブランチで deploy=true のときだけ。
+      - name: Deploy staging worker to workers.dev
+        if: github.ref == 'refs/heads/feat/cloudflare-workers-migration' && (github.event_name == 'push' || inputs.deploy == true)
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

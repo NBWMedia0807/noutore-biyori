@@ -8,6 +8,7 @@
   import { loadGtagOnce, sendPageView } from '$lib/ga';
   import SEO from '$lib/components/SEO.svelte';
   import { shouldNoindexForQuery } from '$lib/utils/trackingParams.js';
+  import { isWorkersDevHost } from '$lib/staging-host.js';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
@@ -19,6 +20,12 @@
   let leftRailRef = null;
   /** @type {HTMLDivElement|null} */
   let rightRailRef = null;
+
+  const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`;
+
+  function adsenseRequestsAllowed() {
+    return typeof window !== 'undefined' && !isWorkersDevHost(window.location.hostname);
+  }
 
   function mountSideRailAd(container) {
     if (!container) return;
@@ -38,7 +45,7 @@
   // 同じ広告が表示され続ける（インプレッション機会の損失）ため。
   let sideRailPath = '';
   function refreshSideRails(path) {
-    if (typeof window === 'undefined' || !path || path === sideRailPath) return;
+    if (!adsenseRequestsAllowed() || !path || path === sideRailPath) return;
     sideRailPath = path;
     if (window.innerWidth < 1540) return;
     for (const container of [leftRailRef, rightRailRef]) {
@@ -51,6 +58,8 @@
   export let data;
 
   $: currentPage = $page;
+  // *.workers.dev ではスクリプトを実行しない。パブリッシャー ID は data-src に残す。
+  $: adsenseLive = !isWorkersDevHost(currentPage?.url?.hostname);
   $: ui = currentPage?.data?.ui ?? {};
 
   // パンくずリスト
@@ -247,11 +256,16 @@
 
 <svelte:head>
   <!-- GA4スクリプトはga.tsのloadGtagOnce()で動的に読み込むため、ここには記載しない -->
-  <script
-    async
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2298313897414846"
-    crossorigin="anonymous"
-  ></script>
+  {#if adsenseLive}
+    <script async src={ADSENSE_SCRIPT_SRC} crossorigin="anonymous"></script>
+  {:else}
+    <script
+      type="text/plain"
+      data-adsense-staging="withheld"
+      data-ad-client={AD_CLIENT}
+      data-src={ADSENSE_SCRIPT_SRC}
+    ></script>
+  {/if}
   <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
   <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
   <!-- Google Publisher Center 所有権確認（環境変数 PUBLIC_PUBLISHER_CENTER_VERIFICATION に値を設定） -->

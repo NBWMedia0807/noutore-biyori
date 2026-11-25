@@ -25,6 +25,21 @@ ENABLE_QUIZ_STUB=1 SKIP_SANITY=1 pnpm dev
 - Vercel のダッシュボード > Project Settings > Functions > Node.js Version を **22.x** に設定してください。
 - 本リポジトリは Node.js 22 を前提にビルドされるため、プレビュー/本番とも同一設定で運用してください。
 
+### Cloudflare Workers 移行用ビルド（移行準備中・本番は Vercel のまま）
+
+アダプターは環境変数 `DEPLOY_TARGET` で切り替えます。未設定なら従来どおり Vercel です。
+
+```bash
+pnpm build                        # Vercel（既定）
+SKIP_SANITY=1 pnpm build:cloudflare  # Cloudflare Workers（DEPLOY_TARGET=cloudflare）
+pnpm exec wrangler dev --var SKIP_SANITY:1 --var ENABLE_QUIZ_STUB:1  # ローカルで workerd 実行
+pnpm run test:edge-cache          # Cloudflare 用キャッシュ・リダイレクト処理のテスト
+```
+
+- 試験 Worker の名前は `noutore-biyori-staging`（`wrangler.jsonc`）。本番 Worker とは別で、routes は付けません。
+- `*.workers.dev` では `X-Robots-Tag: noindex` と全拒否の robots.txt を返します。canonical / sitemap / RSS の URL は `https://noutorebiyori.com` のままです。
+- シークレットはリポジトリに書かず、Cloudflare のこの Worker の Variables and Secrets に登録します。手順は [docs/cloudflare-migration.md](docs/cloudflare-migration.md)。
+
 ### Sanity 予約公開と ISR 再検証の設定
 
 1. Vercel の Environment Variables に以下を追加します（Production / Preview 両方）。値は十分な長さのランダム文字列を推奨します。

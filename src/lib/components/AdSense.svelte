@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
+  import { isWorkersDevHost } from '$lib/staging-host.js';
 
   /** @type {string} */
   export let slot;
@@ -31,7 +32,7 @@
   // 前ページの広告が表示され続けてしまう（インプレッション損失）ため。
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
-    if (initialized) {
+    if (initialized && adsenseRequestsAllowed()) {
       adPushed = false;
       stopPolling();
       if (containerRef) {
@@ -41,6 +42,10 @@
       }
       observeViewport();
     }
+  }
+
+  function adsenseRequestsAllowed() {
+    return browser && !isWorkersDevHost(window.location.hostname);
   }
 
   function observeViewport() {
@@ -61,7 +66,7 @@
   }
 
   function pushAd() {
-    if (!adRef) return;
+    if (!adRef || !adsenseRequestsAllowed()) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (_) {}
@@ -119,6 +124,7 @@
 
   onMount(() => {
     initialized = true;
+    if (!adsenseRequestsAllowed()) return;
     observeViewport();
   });
 

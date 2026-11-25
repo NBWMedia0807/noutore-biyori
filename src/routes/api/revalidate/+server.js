@@ -1,14 +1,24 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { notifyIndexNow } from '$lib/server/indexnow.js';
+import { SITE } from '$lib/config/site.js';
+import { resolveIndexNowBase, resolveSiteOrigin } from '$lib/server/site-origin.js';
+import {
+  PAGE_TAG,
+  buildPurgeUrls,
+  isCloudflarePlatform,
+  purgeCloudflareUrls,
+  quizCacheTag
+} from '$lib/server/edge-cache.js';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 const REVALIDATE_TOKEN = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET || '';
 
 const SLUG_QUERY = /* groq */ `*[_id in $ids]{ _id, _type, "slug": slug.current }`;
 const CATEGORY_FROM_SLUG_QUERY = /* groq */ `
-  *[_type == "quiz" && slug.current in $slugs]{ "category": category->slug.current }
+  *[_type == "quiz" && slug.current in $slugs]{ "slug": slug.current, "category": category->slug.current }
 `;
 
 const MAX_RETRIES = 3;
@@ -124,12 +134,14 @@ const resolveDocumentSlugs = async (payload) => {
   }));
 };
 
+// 戻り値: { categories: カテゴリスラッグ[], articlePaths: '/category/<cat>/<slug>'[] }
 const resolveCategorySlugs = async (slugs) => {
   if (!Array.isArray(slugs) || slugs.length === 0 || shouldSkipSanityFetch()) {
-    return [];
+    return { categories: [], articlePaths: [] };
   }
 
   const categories = new Set();
+  const articlePaths = new Set();
 
   try {
     const result = await client.fetch(CATEGORY_FROM_SLUG_QUERY, { slugs });
@@ -137,16 +149,56 @@ const resolveCategorySlugs = async (slugs) => {
       for (const entry of result) {
         const slug = typeof entry?.category === 'string' ? entry.category.trim() : '';
         if (slug) categories.add(slug);
+        const quizSlug = typeof entry?.slug === 'string' ? entry.slug.trim() : '';
+        if (slug && quizSlug) articlePaths.add(`/category/${slug}/${quizSlug}`);
       }
     }
   } catch (error) {
     console.error('[revalidate] Failed to resolve category slugs', error);
   }
 
-  return Array.from(categories);
+  return { categories: Array.from(categories), articlePaths: Array.from(articlePaths) };
 };
 
-const revalidatePaths = async ({ event, paths }) => {
+// Cloudflare Workers 実行時: Cache API（このデータセンター）とゾーンの URL 指定パージ。
+// CF_ZONE_ID / CF_PURGE_API_TOKEN（Zone > Cache Purge 権限のみのトークン）が未設定なら
+// ローカル削除だけ行い、他データセンターは CF_ARTICLE_CACHE_TTL 経過で自然に更新される。
+// タグ: 記事ごとの quiz-<slug>（UTM 付き URL のキャッシュも消える）と、一覧・フィード用の PAGE_TAG。
+const purgeOnCloudflare = async ({ event, paths, quizSlugs = [] }) => {
+  const uniquePaths = Array.from(new Set(paths.filter(Boolean)));
+  const origins = [event.url.origin, resolveSiteOrigin(publicEnv.PUBLIC_SITE_URL, SITE.url)];
+  const urls = buildPurgeUrls(uniquePaths, origins);
+  const outcome = await purgeCloudflareUrls({
+    platform: event.platform,
+    urls,
+    tags: [...quizSlugs.map(quizCacheTag), PAGE_TAG],
+    zoneId: env.CF_ZONE_ID,
+    apiToken: env.CF_PURGE_API_TOKEN
+  });
+
+  if (outcome.zone === 'skipped') {
+    console.warn(
+      '[revalidate] CF_ZONE_ID / CF_PURGE_API_TOKEN not configured. Purged local data center only.'
+    );
+  }
+  if (outcome.errors.length > 0) {
+    console.error('[revalidate] Cloudflare purge errors', outcome.errors);
+  }
+
+  const failed = outcome.zone === 'failed';
+  return uniquePaths.map((path) => ({
+    path,
+    method: outcome.zone === 'ok' ? 'cloudflare-zone-purge' : 'cloudflare-local-purge',
+    attempts: 1,
+    ...(failed ? { error: 'Cloudflare zone purge failed' } : {})
+  }));
+};
+
+const revalidatePaths = async ({ event, paths, quizSlugs }) => {
+  if (isCloudflarePlatform(event.platform)) {
+    return purgeOnCloudflare({ event, paths, quizSlugs });
+  }
+
   const uniquePaths = Array.from(new Set(paths.filter(Boolean)));
   const results = [];
 
@@ -233,7 +285,7 @@ export const POST = async (event) => {
   const directCategorySlugs = documents
     .filter((doc) => doc.types.includes('category'))
     .map((doc) => doc.slug);
-  const relatedCategorySlugs = await resolveCategorySlugs(quizSlugs);
+  const { categories: relatedCategorySlugs, articlePaths } = await resolveCategorySlugs(quizSlugs);
   const categorySlugs = Array.from(new Set([...directCategorySlugs, ...relatedCategorySlugs]));
   const paths = new Set(['/', '/quiz', '/sitemap.xml']);
 
@@ -257,7 +309,13 @@ export const POST = async (event) => {
     categories: categorySlugs
   });
 
-  const results = await revalidatePaths({ event, paths: Array.from(paths) });
+  // canonical の記事 URL（/category/<cat>/<slug>）は Cloudflare のキャッシュキーなのでパージ対象に含める。
+  // Vercel 経路は本番稼働中のため従来の対象パスのまま変えない。
+  if (isCloudflarePlatform(event.platform)) {
+    for (const articlePath of articlePaths) paths.add(articlePath);
+  }
+
+  const results = await revalidatePaths({ event, paths: Array.from(paths), quizSlugs });
 
   // 記事公開・更新時のみ IndexNow へ通知（削除・スケジュール解除は除外）
   const isPublishEvent = ['publish', 'update', 'create'].includes(
@@ -265,7 +323,8 @@ export const POST = async (event) => {
   );
   let indexNowResult = null;
   if (isPublishEvent && quizSlugs.length > 0) {
-    const baseUrl = env.VERCEL_URL ? `https://${env.VERCEL_URL}` : event.url.origin;
+    // 本番ドメインを基点にする（*.vercel.app / *.workers.dev の URL は IndexNow の host と一致せず拒否されるため）
+    const baseUrl = resolveIndexNowBase(publicEnv.PUBLIC_SITE_URL, SITE.url);
     const indexNowUrls = quizSlugs.flatMap((slug) => [
       `${baseUrl}/quiz/${slug}`,
       `${baseUrl}/quiz/${slug}/answer`

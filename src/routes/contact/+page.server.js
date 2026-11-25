@@ -3,7 +3,10 @@ import nodemailer from 'nodemailer';
 // 【重要】ビルドエラーを防ぐため、envオブジェクトとしてまとめて読み込む
 import { env } from '$env/dynamic/private';
 
-// nodemailer は Edge Runtime で動作しないため、Node.js ランタイムを明示する
+// nodemailer は Edge Runtime で動作しないため、Node.js ランタイムを明示する（Vercel 用）。
+// Cloudflare Workers（nodejs_compat）では node:net / node:tls 経由の SMTP を試す。
+// 動かない場合のフォールバック方針は docs/cloudflare-migration.md「お問い合わせメール」を参照。
+// 送信失敗時はこれまでどおり 500 を返し、送信できたように見せない。
 export const config = { runtime: 'nodejs22.x' };
 
 export const actions = {

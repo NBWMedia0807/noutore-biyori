@@ -1,11 +1,30 @@
-import adapter from '@sveltejs/adapter-vercel';
+// アダプターは環境変数 DEPLOY_TARGET で切り替える。
+//   未設定 / vercel  → @sveltejs/adapter-vercel（現行本番。既定のまま）
+//   cloudflare       → @sveltejs/adapter-cloudflare（Cloudflare Workers 移行用）
+// 同じ main を両方でビルドできるので、Vercel への切り戻しは「DEPLOY_TARGET を外して再デプロイ」だけで済む。
+// adapter-cloudflare は wrangler を読み込むため、Cloudflare ビルド時だけ動的 import する。
+const target = (process.env.DEPLOY_TARGET || 'vercel').trim().toLowerCase();
+
+if (!['vercel', 'cloudflare'].includes(target)) {
+  throw new Error(`Unknown DEPLOY_TARGET "${target}". Use "vercel" (default) or "cloudflare".`);
+}
+
+const createAdapter = async () => {
+  if (target === 'cloudflare') {
+    const { default: cloudflare } = await import('@sveltejs/adapter-cloudflare');
+    // 出力先・assets は wrangler.jsonc の main / assets.directory から読まれる
+    return cloudflare();
+  }
+  const { default: vercel } = await import('@sveltejs/adapter-vercel');
+  return vercel({
+    runtime: 'nodejs22.x'
+  });
+};
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   kit: {
-    adapter: adapter({
-      runtime: 'nodejs22.x'
-    }),
+    adapter: await createAdapter(),
     prerender: {
       handleHttpError: 'warn',
       handleMissingId: 'ignore',
