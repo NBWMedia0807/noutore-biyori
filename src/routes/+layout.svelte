@@ -13,6 +13,15 @@
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
+  const informationLinks = [
+    { href: '/about', label: '会社概要' },
+    { href: '/author/editorial-team', label: '著者情報' },
+    { href: '/privacy-policy', label: 'プライバシーポリシー' },
+    { href: '/terms', label: '利用規約' },
+    { href: '/disclaimer', label: '免責事項' },
+    { href: '/contact', label: 'お問い合わせ' }
+  ];
+
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
   /** @type {HTMLDivElement|null} */
@@ -346,12 +355,9 @@
       <nav google-side-rail-overlap="false" class="menu-section" aria-label="メニュー">
         <p class="menu-section-heading">メニュー</p>
         <ul class="menu-list">
-          <li><a href="/about" on:click={closeMenu}>会社概要</a></li>
-          <li><a href="/author/editorial-team" on:click={closeMenu}>著者情報</a></li>
-          <li><a href="/privacy-policy" on:click={closeMenu}>プライバシーポリシー</a></li>
-          <li><a href="/terms" on:click={closeMenu}>利用規約</a></li>
-          <li><a href="/disclaimer" on:click={closeMenu}>免責事項</a></li>
-          <li><a href="/contact" on:click={closeMenu}>お問い合わせ</a></li>
+          {#each informationLinks as { href, label } (href)}
+            <li><a {href} on:click={closeMenu}>{label}</a></li>
+          {/each}
         </ul>
       </nav>
     </div>
@@ -393,6 +399,11 @@
   <div class="footer-content">
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
+    <nav class="footer-links" aria-label="運営情報">
+      {#each informationLinks as { href, label } (href)}
+        <a {href}>{label}</a>
+      {/each}
+    </nav>
     <p class="footer-rights">合同会社NBWMedia All Rights Reserved.</p>
   </div>
 </footer>
@@ -407,6 +418,20 @@
   .footer-copy,
   .footer-tagline {
     margin: 0.25rem 0;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+  }
+
+  .footer-links a {
+    color: inherit;
+    text-decoration: underline;
   }
 
   .footer-rights {

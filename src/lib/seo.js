@@ -156,7 +156,7 @@ const buildArticleSchema = ({
     author: {
       '@type': 'Organization',
       name: authorName ?? SITE.authorName ?? SITE.organization.name,
-      ...(authorUrl && { url: authorUrl })
+      url: authorUrl ?? toAbsoluteUrl('/author/editorial-team')
     },
     publisher: {
       '@type': 'Organization',
