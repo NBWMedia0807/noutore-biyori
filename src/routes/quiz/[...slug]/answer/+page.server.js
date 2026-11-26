@@ -9,6 +9,7 @@ import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { getQuizStubQuizzesByCategory, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
 import { normalizeChallengePublishedAt, selectNextChallenge } from '$lib/utils/nextChallenge.js';
+import { isArithmeticQuiz, selectArithmeticLinks } from '$lib/utils/arithmeticLinks.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -57,20 +58,14 @@ const arithmeticLinksQuery = /* groq */ `*[
   title, "slug": slug.current
 }`;
 
-const calculationOrderTitle =
-  /計算の順[番序]|かっこ|カッコ|括弧|ど(?:れ|ちら|っち)を先に計算|(?:何|どこ)から計算/;
-
 async function fetchArithmeticLinks(quiz) {
-  const category = quiz.category;
-  if (category?.slug !== 'arithmetic-quiz' || (quiz.quizType != null && quiz.quizType !== 'arithmetic')) {
-    return [];
-  }
+  if (!isArithmeticQuiz(quiz)) return [];
 
   try {
     let candidates;
     if (isQuizStubEnabled()) {
       const now = Date.now();
-      candidates = getQuizStubQuizzesByCategory(category.slug)
+      candidates = getQuizStubQuizzesByCategory(quiz.category.slug)
         .filter((candidate) =>
           candidate.slug !== quiz.slug &&
           (candidate.quizType == null || candidate.quizType === 'arithmetic') &&
@@ -86,14 +81,7 @@ async function fetchArithmeticLinks(quiz) {
       candidates = await client.fetch(arithmeticLinksQuery, { slug: quiz.slug, categoryId: quiz.categoryId });
     }
 
-    const links = candidates.map(({ title, slug }) => ({ title, slug, category }));
-    if (calculationOrderTitle.test(quiz.title)) {
-      const sameType = links.filter(({ title }) => calculationOrderTitle.test(title));
-      if (sameType.length >= 3) return sameType.slice(0, 5);
-      const fallback = links.filter(({ title }) => !calculationOrderTitle.test(title));
-      return [...sameType, ...fallback].slice(0, 5);
-    }
-    return links.slice(0, 5);
+    return selectArithmeticLinks(quiz, candidates);
   } catch {
     return [];
   }
