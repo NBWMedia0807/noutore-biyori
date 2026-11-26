@@ -190,7 +190,23 @@ const STUB_QUIZZES = [
     publishedAt: '2024-01-20T00:00:00Z',
     _createdAt: '2024-01-20T00:00:00Z',
     _updatedAt: '2024-01-21T00:00:00Z'
-  }
+  },
+  ...[
+    ['order', '足し算と掛け算が混在、どれを先に計算する？'],
+    ['brackets', 'かっこのある式を計算しよう'],
+    ['priority', '計算の順番はわかる？'],
+    ['parentheses', '括弧を含む式の答えは？'],
+    ['addition', '暗算で足し算に挑戦']
+  ].map(([id, title], index) => ({
+    _id: `stub-arithmetic-${id}`,
+    slug: `arithmetic-quiz/stub-${id}`,
+    title,
+    category: { title: '計算クイズ', slug: 'arithmetic-quiz' },
+    quizType: 'arithmetic',
+    problemDescription: '式の答えを求めてください。',
+    answerExplanation: '計算の順番に注意して式を解きます。',
+    publishedAt: `2024-02-0${index + 1}T00:00:00Z`
+  }))
 ];
 
 export const isQuizStubEnabled = () => {
