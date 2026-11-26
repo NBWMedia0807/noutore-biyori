@@ -17,6 +17,7 @@ export const config = { runtime: 'nodejs22.x' };
 const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED_FILTER}][0]{
   _id,
   title,
+  quizType,
   "slug": slug.current,
   "categoryId": category._ref,
   category->{ title, "slug": slug.current },
@@ -48,6 +49,55 @@ const nextChallengeQuery = /* groq */ `{
   "older": *[${candidateFilter} && ${publishedTime} < dateTime($publishedAt)]
     | order(${publishedTime} desc, slug.current asc)[0]${candidateFields}
 }`;
+
+const arithmeticLinksQuery = /* groq */ `*[
+  ${candidateFilter}
+  && (quizType == "arithmetic" || !defined(quizType))
+] | order(${publishedTime} desc, slug.current asc)[0...8]{
+  title, "slug": slug.current
+}`;
+
+const calculationOrderTitle =
+  /計算の順[番序]|かっこ|カッコ|括弧|ど(?:れ|ちら|っち)を先に計算|(?:何|どこ)から計算/;
+
+async function fetchArithmeticLinks(quiz) {
+  const category = quiz.category;
+  if (category?.slug !== 'arithmetic-quiz' || (quiz.quizType != null && quiz.quizType !== 'arithmetic')) {
+    return [];
+  }
+
+  try {
+    let candidates;
+    if (isQuizStubEnabled()) {
+      const now = Date.now();
+      candidates = getQuizStubQuizzesByCategory(category.slug)
+        .filter((candidate) =>
+          candidate.slug !== quiz.slug &&
+          (candidate.quizType == null || candidate.quizType === 'arithmetic') &&
+          candidate.isRepublished !== true &&
+          !candidate._id.startsWith('drafts.') &&
+          (candidate.reviewStatus == null || candidate.reviewStatus === 'approved') &&
+          Date.parse(normalizeChallengePublishedAt(candidate)) <= now
+        )
+        .sort((a, b) => Date.parse(normalizeChallengePublishedAt(b)) - Date.parse(normalizeChallengePublishedAt(a)))
+        .slice(0, 8);
+    } else {
+      if (shouldSkipSanityFetch() || !quiz.categoryId) return [];
+      candidates = await client.fetch(arithmeticLinksQuery, { slug: quiz.slug, categoryId: quiz.categoryId });
+    }
+
+    const links = candidates.map(({ title, slug }) => ({ title, slug, category }));
+    if (calculationOrderTitle.test(quiz.title)) {
+      const sameType = links.filter(({ title }) => calculationOrderTitle.test(title));
+      if (sameType.length >= 3) return sameType.slice(0, 5);
+      const fallback = links.filter(({ title }) => !calculationOrderTitle.test(title));
+      return [...sameType, ...fallback].slice(0, 5);
+    }
+    return links.slice(0, 5);
+  } catch {
+    return [];
+  }
+}
 
 async function fetchNextChallenge(quiz) {
   if (isQuizStubEnabled() || shouldSkipSanityFetch()) {
@@ -81,12 +131,13 @@ export async function load({ params, setHeaders }) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
 
-  const [related, nextChallenge] = await Promise.all([
+  const [related, nextChallenge, arithmeticLinks] = await Promise.all([
     fetchRelatedQuizzes({
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
     fetchNextChallenge(quiz),
+    fetchArithmeticLinks(quiz),
   ]);
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
@@ -144,6 +195,7 @@ export async function load({ params, setHeaders }) {
     quiz,
     related,
     nextChallenge,
+    arithmeticLinks,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,

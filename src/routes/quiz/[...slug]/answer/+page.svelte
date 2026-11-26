@@ -175,13 +175,32 @@
     headingId="related-answer-heading"
   />
 
-  <!-- 正解ページ: ページ末の広告（下にボタンを置かない） -->
+  <!-- 正解ページ: 関連記事の後の広告 -->
   <div class="ad-buffer">
     <AdSense slot="1724332823" />
   </div>
+
+  {#if data.arithmeticLinks?.length}
+    <section class="arithmetic-links" aria-labelledby="arithmetic-links-heading">
+      <h2 id="arithmetic-links-heading">ほかの計算クイズに挑戦</h2>
+      <ul>
+        {#each data.arithmeticLinks as link}
+          <li><a href={quizHref(link)}>{link.title}</a></li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 </main>
 
 <style>
+  .arithmetic-links {
+    margin-top: 24px;
+  }
+
+  .arithmetic-links li + li {
+    margin-top: 8px;
+  }
+
   .answer-page {
     max-width: 820px;
     margin: 24px auto 56px;
