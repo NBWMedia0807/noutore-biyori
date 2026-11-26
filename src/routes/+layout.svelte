@@ -282,6 +282,8 @@
   description={seo.description}
   canonical={seo.canonical}
   image={seo.image}
+  imageWidth={seo.imageWidth}
+  imageHeight={seo.imageHeight}
   noindex={noindexPage}
   type={seo.type ?? 'website'}
   jsonld={seo.jsonld ?? null}
