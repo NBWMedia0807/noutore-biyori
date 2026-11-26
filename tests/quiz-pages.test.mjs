@@ -220,3 +220,13 @@ test(
     assert.doesNotMatch(await single.text(), /さらにもう一問！/);
   }
 );
+
+test('math-quiz の正解ページにほかの計算クイズへのリンクが出る', async () => {
+  const { response } = await fetchWithLog('/quiz/arithmetic-quiz/stub-order/answer');
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  const relatedSection = html.match(/<section[^>]*aria-labelledby="arithmetic-links-heading"[^>]*>[\s\S]*?<\/section>/)?.[0];
+  assert.ok(relatedSection);
+  assert.match(relatedSection, /<h2 id="arithmetic-links-heading"[^>]*>ほかの計算クイズに挑戦<\/h2>/);
+  assert.match(relatedSection, /href="\/quiz\/arithmetic-quiz\/stub-brackets"/);
+});

@@ -201,7 +201,7 @@ const STUB_QUIZZES = [
     _id: `stub-arithmetic-${id}`,
     slug: `arithmetic-quiz/stub-${id}`,
     title,
-    category: { title: '計算クイズ', slug: 'arithmetic-quiz' },
+    category: { title: '計算クイズ', slug: 'math-quiz' },
     quizType: 'arithmetic',
     problemDescription: '式の答えを求めてください。',
     answerExplanation: '計算の順番に注意して式を解きます。',
