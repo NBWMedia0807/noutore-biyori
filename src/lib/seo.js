@@ -1,3 +1,4 @@
+import { toProxiedSanityImageUrl } from './utils/imageProxy.js';
 import { HOME_BREADCRUMB, SITE } from './config/site.js';
 
 const MIN_DESCRIPTION_LENGTH = 120;
@@ -236,7 +237,7 @@ export const createPageSeo = ({
   })();
 
   const sourceImage = image ? toAbsoluteUrl(image) : SITE.defaultOgImage;
-  const ogImage = buildOgImageUrl(sourceImage);
+  const ogImage = toProxiedSanityImageUrl(buildOgImageUrl(sourceImage));
   const usesSanityImage = isSanityImageUrl(sourceImage);
   const dimensions = usesSanityImage
     ? new URL(sourceImage).pathname.match(/-(\d+)x(\d+)\.[^/]+$/)

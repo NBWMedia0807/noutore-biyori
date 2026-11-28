@@ -1,0 +1,8 @@
+// SvelteKit の生成先。デプロイ時は wrangler.jsonc の入口がこれを読み込む。
+{
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS"
+  }
+}

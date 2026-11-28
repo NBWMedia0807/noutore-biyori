@@ -2,6 +2,7 @@
 
 // 【修正1】v7以降は createClient を使う必要があります
 import { createClient } from '@sanity/client';
+import { withSanityEdgeCache } from '../server/sanity-edge-cache.js';
 import imageUrlBuilder from '@sanity/image-url';
 
 // 【修正2】パスを './sanityDefaults.js' から '../sanityDefaults.js' に変更（適用済み）
@@ -20,12 +21,12 @@ warnMissingSanityEnv({
 });
 
 // 【修正3】sanityClient() ではなく createClient() を使用
-export const client = createClient({
+export const client = withSanityEdgeCache(createClient({
   projectId,
   dataset,
   apiVersion,
   useCdn: true, // `false` if you want to ensure fresh data
-});
+}));
 
 const builder = imageUrlBuilder(client);
 
