@@ -1,12 +1,13 @@
 <script>
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
-  import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
   import { createSanityImageSet } from '$lib/utils/images.js';
+  import { sendEvent } from '$lib/ga';
   import { quizHref } from '$lib/utils/quizLinks.js';
 
   export let data;
-  const { quiz, nextChallengePosts = [] } = data;
+  const { quiz } = data;
+  $: nextChallenge = data.nextChallenge;
   const relatedQuizzes = Array.isArray(data?.related) ? data.related : [];
   const relatedFallback = quiz?.answerImage?.asset?.url ?? '/logo.svg';
 
@@ -21,16 +22,6 @@
   const answerImageDimensions =
     quiz?.answerImage?.asset?.metadata?.dimensions ?? { width: 960, height: 540 };
 
-  // 「さらにもう一問」サムネイルも変換URLに（CLS防止に width/height を付与）
-  const buildThumbSet = (image) =>
-    image?.asset
-      ? createSanityImageSet(image, {
-          width: 400,
-          height: 225,
-          quality: 75,
-          fallbackUrl: image.asset.url
-        })
-      : null;
   const closingDefault =
     'このシリーズは毎日更新。明日も新作を公開します。ブックマークしてまた挑戦してください！';
 
@@ -97,13 +88,11 @@
 <main class="answer-page hide-chrome">
   <header class="quiz-header">
     <p class="quiz-meta" aria-hidden="true">答え合わせ</p>
+    {#if quiz.category?.title && quiz.category?.slug}
+      <a class="category-chip" href={`/category/${quiz.category.slug}`}>{quiz.category.title}</a>
+    {/if}
     <h1 class="quiz-title">{quiz.title}｜正解</h1>
   </header>
-
-  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
-  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
-  <AdSense slot="4170928887" minHeight={250} />
 
   {#if answerImageSet?.src}
     <div class="answer-image">
@@ -120,8 +109,10 @@
     </div>
   {/if}
 
-  <!-- 正解ページ: 画像下の広告 -->
-  <AdSense slot="3921249196" />
+  <div class="image-ad">
+    <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
+    <AdSense slot="4170928887" minHeight={250} showLabel />
+  </div>
 
   {#if answerHtml}
     <section class="answer-explanation content-card">
@@ -134,6 +125,25 @@
 
   <p class="answer-note">※複数の正解を持つ場合もございます。あくまでも一例のご紹介に留まることを、ご了承ください。</p>
 
+  {#if nextChallenge}
+    <section class="next-challenge">
+      <h2 class="next-challenge__title">さらにもう一問！</h2>
+      <a
+        href={quizHref(nextChallenge)}
+        class="action-button next-challenge__button"
+        on:click={() =>
+          sendEvent('next_challenge_click', {
+            next_quiz_slug: nextChallenge.slug,
+            category_slug: nextChallenge.category.slug,
+            source: 'answer_page',
+          })}
+      >
+        {nextChallenge.title}
+        <span aria-hidden="true">→</span>
+      </a>
+    </section>
+  {/if}
+
   <nav class="back-nav">
     <a class="action-button secondary" href={questionPath}>
       <span aria-hidden="true">←</span>
@@ -141,7 +151,12 @@
     </a>
   </nav>
 
-  <SnsFollowCard />
+  <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
+  <div class="cta-ad-spacer" aria-hidden="true"></div>
+
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
 
   <section class="closing">
     <div class="closing-card">
@@ -149,48 +164,43 @@
     </div>
   </section>
 
-  <!-- 正解ページ: もう一問上の広告 -->
-  <AdSense slot="5428887502" />
-
-  {#if nextChallengePosts.length > 0}
-    <section class="next-challenge">
-      <h2 class="next-challenge__title">さらにもう一問！</h2>
-      <div class="next-challenge__grid">
-        {#each nextChallengePosts as post}
-          {@const thumb = buildThumbSet(post.image)}
-          <a href={quizHref(post)} class="next-challenge__card">
-            {#if thumb?.src}
-              <div class="next-challenge__image">
-                <img
-                  src={thumb.src}
-                  srcset={thumb.srcset}
-                  sizes="(min-width: 768px) 220px, 45vw"
-                  alt={post.title}
-                  loading="lazy"
-                  decoding="async"
-                  width="400"
-                  height="225"
-                />
-              </div>
-            {/if}
-            <p class="next-challenge__card-title">{post.title}</p>
-          </a>
-        {/each}
-      </div>
-    </section>
-  {/if}
-
-  <!-- 正解ページ: 関連記事上の広告 -->
-  <AdSense slot="1724332823" />
+  <!-- 正解ページ: 締めの後の広告（ボタン・次問カードから離す） -->
+  <div class="ad-buffer">
+    <AdSense slot="5428887502" />
+  </div>
 
   <RelatedQuizSection
     quizzes={relatedQuizzes}
     fallbackImageUrl={relatedFallback}
     headingId="related-answer-heading"
   />
+
+  <!-- 正解ページ: 関連記事の後の広告 -->
+  <div class="ad-buffer">
+    <AdSense slot="1724332823" />
+  </div>
+
+  {#if data.arithmeticLinks?.length}
+    <section class="arithmetic-links" aria-labelledby="arithmetic-links-heading">
+      <h2 id="arithmetic-links-heading">ほかの計算クイズに挑戦</h2>
+      <ul>
+        {#each data.arithmeticLinks as link}
+          <li><a href={quizHref(link)}>{link.title}</a></li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 </main>
 
 <style>
+  .arithmetic-links {
+    margin-top: 24px;
+  }
+
+  .arithmetic-links li + li {
+    margin-top: 8px;
+  }
+
   .answer-page {
     max-width: 820px;
     margin: 24px auto 56px;
@@ -219,12 +229,37 @@
     margin-bottom: 8px;
   }
 
+  .category-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 8px;
+    padding: 0.3rem 1rem;
+    border: 1px solid #f59e0b;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #78350f;
+    font-size: 1rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .category-chip:hover,
+  .category-chip:focus-visible {
+    text-decoration: underline;
+  }
+
   .quiz-title {
     font-size: clamp(1.7rem, 3.8vw, 2.35rem);
     line-height: 1.4;
     margin-bottom: 12px;
     color: #7c2d12;
     font-weight: 800;
+  }
+
+  .answer-image + .image-ad {
+    /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
+    padding-top: 28px;
   }
 
   .answer-image {
@@ -352,6 +387,8 @@
     padding: 28px 24px 32px;
     box-shadow: 0 18px 45px rgba(249, 115, 22, 0.14);
     border: 1px solid rgba(248, 196, 113, 0.35);
+    /* 画像下広告・解説が空でも「さらにもう一問」が広告に密着しないよう余白 */
+    margin-top: 24px;
   }
 
   .next-challenge__title {
@@ -362,68 +399,37 @@
     color: #9a3412;
   }
 
-  .next-challenge__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 14px;
-  }
-
-  .next-challenge__card {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: #fff;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(248, 196, 113, 0.35);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-  }
-
-  .next-challenge__card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 36px rgba(234, 88, 12, 0.18);
-  }
-
-  .next-challenge__image {
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #fff;
-  }
-
-  .next-challenge__image img {
-    display: block;
+  .next-challenge__button {
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-  }
-
-  .next-challenge__card:hover .next-challenge__image img {
-    transform: scale(1.04);
-  }
-
-  .next-challenge__card-title {
-    padding: 10px 12px 14px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #1f2937;
-    line-height: 1.4;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    min-height: 56px;
+    font-size: 1.125rem;
+    white-space: normal;
+    text-align: center;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: #78350f;
   }
 
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
      上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
-  .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+  .answer-page > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
   }
+
+  .cta-ad-spacer {
+    min-height: 48px;
+  }
+
+  /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も
+     適用しない（表示後に広告がボタンやカードへ寄るのを防ぐ）。未配信なら枠ごと畳む */
+  .ad-buffer {
+    padding-block: 24px;
+  }
+
+  .ad-buffer:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
+    display: none;
+  }
+
 
   @media (max-width: 640px) {
     .answer-page {
@@ -431,7 +437,7 @@
       gap: 20px;
     }
 
-    .answer-page :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+    .answer-page > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 

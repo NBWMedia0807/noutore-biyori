@@ -4,6 +4,7 @@
   import ArticleGrid from '$lib/components/ArticleGrid.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
+  import { quizHref } from '$lib/utils/quizLinks.js';
   import ArticleFeed from '$lib/components/ArticleFeed.svelte';
 
   export let data;
@@ -20,6 +21,7 @@
       )
     : [];
 
+  $: todayQuizzes = data?.todayQuizzes;
   $: pagination = data?.pagination ?? null;
 
   // サーバー側ページングを尊重。未設定時は12件を既定値に。
@@ -38,6 +40,30 @@
 <div class="home-page">
   <!-- TOPページ: 新着クイズ上の広告 -->
   <AdSense slot="5756190566" />
+
+  {#if todayQuizzes}
+    <section class="home-section today-section" aria-labelledby="today-heading" id="today-quizzes">
+      <h2 class="section-title" id="today-heading">{todayQuizzes.hasToday ? '今日のクイズ' : '最新のクイズ'}</h2>
+      <p class="today-note">
+        {todayQuizzes.dateLabel}（日本時間） · 毎日更新
+        {#if !todayQuizzes.hasToday}
+          <br />本日分はまだありません。{todayQuizzes.quizzes.length ? '最近公開したクイズをどうぞ。' : ''}
+        {/if}
+      </p>
+      {#if todayQuizzes.quizzes.length}
+        <ul class="today-links">
+          {#each todayQuizzes.quizzes as quiz (quiz.slug)}
+            <li>
+              <a href={quizHref(quiz)}>
+                {#if quiz.category?.title}<span>{quiz.category.title}</span>{/if}
+                <strong>{quiz.title}</strong>
+              </a>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </section>
+  {/if}
 
   {#if hasNewest}
     <section class="home-section" aria-labelledby="newest-heading" id="newest-quizzes">
@@ -98,6 +124,42 @@
     /* margin-bottom は不要: 親 .home-page の gap: 3rem がセクション間余白を管理 */
     display: grid;
     gap: 1.5rem;
+  }
+
+  .today-section {
+    gap: 0.75rem;
+  }
+
+  .today-note {
+    margin: 0;
+    color: #555d65;
+    font-size: 0.95rem;
+  }
+
+  .today-links {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .today-links a {
+    display: grid;
+    align-content: center;
+    min-height: 48px;
+    height: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid #f5d5a0;
+    border-radius: 12px;
+    background: #fff;
+    text-underline-offset: 0.2em;
+  }
+
+  .today-links span {
+    font-size: 0.8rem;
+    color: #712b13;
   }
 
   .section-title {

@@ -8,6 +8,7 @@ import { portableTextToHtml } from '$lib/utils/portableText';
 import { QUIZ_FEED_SAFE_FILTER } from '$lib/queries/quizVisibility.js';
 import { buildSmartViewAnalyticsSnippet } from '$lib/rss/feedAnalytics.js';
 import { dedupeBySlug, selectSmartnewsItems } from '$lib/rss/feedSlots.js';
+import { resizeSanityThumbnail } from '$lib/rss/thumbnailUrl.js';
 import {
 	MATCHSTICK_SLUG_PREFIX,
 	SMARTNEWS_RECIRCULATION_CONTENT,
@@ -249,7 +250,7 @@ export async function GET({ request }) {
 			}
 
 			// サムネイル画像
-			const thumbnail = primaryImageUrl || siteLogo;
+			const thumbnail = resizeSanityThumbnail(primaryImageUrl) || siteLogo;
 			// 日付
 			const pubDate = new Date(article.publishedAt || article._createdAt).toUTCString();
 
@@ -261,7 +262,8 @@ export async function GET({ request }) {
 						SMARTNEWS_RECIRCULATION_CONTENT.sponsoredLink,
 						article.category?.slug
 					);
-					const thumbnailUrl = getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage) || siteLogo;
+					const thumbnailUrl =
+						resizeSanityThumbnail(getImageUrl(quiz.problemImage) || getImageUrl(quiz.mainImage)) || siteLogo;
 					const title = escapeXml(quiz.title);
 					// UTM 付きURLには & が入るため、XML 属性としてエスケープする
 					return `<snf:sponsoredLink link="${escapeXml(link)}" thumbnail="${escapeXml(thumbnailUrl)}" title="${title}" advertiser="${siteTitle}"/>`;
@@ -287,7 +289,7 @@ export async function GET({ request }) {
 					);
 
 					// 関連リンクの画像URL
-					const relatedThumb = getImageUrl(related.problemImage) || getImageUrl(related.mainImage);
+					const relatedThumb = resizeSanityThumbnail(getImageUrl(related.problemImage) || getImageUrl(related.mainImage));
 					const thumbAttr = relatedThumb ? ` thumbnail="${escapeXml(relatedThumb)}"` : '';
 
 					return `<snf:relatedLink link="${escapeXml(relatedUrl)}" title="${escapeXml(related.title)}"${thumbAttr} />`;
@@ -321,7 +323,7 @@ export async function GET({ request }) {
 			<pubDate>${pubDate}</pubDate>
 			<description><![CDATA[${escapeXml(article.seoDescription || portableTextToPlainText(article.problemDescription).slice(0, 120))}]]></description>
 			<content:encoded><![CDATA[${safeContentHtml}]]></content:encoded>
-			<media:thumbnail url="${thumbnail}"/>
+			<media:thumbnail url="${escapeXml(thumbnail)}"/>
 			<dc:creator>脳トレ日和</dc:creator>
 			<category>${escapeXml(article.category?.title || article.category?.name || 'クイズ')}</category>
 			${advertisementXml}

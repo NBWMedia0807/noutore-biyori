@@ -40,10 +40,10 @@ export const PAGE_TAG = 'noutore-page';
 /** Cloudflare の purge_cache は1回あたりの URL・タグ数に上限があるため分割する */
 export const PURGE_BATCH_SIZE = 30;
 
-// ISR 対象だった記事ページ
+// canonical 記事と、Sanity のフル slug を使うクイズの問題・解答ページ
 const ARTICLE_PATH_PATTERNS = [
   /^\/category\/[^/]+\/([^/]+)$/, // /category/[categorySlug]/[quizSlug]（canonical）
-  /^\/quiz\/([^/]+)\/answer$/ // /quiz/[slug]/answer（解答ページ）
+  /^\/quiz\/([^/]+(?:\/[^/]+)*?)(?:\/answer)?$/ // /quiz/[...slug]（末尾の /answer は slug から除く）
 ];
 
 /**

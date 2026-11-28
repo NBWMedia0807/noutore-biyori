@@ -3,6 +3,7 @@ import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { notifyIndexNow } from '$lib/server/indexnow.js';
+import { buildQuizIndexNowUrls } from '$lib/server/indexnow-visibility.js';
 import { SITE } from '$lib/config/site.js';
 import { resolveIndexNowBase, resolveSiteOrigin } from '$lib/server/site-origin.js';
 import {
@@ -10,16 +11,49 @@ import {
   buildPurgeUrls,
   isCloudflarePlatform,
   purgeCloudflareUrls,
-  quizCacheTag
+  quizCacheTag,
 } from '$lib/server/edge-cache.js';
 
 const WEBHOOK_SECRET = env.SANITY_REVALIDATE_SECRET || env.VERCEL_REVALIDATE_TOKEN || '';
 const REVALIDATE_TOKEN = env.VERCEL_REVALIDATE_TOKEN || env.SANITY_REVALIDATE_SECRET || '';
 
-const SLUG_QUERY = /* groq */ `*[_id in $ids]{ _id, _type, "slug": slug.current }`;
+const SLUG_QUERY = /* groq */ `*[_id in $ids]{
+  _id,
+  _type,
+  "slug": slug.current,
+  publishedAt,
+  _createdAt,
+  reviewStatus
+}`;
 const CATEGORY_FROM_SLUG_QUERY = /* groq */ `
-  *[_type == "quiz" && slug.current in $slugs]{ "slug": slug.current, "category": category->slug.current }
+  *[_type == "quiz" && slug.current in $slugs]{
+    _id,
+    "slug": slug.current,
+    "category": category->slug.current,
+    publishedAt,
+    _createdAt,
+    reviewStatus
+  }
 `;
+
+const PUBLISH_META_FIELDS = ['_id', 'publishedAt', '_createdAt', 'reviewStatus'];
+
+const publishMetaFrom = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const meta = {};
+  for (const field of PUBLISH_META_FIELDS) {
+    if (field in value) meta[field] = value[field];
+  }
+  return meta;
+};
+
+const resolveWaitUntil = (platform) => {
+  const ctx = platform?.ctx || platform?.context;
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    return (promise) => ctx.waitUntil(promise);
+  }
+  return null;
+};
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 500;
@@ -76,40 +110,45 @@ const collectDocumentIds = (payload) => {
 const resolveDocumentSlugs = async (payload) => {
   const slugMap = new Map();
 
-  const addSlug = (slug, type) => {
+  const addSlug = (slug, type, meta) => {
     const normalized = typeof slug === 'string' ? slug.trim() : '';
     if (!normalized) return;
-    const existing = slugMap.get(normalized);
-    if (existing) {
-      if (type) existing.types.add(type);
-      return;
+    let existing = slugMap.get(normalized);
+    if (!existing) {
+      existing = { slug: normalized, types: new Set(), meta: {} };
+      slugMap.set(normalized, existing);
     }
-    const types = new Set();
-    if (type) types.add(type);
-    slugMap.set(normalized, { slug: normalized, types });
+    if (type) existing.types.add(type);
+    if (!meta) return;
+    for (const field of PUBLISH_META_FIELDS) {
+      if (field in meta && existing.meta[field] === undefined) existing.meta[field] = meta[field];
+    }
   };
 
-  const addFromValue = (value, typeHint) => {
+  const addFromValue = (value, typeHint, meta) => {
     for (const candidate of toStringArray(value)) {
-      addSlug(candidate, typeHint);
+      addSlug(candidate, typeHint, meta);
     }
   };
 
-  const inspectDocumentLike = (value) => {
+  const inspectDocumentLike = (value, { withMeta = true } = {}) => {
     if (!value || typeof value !== 'object') return;
     const typeHint = typeof value._type === 'string' ? value._type.trim() : undefined;
+    const meta = withMeta ? publishMetaFrom(value) : null;
     if (value.slug !== undefined) {
-      addFromValue(value.slug, typeHint);
+      addFromValue(value.slug, typeHint, meta);
     } else {
-      addFromValue(value, typeHint);
+      addFromValue(value, typeHint, meta);
     }
   };
 
-  addFromValue(payload?.slug);
+  addFromValue(payload?.slug, undefined, publishMetaFrom(payload));
   addFromValue(payload?.slugs);
+  inspectDocumentLike(payload);
   inspectDocumentLike(payload?.document);
   inspectDocumentLike(payload?.current);
-  inspectDocumentLike(payload?.previous);
+  // previous の publishedAt は古い値。公開判定に使うと、未来日へ変更した URL を送ってしまう。
+  inspectDocumentLike(payload?.previous, { withMeta: false });
   inspectDocumentLike(payload?.after);
   inspectDocumentLike(payload?.payload);
 
@@ -120,7 +159,7 @@ const resolveDocumentSlugs = async (payload) => {
       if (Array.isArray(result)) {
         for (const entry of result) {
           const type = typeof entry?._type === 'string' ? entry._type.trim() : undefined;
-          addFromValue(entry?.slug, type);
+          addFromValue(entry?.slug, type, publishMetaFrom(entry));
         }
       }
     } catch (error) {
@@ -130,18 +169,30 @@ const resolveDocumentSlugs = async (payload) => {
 
   return Array.from(slugMap.values()).map((entry) => ({
     slug: entry.slug,
-    types: Array.from(entry.types)
+    types: Array.from(entry.types),
+    ...entry.meta,
   }));
 };
 
-// 戻り値: { categories: カテゴリスラッグ[], articlePaths: '/category/<cat>/<slug>'[] }
+const fillPublishMeta = (doc, fetched) => {
+  if (!fetched) return doc;
+  const next = { ...doc };
+  for (const field of PUBLISH_META_FIELDS) {
+    if (next[field] === undefined && field in fetched) next[field] = fetched[field];
+  }
+  return next;
+};
+
+// 戻り値: { categories, articlePaths, quizzes }
+// quizzes は公開判定（publishedAt）に使う。未来日の記事もここには含まれる。
 const resolveCategorySlugs = async (slugs) => {
   if (!Array.isArray(slugs) || slugs.length === 0 || shouldSkipSanityFetch()) {
-    return { categories: [], articlePaths: [] };
+    return { categories: [], articlePaths: [], quizzes: [] };
   }
 
   const categories = new Set();
   const articlePaths = new Set();
+  const quizzes = [];
 
   try {
     const result = await client.fetch(CATEGORY_FROM_SLUG_QUERY, { slugs });
@@ -151,13 +202,14 @@ const resolveCategorySlugs = async (slugs) => {
         if (slug) categories.add(slug);
         const quizSlug = typeof entry?.slug === 'string' ? entry.slug.trim() : '';
         if (slug && quizSlug) articlePaths.add(`/category/${slug}/${quizSlug}`);
+        if (quizSlug) quizzes.push({ ...entry, slug: quizSlug });
       }
     }
   } catch (error) {
     console.error('[revalidate] Failed to resolve category slugs', error);
   }
 
-  return { categories: Array.from(categories), articlePaths: Array.from(articlePaths) };
+  return { categories: Array.from(categories), articlePaths: Array.from(articlePaths), quizzes };
 };
 
 // Cloudflare Workers 実行時: Cache API（このデータセンター）とゾーンの URL 指定パージ。
@@ -173,7 +225,7 @@ const purgeOnCloudflare = async ({ event, paths, quizSlugs = [] }) => {
     urls,
     tags: [...quizSlugs.map(quizCacheTag), PAGE_TAG],
     zoneId: env.CF_ZONE_ID,
-    apiToken: env.CF_PURGE_API_TOKEN
+    apiToken: env.CF_PURGE_API_TOKEN,
   });
 
   if (outcome.zone === 'skipped') {
@@ -190,7 +242,7 @@ const purgeOnCloudflare = async ({ event, paths, quizSlugs = [] }) => {
     path,
     method: outcome.zone === 'ok' ? 'cloudflare-zone-purge' : 'cloudflare-local-purge',
     attempts: 1,
-    ...(failed ? { error: 'Cloudflare zone purge failed' } : {})
+    ...(failed ? { error: 'Cloudflare zone purge failed' } : {}),
   }));
 };
 
@@ -228,7 +280,7 @@ const revalidatePaths = async ({ event, paths, quizSlugs }) => {
         const targetUrl = new URL(path, baseUrl);
         const response = await fetch(targetUrl, {
           method: 'GET',
-          headers: { 'x-prerender-revalidate': REVALIDATE_TOKEN }
+          headers: { 'x-prerender-revalidate': REVALIDATE_TOKEN },
         });
 
         if (!response.ok) {
@@ -285,7 +337,15 @@ export const POST = async (event) => {
   const directCategorySlugs = documents
     .filter((doc) => doc.types.includes('category'))
     .map((doc) => doc.slug);
-  const { categories: relatedCategorySlugs, articlePaths } = await resolveCategorySlugs(quizSlugs);
+  const {
+    categories: relatedCategorySlugs,
+    articlePaths,
+    quizzes: fetchedQuizzes,
+  } = await resolveCategorySlugs(quizSlugs);
+  const fetchedBySlug = new Map(fetchedQuizzes.map((quiz) => [quiz.slug, quiz]));
+  const quizCandidates = documents
+    .filter((doc) => doc.types.length === 0 || doc.types.includes('quiz'))
+    .map((doc) => fillPublishMeta(doc, fetchedBySlug.get(doc.slug)));
   const categorySlugs = Array.from(new Set([...directCategorySlugs, ...relatedCategorySlugs]));
   const paths = new Set(['/', '/quiz', '/sitemap.xml']);
 
@@ -306,7 +366,7 @@ export const POST = async (event) => {
   console.log('[revalidate] Triggered', {
     transition: logLabel,
     paths: Array.from(paths),
-    categories: categorySlugs
+    categories: categorySlugs,
   });
 
   // canonical の記事 URL（/category/<cat>/<slug>）は Cloudflare のキャッシュキーなのでパージ対象に含める。
@@ -317,19 +377,40 @@ export const POST = async (event) => {
 
   const results = await revalidatePaths({ event, paths: Array.from(paths), quizSlugs });
 
-  // 記事公開・更新時のみ IndexNow へ通知（削除・スケジュール解除は除外）
+  // 記事公開・更新時のみ IndexNow へ通知（削除・スケジュール解除は除外）。
+  // publishedAt が未来、または未公開の URL は送らない。ページは公開前を 404 にしている。
+  // 送信の失敗や 429 ではこの webhook の HTTP ステータスを変えない。
   const isPublishEvent = ['publish', 'update', 'create'].includes(
     (payload?.transition || payload?.operation || '').toLowerCase()
   );
   let indexNowResult = null;
-  if (isPublishEvent && quizSlugs.length > 0) {
+  if (isPublishEvent && quizCandidates.length > 0) {
     // 本番ドメインを基点にする（*.vercel.app / *.workers.dev の URL は IndexNow の host と一致せず拒否されるため）
     const baseUrl = resolveIndexNowBase(publicEnv.PUBLIC_SITE_URL, SITE.url);
-    const indexNowUrls = quizSlugs.flatMap((slug) => [
-      `${baseUrl}/quiz/${slug}`,
-      `${baseUrl}/quiz/${slug}/answer`
-    ]);
-    indexNowResult = await notifyIndexNow(indexNowUrls);
+    const { urls: indexNowUrls, skipped } = buildQuizIndexNowUrls(baseUrl, quizCandidates);
+    if (skipped.length > 0) {
+      console.log('[indexnow] skipped not-yet-public urls', {
+        count: skipped.length,
+        slugs: skipped.slice(0, 20),
+      });
+    }
+    if (indexNowUrls.length === 0) {
+      indexNowResult = {
+        ok: true,
+        skipped: true,
+        reason: 'not-public',
+        skippedCount: skipped.length,
+      };
+    } else {
+      try {
+        indexNowResult = await notifyIndexNow(indexNowUrls, {
+          waitUntil: resolveWaitUntil(event.platform),
+        });
+      } catch (error) {
+        console.error('[indexnow] unexpected failure', error);
+        indexNowResult = { ok: true, skipped: true, reason: 'error' };
+      }
+    }
   }
 
   const failed = results.filter((result) => result.error);
@@ -341,7 +422,7 @@ export const POST = async (event) => {
       revalidated: results,
       slugs: quizSlugs,
       categories: categorySlugs,
-      indexNow: indexNowResult
+      indexNow: indexNowResult,
     },
     { status }
   );

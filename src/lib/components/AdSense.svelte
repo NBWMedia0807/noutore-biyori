@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { isWorkersDevHost } from '$lib/staging-host.js';
@@ -12,6 +12,7 @@
    * @type {number}
    */
   export let minHeight = 0;
+  export let showLabel = false;
 
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
@@ -27,21 +28,39 @@
   let intersectionObs = null;
   let adPushed = false;
 
+  /** ポーリング開始済みのパス（同じパスでの二重 push 防止） */
+  let pushedPath = '';
+  /** 遷移ごとに増やす世代番号。古い遷移の tick 待ちを捨てるために使う */
+  let navToken = 0;
+  let destroyed = false;
+
   // ページ遷移時は {#key currentPath} で <ins> をDOMごと作り直す。
   // 既に広告が入った <ins> への再pushはAdSense側で拒否され、
   // 前ページの広告が表示され続けてしまう（インプレッション損失）ため。
+  // ※ この $: はDOM更新より前に走るので、ここで直接 push すると
+  //   adRef が古い <ins>（または null）のままになる。tick() 後に監視を再開する。
   $: if (browser && $page?.url?.pathname && $page.url.pathname !== currentPath) {
     currentPath = $page.url.pathname;
     if (initialized && adsenseRequestsAllowed()) {
-      adPushed = false;
-      stopPolling();
-      if (containerRef) {
-        containerRef.classList.remove('revealed');
-        // unfilled時に付与した display:none を解除して新しい枠を計測可能にする
-        containerRef.style.removeProperty('display');
-      }
-      observeViewport();
+      resetForNavigation();
     }
+  }
+
+  async function resetForNavigation() {
+    const token = ++navToken;
+    adPushed = false;
+    pushedPath = '';
+    intersectionObs?.disconnect();
+    stopPolling();
+    if (containerRef) {
+      containerRef.classList.remove('revealed');
+      // unfilled時に付与した display:none を解除して新しい枠を計測可能にする
+      containerRef.style.removeProperty('display');
+    }
+    // {#key} で新しい <ins> が DOM に載り、bind:this が更新されるのを待つ
+    await tick();
+    if (destroyed || token !== navToken || !adsenseRequestsAllowed()) return;
+    observeViewport();
   }
 
   function adsenseRequestsAllowed() {
@@ -50,14 +69,15 @@
 
   function observeViewport() {
     intersectionObs?.disconnect();
-    if (!containerRef) return;
+    if (!containerRef || destroyed) return;
 
     intersectionObs = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !adPushed) {
-          adPushed = true;
-          pushAd();
-          intersectionObs?.disconnect();
+          // ポーリング開始時に監視を外す。ins 未接続なら次の交差で再試行する
+          if (pushAd()) {
+            intersectionObs?.disconnect();
+          }
         }
       },
       { rootMargin: '400px 0px' }
@@ -66,11 +86,19 @@
   }
 
   function pushAd() {
-    if (!adRef || !adsenseRequestsAllowed()) return;
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (_) {}
+    if (!adRef || destroyed || !adsenseRequestsAllowed()) return false;
+    if (!adRef.isConnected) return false;
+    // 同じパスで二重 push しない
+    if (pushedPath === currentPath) return false;
+    pushedPath = currentPath;
+    adPushed = true;
+    if (!adRef.hasAttribute('data-adsbygoogle-status')) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (_) {}
+    }
     startPolling();
+    return true;
   }
 
   function startPolling() {
@@ -129,6 +157,8 @@
   });
 
   onDestroy(() => {
+    destroyed = true;
+    navToken++;
     stopPolling();
     intersectionObs?.disconnect();
   });
@@ -140,6 +170,9 @@
   style={minHeight > 0 ? `min-height:${minHeight}px` : null}
   bind:this={containerRef}
 >
+  {#if showLabel}
+    <p class="ad-label">広告</p>
+  {/if}
   {#key currentPath}
     <ins
       bind:this={adRef}
@@ -154,6 +187,13 @@
 </div>
 
 <style>
+  .ad-label {
+    margin: 0 0 8px;
+    color: #475569;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
   .adsense-container {
     position: relative;
     width: 100%;
@@ -173,8 +213,10 @@
     visibility: hidden;
   }
 
-  /* 広告ロード完了後に表示 */
-  .adsense-container.revealed {
+  /* 広告ロード完了後に表示。
+     revealed は classList で付けるため、:global を付けないと Svelte 5 が
+     「未使用セレクタ」として出力から削除し、枠が hidden のままになる */
+  .adsense-container:global(.revealed) {
     visibility: visible;
   }
 
@@ -185,7 +227,7 @@
   }
 
   /* unfilled 時は非表示 */
-  .adsense-container:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+  .adsense-container:has(> :global(ins.adsbygoogle[data-ad-status='unfilled'])) {
     display: none !important;
   }
 </style>

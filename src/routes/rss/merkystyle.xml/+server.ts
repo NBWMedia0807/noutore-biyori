@@ -5,8 +5,10 @@ import { shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { SANITY_DEFAULTS } from '$lib/sanityDefaults.js';
 import { getAbsoluteUrl } from '$lib/rss/getAbsoluteUrl';
 import { portableTextToHtml, portableTextToPlain } from '$lib/rss/portableText';
-import { resolveImage } from '$lib/rss/images';
+import { resolveImage, type ResolvedImage } from '$lib/rss/images';
+import { resizeSanityThumbnail } from '$lib/rss/thumbnailUrl.js';
 import { toRfc822 } from '$lib/rss/toRfc822';
+import { buildMerkystyleDescription } from '$lib/rss/merkystyleDescription.js';
 import { resolvePublishedDate } from '$lib/queries/quizVisibility.js';
 import { RSS_MERKYSTYLE_QUERY } from '$lib/queries/rssMerkystyle.groq.js';
 import { withFeedUtm, FEED_UTM_SOURCE } from '$lib/utils/feedUtm.js';
@@ -57,12 +59,14 @@ const toPlainText = (value: unknown): string => {
   return portableTextToPlain(value);
 };
 
-const renderImageHtml = (source: any, alt: string): string => {
-  const resolved = resolveImage([source], { minWidth: 640 });
+const renderResolvedImageHtml = (resolved: ResolvedImage | null, alt: string): string => {
   if (!resolved?.url) return '';
   const safeAlt = resolved.alt || alt;
   return `<p><img src="${escapeAttribute(resolved.url)}" alt="${escapeAttribute(safeAlt)}" /></p>`;
 };
+
+const renderImageHtml = (source: any, alt: string): string =>
+  renderResolvedImageHtml(resolveImage([source], { minWidth: 640 }), alt);
 
 const wrapCdata = (value: string): string => {
   const sanitized = sanitizeXmlText(value);
@@ -70,50 +74,13 @@ const wrapCdata = (value: string): string => {
   return `<![CDATA[${sanitized.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 };
 
-const compactWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const dedupeFragments = (text: string): string[] => {
-  const fragments = text
-    .split(/(?<=[。！？!?])/u)
-    .map((fragment) => compactWhitespace(fragment))
-    .filter(Boolean);
-  const seen = new Set<string>();
-  const unique: string[] = [];
-  for (const fragment of fragments) {
-    const key = fragment.replace(/[\s。、,.!?！？]/gu, '');
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    unique.push(fragment);
-  }
-  return unique;
-};
-
-const buildDescription = (plain: string, fallback: string, extras: string[] = []): string => {
-  const candidates = [plain, ...extras, fallback].filter(Boolean);
-  const raw = candidates.join(' ').trim();
-  if (!raw) return '';
-  const normalized = compactWhitespace(raw);
-  const fragments = dedupeFragments(normalized);
-  const title = fallback ? compactWhitespace(fallback) : '';
-  const merged = fragments.length > 0 ? fragments.join(' ') : normalized;
-  const withoutTitle = title ? merged.replace(new RegExp(`^${escapeRegExp(title)}\s*`), '') : merged;
-  const cleaned = compactWhitespace(withoutTitle || merged);
-  const limit = 180;
-  if (cleaned.length <= limit) return cleaned;
-  const sliced = cleaned.slice(0, limit - 1);
-  const trimmed = sliced.replace(/[\s、。,.!?！？]+$/u, '') || sliced;
-  return `${trimmed}…`;
-};
-
 const pickThumbnail = (doc: any): string | null => {
   if (typeof doc?.thumbnailUrl === 'string' && doc.thumbnailUrl.trim()) {
-    return getAbsoluteUrl(doc.thumbnailUrl.trim());
+    return resizeSanityThumbnail(getAbsoluteUrl(doc.thumbnailUrl.trim()));
   }
-  const resolved = resolveImage([doc?.mainImage, doc?.problemImage, doc?.answerImage], { minWidth: 300 });
+  const resolved = resolveImage([doc?.mainImage, doc?.problemImage, doc?.answerImage], { minWidth: 640 });
   if (!resolved?.url) return null;
-  return resolved.url;
+  return resizeSanityThumbnail(resolved.url);
 };
 
 const pickEnclosure = (doc: any) =>
@@ -158,13 +125,22 @@ const toItem = (doc: any) => {
   const problemImageHtml = renderImageHtml(doc?.problemImage ?? doc?.questionImage, `${title}の問題画像`);
   const answerImageHtml = renderImageHtml(doc?.answerImage, `${title}の解答画像`);
   const enclosure = pickEnclosure(doc);
-  const enclosureHtml = renderImageHtml(enclosure, `${doc?.title ?? '脳トレ問題'}の問題画像`);
+  // enclosure は解決済みの画像なので、もう一度 resolveImage に通さない
+  // （以前は通していたため、全記事で [rss/images] Failed to build image URL が出ていた）
+  const enclosureHtml = renderResolvedImageHtml(
+    enclosure,
+    `${doc?.title ?? '脳トレ問題'}の問題画像`
+  );
   const plain = toPlainText(doc?.body);
   const plainDescription = toPlainText(doc?.problemDescription);
   const plainHints = toPlainText(doc?.hints);
-  const plainAnswer = toPlainText(doc?.answerExplanation);
-  const plainClosing = toPlainText(doc?.closingMessage);
-  const description = buildDescription(plain, title, [plainDescription, plainHints, plainAnswer, plainClosing]);
+  // 紹介文は問題文＋ヒントだけ（解答・締めは入れない。タイトルは末尾に足さない）。
+  const description = buildMerkystyleDescription({
+    problemDescription: plainDescription,
+    hints: plainHints,
+    body: plain,
+    title
+  });
 
   const contentParts: string[] = [];
   if (mainImageHtml) {

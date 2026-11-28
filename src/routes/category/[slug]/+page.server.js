@@ -1,7 +1,9 @@
+import { resolveRequestedPage } from '$lib/server/pagination.js';
 import { error, redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import {
   createCategoryDescription,
+  createMatchstickCategoryDescription,
   createPageSeo,
   portableTextToPlain,
   resolveOgImageFromQuizzes
@@ -34,13 +36,6 @@ const CATEGORY_QUERY = /* groq */ `
 }`;
 
 const CATEGORY_PAGE_SIZE = 12;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  const integer = Math.trunc(parsed);
-  return integer >= 1 ? integer : 1;
-};
 
 const QUIZZES_BY_CATEGORY_QUERY = /* groq */ `{
   "newest": *[
@@ -118,6 +113,15 @@ export const entries = async () => {
   }
 };
 
+const createCategorySeo = (slug, totalCount, options) =>
+  createPageSeo(slug === 'matchstick-quiz'
+    ? {
+        ...options,
+        description: createMatchstickCategoryDescription(totalCount),
+        appendSiteDescription: false
+      }
+    : options);
+
 const createStubCategoryResponse = (slug, path, page, limit) => {
   const stubCategory = getQuizStubCategory(slug);
   const stubQuizzes = getQuizStubQuizzesByCategory(slug);
@@ -143,7 +147,7 @@ const createStubCategoryResponse = (slug, path, page, limit) => {
     quizzes: previews,
     totalCount,
     breadcrumbs,
-    seo: createPageSeo({
+    seo: createCategorySeo(slug, totalCount, {
       title: stubCategory.title,
       description: overview,
       path,
@@ -179,7 +183,7 @@ const createFallbackResponse = (slug, path) => {
     newest: [],
     quizzes: [],
     totalCount: 0,
-    seo: createPageSeo({
+    seo: createCategorySeo(slug, 0, {
       title: normalizedTitle,
       description: `${normalizedTitle}のクイズ一覧ページです。`,
       path,
@@ -208,7 +212,7 @@ export const load = async (event) => {
   // 他の取得より先に判定する。
   await assertCategoryNotRetracted(slug);
 
-  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const requestedPage = resolveRequestedPage(url);
   const offset = (requestedPage - 1) * CATEGORY_PAGE_SIZE;
 
   const resolveStubResponse = () => createStubCategoryResponse(slug, url.pathname, requestedPage, CATEGORY_PAGE_SIZE);
@@ -267,7 +271,7 @@ export const load = async (event) => {
     const breadcrumbs = [{ name: category.title, url: url.pathname }];
     const imageUrl = resolveOgImageFromQuizzes(newest, '/logo.svg');
 
-    const seo = createPageSeo({
+    const seo = createCategorySeo(slug, totalCount, {
       title: category.title,
       description: overview,
       path: url.pathname,

@@ -10,6 +10,9 @@ const fallbackTitleFromSlug = (value) => {
   return sanitized.replace(/[-_]+/g, ' ');
 };
 
+// ローカルのプレビューで画像と広告の順を確認するための仮画像。
+const previewImage = { asset: { url: '/logo.svg' } };
+
 const STUB_QUIZZES = [
   {
     _id: 'stub-quiz-a',
@@ -17,13 +20,13 @@ const STUB_QUIZZES = [
     title: 'サンプルクイズA',
     category: { title: 'サンプルカテゴリ', slug: 'sample-category' },
     mainImage: null,
-    problemImage: null,
+    problemImage: previewImage,
     problemDescription: '図形の位置関係から隠れた規則を見つけてください。',
     hints: [
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント1: 左右の並びに注目しましょう。' }] },
       { _type: 'block', children: [{ _type: 'span', text: 'ヒント2: 数字と図形の対応関係を確認してください。' }] }
     ],
-    answerImage: null,
+    answerImage: previewImage,
     answerExplanation: [
       { _type: 'block', children: [{ _type: 'span', text: '図形の位置を数字に置き換えると答えが導けます。' }] }
     ],
@@ -55,6 +58,15 @@ const STUB_QUIZZES = [
     publishedAt: '2024-01-05T00:00:00Z',
     _createdAt: '2024-01-05T00:00:00Z',
     _updatedAt: '2024-01-06T00:00:00Z'
+  },
+  {
+    _id: 'stub-quiz-next',
+    slug: 'sample-quiz-next',
+    title: 'サンプルクイズ 次の問題',
+    category: { title: 'サンプルカテゴリ', slug: 'sample-category' },
+    problemDescription: '図形の並びから次に来る図形を考えてください。',
+    answerExplanation: '同じ並びが繰り返されるので、次に来るのは最初の図形です。',
+    publishedAt: '2024-01-02T00:00:00Z',
   },
   {
     _id: 'stub-quiz-c',
@@ -178,7 +190,23 @@ const STUB_QUIZZES = [
     publishedAt: '2024-01-20T00:00:00Z',
     _createdAt: '2024-01-20T00:00:00Z',
     _updatedAt: '2024-01-21T00:00:00Z'
-  }
+  },
+  ...[
+    ['order', '足し算と掛け算が混在、どれを先に計算する？'],
+    ['brackets', 'かっこのある式を計算しよう'],
+    ['priority', '計算の順番はわかる？'],
+    ['parentheses', '括弧を含む式の答えは？'],
+    ['addition', '暗算で足し算に挑戦']
+  ].map(([id, title], index) => ({
+    _id: `stub-arithmetic-${id}`,
+    slug: `arithmetic-quiz/stub-${id}`,
+    title,
+    category: { title: '計算クイズ', slug: 'math-quiz' },
+    quizType: 'arithmetic',
+    problemDescription: '式の答えを求めてください。',
+    answerExplanation: '計算の順番に注意して式を解きます。',
+    publishedAt: `2024-02-0${index + 1}T00:00:00Z`
+  }))
 ];
 
 export const isQuizStubEnabled = () => {

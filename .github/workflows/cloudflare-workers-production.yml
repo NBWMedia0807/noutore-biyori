@@ -1,0 +1,88 @@
+# 本番 Worker（noutore-biyori）を workers.dev へ出す。カスタムドメインは付けない。
+#
+# - deploy/cloudflare-production への push だけ。main や試験ブランチでは動かない。
+# - wrangler.jsonc の name は noutore-biyori。routes / custom_domain は無い。
+# - 試験用の _headers（全静的ファイルを noindex）は付けない。
+#   *.workers.dev の noindex は Worker がホスト名で付ける。
+# - 避ける時刻（日本時間）: 08:00 / 09:00 / 12:30 / 22:00 の前後。
+# - GitHub Secrets は試験と同じ（値はログに出さない）:
+#     CLOUDFLARE_API_TOKEN   … Account › Workers Scripts › Edit のみ
+#     CLOUDFLARE_ACCOUNT_ID
+name: Cloudflare Workers deploy (production script)
+
+on:
+  push:
+    branches:
+      - deploy/cloudflare-production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-workers-production
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Refuse quiet hours (JST)
+        run: |
+          node --input-type=module <<'EOF'
+          const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+          }).formatToParts(new Date());
+          const hour = Number(parts.find((p) => p.type === 'hour').value);
+          const minute = Number(parts.find((p) => p.type === 'minute').value);
+          const now = hour * 60 + minute;
+          const blocked = [
+            [8, 0],
+            [9, 0],
+            [12, 30],
+            [22, 0]
+          ];
+          const hit = blocked.find(([h, m]) => Math.abs(now - (h * 60 + m)) <= 15);
+          if (hit) {
+            console.error(`日本時間 ${hour}:${String(minute).padStart(2, '0')} は ${hit[0]}:${String(hit[1]).padStart(2, '0')} の前後です。デプロイを止めます。`);
+            process.exit(1);
+          }
+          console.log(`日本時間 ${hour}:${String(minute).padStart(2, '0')} 。自動投稿の時刻ではありません。`);
+          EOF
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests (edge cache, related articles, IndexNow)
+        run: pnpm run test:edge-cache && pnpm run test:update-related && pnpm run test:indexnow
+
+      - name: Build (Cloudflare)
+        run: pnpm run build:cloudflare
+        env:
+          # 公開の GA4 測定 ID（プロパティ 498385647）。リポジトリ変数が空でも本番バンドルに入れる。
+          # workers.dev では shouldMeasureHostname が計測しない。
+          VITE_GA_ID: ${{ vars.VITE_GA_ID || 'G-855Y7S6M95' }}
+
+      - name: Refuse routes and staging noindex headers
+        run: node scripts/check-cloudflare-production-config.mjs
+
+      - name: Dry run
+        run: pnpm exec wrangler deploy --dry-run --outdir .wrangler/dry-run
+
+      - name: Deploy production worker to workers.dev
+        if: github.ref == 'refs/heads/deploy/cloudflare-production'
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

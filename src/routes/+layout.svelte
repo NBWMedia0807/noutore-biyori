@@ -9,11 +9,19 @@
   import SEO from '$lib/components/SEO.svelte';
   import { shouldNoindexForQuery } from '$lib/utils/trackingParams.js';
   import { isWorkersDevHost } from '$lib/staging-host.js';
+  import { SIDE_RAIL_SLOT } from '$lib/config/ads.js';
   import { env } from '$env/dynamic/public';
   const PUBLIC_PUBLISHER_CENTER_VERIFICATION = env.PUBLIC_PUBLISHER_CENTER_VERIFICATION ?? '';
 
-  // サイドレール広告スロットID（AdSenseダッシュボードで作成した専用スロットに変更してください）
-  const SIDE_RAIL_SLOT = '5756190566';
+  const informationLinks = [
+    { href: '/about', label: '会社概要' },
+    { href: '/author/editorial-team', label: '著者情報' },
+    { href: '/privacy-policy', label: 'プライバシーポリシー' },
+    { href: '/terms', label: '利用規約' },
+    { href: '/disclaimer', label: '免責事項' },
+    { href: '/contact', label: 'お問い合わせ' }
+  ];
+
   const AD_CLIENT = 'ca-pub-2298313897414846';
 
   /** @type {HTMLDivElement|null} */
@@ -40,18 +48,19 @@
     } catch (_) {}
   }
 
-  // ユーザーのページ遷移ごとにサイドレールの <ins> を作り直して再リクエストする。
-  // 描画済みの <ins> へ再pushしてもAdSense側で拒否され、セッション中ずっと
-  // 同じ広告が表示され続ける（インプレッション機会の損失）ため。
   let sideRailPath = '';
-  function refreshSideRails(path) {
-    if (!adsenseRequestsAllowed() || !path || path === sideRailPath) return;
+  function refreshSideRails(path = window.location.pathname) {
+    if (!/^\d{10}$/.test(SIDE_RAIL_SLOT) || !adsenseRequestsAllowed()) return;
+
+    const pathChanged = path !== sideRailPath;
     sideRailPath = path;
-    if (window.innerWidth < 1540) return;
     for (const container of [leftRailRef, rightRailRef]) {
       if (!container) continue;
-      container.innerHTML = '';
-      mountSideRailAd(container);
+      if (pathChanged) container.replaceChildren();
+      // 表示する幅は CSS で判定。同じページで幅を戻したときは読み込み済みの枠を再利用する。
+      if (!container.firstChild && getComputedStyle(container).display !== 'none') {
+        mountSideRailAd(container);
+      }
     }
   }
 
@@ -201,7 +210,9 @@
     // サイドレール広告を初期化（十分な画面幅がある場合のみ）。
     // afterNavigate は初回ナビゲーションでも発火するが、
     // タイミング差異に備えてここでも冪等に呼んでおく。
-    refreshSideRails(window.location.pathname);
+    refreshSideRails();
+    const handleRailResize = () => refreshSideRails();
+    window.addEventListener('resize', handleRailResize);
 
     // GA4はga.tsのloadGtagOnce()に一本化（二重読み込み防止）
     loadGtagOnce();
@@ -246,6 +257,7 @@
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      window.removeEventListener('resize', handleRailResize);
       window.removeEventListener('hashchange', checkVignette);
       window.removeEventListener('popstate', checkVignette);
       clearInterval(vignettePoll);
@@ -279,6 +291,8 @@
   description={seo.description}
   canonical={seo.canonical}
   image={seo.image}
+  imageWidth={seo.imageWidth}
+  imageHeight={seo.imageHeight}
   noindex={noindexPage}
   type={seo.type ?? 'website'}
   jsonld={seo.jsonld ?? null}
@@ -286,7 +300,7 @@
 />
 
 {#if ui.showHeader !== false}
-  <header data-review-mode={reviewMode}>
+  <header google-side-rail-overlap="false" data-review-mode={reviewMode}>
     <div class="header-content">
       <a href="/" class="logo-section" aria-label="脳トレ日和 トップページ">
         <img
@@ -329,7 +343,7 @@
         <span aria-hidden="true">✕</span>
       </button>
 
-      <nav class="menu-section" aria-label="カテゴリ">
+      <nav google-side-rail-overlap="false" class="menu-section" aria-label="カテゴリ">
         <p class="menu-section-heading">カテゴリ</p>
         <ul class="menu-list">
           {#if data?.categories?.length}
@@ -340,15 +354,12 @@
         </ul>
       </nav>
 
-      <nav class="menu-section" aria-label="メニュー">
+      <nav google-side-rail-overlap="false" class="menu-section" aria-label="メニュー">
         <p class="menu-section-heading">メニュー</p>
         <ul class="menu-list">
-          <li><a href="/about" on:click={closeMenu}>会社概要</a></li>
-          <li><a href="/author/editorial-team" on:click={closeMenu}>著者情報</a></li>
-          <li><a href="/privacy-policy" on:click={closeMenu}>プライバシーポリシー</a></li>
-          <li><a href="/terms" on:click={closeMenu}>利用規約</a></li>
-          <li><a href="/disclaimer" on:click={closeMenu}>免責事項</a></li>
-          <li><a href="/contact" on:click={closeMenu}>お問い合わせ</a></li>
+          {#each informationLinks as { href, label } (href)}
+            <li><a {href} on:click={closeMenu}>{label}</a></li>
+          {/each}
         </ul>
       </nav>
     </div>
@@ -357,7 +368,7 @@
 {/if}
 
 {#if !ui.hideGlobalNavTabs && data?.globalNav?.length}
-  <nav class="main-nav">
+  <nav google-side-rail-overlap="false" class="main-nav">
     <div class="nav-container">
       <ul class="nav-menu">
         {#each data.globalNav as c (c.title)}
@@ -379,21 +390,22 @@
 {/if}
 
 <!-- サイドレール広告（PC幅が十分な場合のみ表示） -->
-<aside class="side-rail side-rail--left" aria-hidden="true">
-  <div class="side-rail__inner" bind:this={leftRailRef}></div>
-</aside>
-<aside class="side-rail side-rail--right" aria-hidden="true">
-  <div class="side-rail__inner" bind:this={rightRailRef}></div>
-</aside>
+<div class="side-rail side-rail--left" google-side-rail-overlap="false" bind:this={leftRailRef}></div>
+<div class="side-rail side-rail--right" google-side-rail-overlap="false" bind:this={rightRailRef}></div>
 
-<main class={mainClass}>
+<main google-side-rail-overlap="false" class={mainClass}>
   <slot />
 </main>
 
-<footer data-review-mode={reviewMode}>
+<footer google-side-rail-overlap="false" data-review-mode={reviewMode}>
   <div class="footer-content">
     <p class="footer-copy">&copy; 2025年9月 脳トレ日和</p>
     <p class="footer-tagline">毎日の脳トレで健康な生活を</p>
+    <nav class="footer-links" aria-label="運営情報">
+      {#each informationLinks as { href, label } (href)}
+        <a {href}>{label}</a>
+      {/each}
+    </nav>
     <p class="footer-rights">合同会社NBWMedia All Rights Reserved.</p>
   </div>
 </footer>
@@ -408,6 +420,20 @@
   .footer-copy,
   .footer-tagline {
     margin: 0.25rem 0;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+  }
+
+  .footer-links a {
+    color: inherit;
+    text-decoration: underline;
   }
 
   .footer-rights {
@@ -583,27 +609,39 @@
   .side-rail {
     display: none;
     position: fixed;
-    top: 140px; /* header + sticky nav の高さ分 */
+    top: 168px; /* デスクトップのヘッダーとナビの下から表示 */
     width: 160px;
-    height: 0; /* flex コンテナに高さを与えない */
-    z-index: 10; /* sticky nav (z-index:100) より下、コンテンツより上 */
-    flex: none;
-    overflow: visible;
+    height: 600px;
+    z-index: 10; /* sticky nav (z-index:100) より下 */
   }
 
-  .side-rail--left {
-    /* コンテンツ左端の外側に配置: 50vw - (コンテンツ幅/2) - 広告幅 - gap */
-    left: calc(50vw - 600px - 160px - 8px);
+  @media (1280px <= width < 1540px) {
+    main {
+      width: min(1200px, calc(100% - 208px));
+      margin-inline: auto 192px;
+    }
+
+    .side-rail--right {
+      display: block;
+      right: 16px;
+    }
   }
 
-  .side-rail--right {
-    right: calc(50vw - 600px - 160px - 8px);
-  }
-
-  /* 1540px以上（コンテンツ1200px + 左右160px×2 + 余裕）で表示 */
   @media (min-width: 1540px) {
+    main {
+      width: 1200px;
+    }
+
     .side-rail {
       display: block;
+    }
+
+    .side-rail--left {
+      left: calc(50% - 600px - 160px - 8px);
+    }
+
+    .side-rail--right {
+      right: calc(50% - 600px - 160px - 8px);
     }
   }
 </style>

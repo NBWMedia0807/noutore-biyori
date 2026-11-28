@@ -142,7 +142,7 @@ after(async () => {
   }
 });
 
-test('quiz detail and answer pages respond with 200', async () => {
+test('quiz detail and answer pages retain navigation and ad slots without follow buttons', async () => {
   const slugs = await resolveSlugs();
   assert.ok(slugs.length >= 2, 'At least two slugs are required for the smoke test');
 
@@ -169,8 +169,64 @@ test('quiz detail and answer pages respond with 200', async () => {
       return result;
     };
 
-    await verifyResponse(`/quiz/${encodeURIComponent(slug)}`, `/quiz/${slug}`);
-    await verifyResponse(`/quiz/${encodeURIComponent(slug)}/answer`, `/quiz/${slug}/answer`);
+    const questionPath = `/quiz/${encodeURIComponent(slug)}`;
+    for (const [path, cta, slots] of [
+      [questionPath, '正解ページへ進む', ['4170928887', '3921249196', '1724332823']],
+      [`${questionPath}/answer`, '問題ページに戻る', ['4170928887', '3921249196', '5428887502', '1724332823']]
+    ]) {
+      const { response } = await verifyResponse(path, path);
+      const html = await response.text();
+      assert.doesNotMatch(html, /フォローする|SNSも毎日更新中/, path);
+      const reservedAd = html.indexOf('data-ad-slot="4170928887"');
+      assert.match(html, /<p class="ad-label[^"]*">広告<\/p>/, path);
+      if (slug === 'sample-quiz-a') {
+        const image = html.search(/<img[^>]+alt="(?:サンプルクイズAの問題イメージ|正解画像)"/);
+        assert.ok(image >= 0 && image < reservedAd, `${path} should show the image before the ad`);
+      }
+      const secondAd = html.indexOf('data-ad-slot="3921249196"');
+      const ctaSpacer = html.indexOf('class="cta-ad-spacer');
+      assert.ok(ctaSpacer > html.lastIndexOf(cta) && secondAd > ctaSpacer, path);
+      if (path === questionPath) {
+        const mobileCta = html.indexOf('to-answer to-answer--mobile');
+        assert.ok(mobileCta > reservedAd && mobileCta < secondAd, path);
+        assert.equal([...html.matchAll(/正解ページへ進む/g)].length, 2, path);
+      }
+      assert.ok(html.includes(cta), `${path} should include ${cta}`);
+      assert.deepEqual(
+        [...html.matchAll(/data-ad-slot="([0-9]+)"/g)].map((match) => match[1]),
+        slots,
+        `${path} should retain its ad slots in order`
+      );
+    }
   }
 });
 
+test(
+  'stub answer links to one next quiz in the same category after the explanation',
+  {
+    skip: !KNOWN_SLUGS.includes('sample-quiz-a'),
+  },
+  async () => {
+    const { response } = await fetchWithLog('/quiz/sample-quiz-a/answer');
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    const challenge = html.indexOf('さらにもう一問！');
+    const note = html.indexOf('※複数の正解');
+    assert.ok(note >= 0 && challenge > note);
+    assert.match(html.slice(challenge), /href="\/category\/sample-category\/sample-quiz-next"/);
+
+    const { response: single } = await fetchWithLog('/quiz/sample-quiz-b/answer');
+    assert.equal(single.status, 200);
+    assert.doesNotMatch(await single.text(), /さらにもう一問！/);
+  }
+);
+
+test('math-quiz の正解ページにほかの計算クイズへのリンクが出る', async () => {
+  const { response } = await fetchWithLog('/quiz/arithmetic-quiz/stub-order/answer');
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  const relatedSection = html.match(/<section[^>]*aria-labelledby="arithmetic-links-heading"[^>]*>[\s\S]*?<\/section>/)?.[0];
+  assert.ok(relatedSection);
+  assert.match(relatedSection, /<h2 id="arithmetic-links-heading"[^>]*>ほかの計算クイズに挑戦<\/h2>/);
+  assert.match(relatedSection, /href="\/quiz\/arithmetic-quiz\/stub-brackets"/);
+});

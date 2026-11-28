@@ -12,8 +12,8 @@ if (!['vercel', 'cloudflare'].includes(target)) {
 const createAdapter = async () => {
   if (target === 'cloudflare') {
     const { default: cloudflare } = await import('@sveltejs/adapter-cloudflare');
-    // 出力先・assets は wrangler.jsonc の main / assets.directory から読まれる
-    return cloudflare();
+    // 生成 Worker と、wrangler.jsonc が指定する手書きの入口を分ける。
+    return cloudflare({ config: 'wrangler.adapter.jsonc' });
   }
   const { default: vercel } = await import('@sveltejs/adapter-vercel');
   return vercel({

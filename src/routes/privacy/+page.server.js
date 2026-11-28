@@ -1,13 +1,8 @@
 import { redirect } from '@sveltejs/kit';
+import { resolvePrivacyRedirect } from '$lib/server/privacy-redirect.js';
 
+// 旧URL /privacy → /privacy-policy へ 308（理由は $lib/server/privacy-redirect.js）
+/** @type {import('./$types').PageServerLoad} */
 export const load = ({ url }) => {
-  const hasTrailingSlash = url.pathname.endsWith('/');
-  const basePath = hasTrailingSlash ? '/privacy-policy/' : '/privacy-policy';
-  const target = new URL(basePath, url);
-  target.search = url.search;
-  target.hash = url.hash;
-
-  const destination = `${target.pathname}${target.search}${target.hash}`;
-
-  throw redirect(308, destination);
+  redirect(308, resolvePrivacyRedirect(url));
 };

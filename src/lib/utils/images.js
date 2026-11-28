@@ -1,3 +1,4 @@
+import { toProxiedSanityImageUrl } from './imageProxy.js';
 import { urlFor } from '$lib/sanityPublic.js';
 
 const buildWidth = (value) => {
@@ -25,7 +26,7 @@ const buildSources = (image, { width, height, quality }) => {
             const q = format === 'avif' ? Math.min(quality + 10, 90) : quality;
             builder = builder.quality(q);
           }
-          return `${builder.url()} ${buildWidth(width * scale)}w`;
+          return `${toProxiedSanityImageUrl(builder.url())} ${buildWidth(width * scale)}w`;
         } catch (error) {
           console.error('[image-utils] Failed to build source', error);
           return null;
@@ -68,7 +69,9 @@ export function createSanityImageSet(image, { width = 800, height, quality = 80,
       ? image.asset._ref ?? image.asset._id
       : null;
   const hasBuilder = Boolean(assetRef);
-  const fallback = fallbackUrl ?? (typeof image === 'string' ? image : image?.asset?.url ?? '');
+  const fallback = toProxiedSanityImageUrl(
+    fallbackUrl ?? (typeof image === 'string' ? image : image?.asset?.url ?? '')
+  );
 
   if (!hasBuilder) {
     return {

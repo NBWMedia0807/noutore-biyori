@@ -4,7 +4,6 @@
   import RelatedQuizSection from '$lib/components/RelatedQuizSection.svelte';
   import InlineCta from '$lib/components/InlineCta.svelte';
   import AdSense from '$lib/components/AdSense.svelte';
-  import SnsFollowCard from '$lib/components/SnsFollowCard.svelte';
   import { quizHref, quizAnswerHref } from '$lib/utils/quizLinks.js';
 
   export let data;
@@ -199,11 +198,6 @@
     {/if}
   </header>
 
-  <!-- タイトル直下: 固定レクタングルバナー広告（必須配信） -->
-  <!-- noutorebiyori_記事内_タイトル下_固定レクタングル -->
-  <!-- 必須配信のため高さを予約してCLS（読込時のガタつき）を防ぐ -->
-  <AdSense slot="4170928887" minHeight={250} />
-
   {#if problemImageSet?.src}
     <div class="problem-image">
       <picture>
@@ -236,8 +230,18 @@
     </div>
   {/if}
 
-  <!-- 記事内: 問題画像下の広告 -->
-  <AdSense slot="3921249196" />
+  <div class="image-ad">
+    <!-- 必須配信枠は高さを予約し、広告読み込み時のレイアウトシフトを防ぐ -->
+    <AdSense slot="4170928887" minHeight={250} showLabel />
+  </div>
+
+  <nav class="to-answer to-answer--mobile">
+    <a class="action-button primary" href={answerPath}>
+      正解ページへ進む
+      <span class="sr-only">次のページへ</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </nav>
 
   {#if bodyHtml}
     <section class="body content-card">
@@ -291,10 +295,17 @@
     </a>
   </nav>
 
-  <!-- 記事下: 関連記事上の広告 -->
-  <AdSense slot="1724332823" />
+  <!-- 誤クリック対策: ボタンと後続の広告の間に余白を確保 -->
+  <div class="cta-ad-spacer" aria-hidden="true"></div>
 
-  <SnsFollowCard />
+  <div class="ad-buffer">
+    <AdSense slot="3921249196" showLabel />
+  </div>
+
+  <!-- 記事下: 関連記事上の広告（前後に余白を確保してボタンと密着させない） -->
+  <div class="ad-buffer">
+    <AdSense slot="1724332823" />
+  </div>
 
   {#if hasRelated}
     <RelatedQuizSection quizzes={relatedQuizzes} />
@@ -352,9 +363,9 @@
     border: 1.5px solid rgba(245, 158, 11, 0.5);
     color: #78350f;
     font-weight: 800;
-    font-size: 0.88rem;
+    font-size: 1rem;
     text-decoration: none;
-    min-height: 34px;
+    min-height: 44px;
     letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.18);
     transition: background 0.2s ease, box-shadow 0.2s ease;
@@ -386,6 +397,11 @@
     color: #92400e;
     font-weight: 600;
     font-size: 0.95rem;
+  }
+
+  .problem-image + .image-ad {
+    /* ページの gap（最小20px）と合わせ、画像から48px以上空ける */
+    padding-top: 28px;
   }
 
   .problem-image {
@@ -443,8 +459,27 @@
   /* 広告がまだ表示されていない（読み込み中／未配信）枠が
      上下それぞれの flex gap を確保して二重の余白になるのを防ぐ（トルツメ）。
      高さ予約済み（.ad-reserved）の枠は常にスペースを確保するため対象外 */
-  .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+  .quiz-detail > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
     margin-top: -24px;
+  }
+
+  .cta-ad-spacer {
+    min-height: 48px;
+  }
+
+  /* ボタン・カード近くの広告枠。上下に余白を確保し、未表示時の負マージン（トルツメ）も
+     適用しない（表示後に広告がボタンへ寄るのを防ぐ）。未配信なら枠ごと畳む */
+  .ad-buffer {
+    padding-block: 24px;
+  }
+
+  .ad-buffer:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
+    display: none;
+  }
+
+  /* カテゴリ一覧ボタンは直前の広告・関連記事と密着させない */
+  .category-nav {
+    margin-top: 24px;
   }
 
   .hints-toggle,
@@ -458,6 +493,18 @@
   .to-answer .action-button,
   .category-nav .action-button {
     width: 100%;
+  }
+
+  .to-answer.to-answer--mobile {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .to-answer.to-answer--mobile {
+      display: flex;
+      /* ページの gap 20px と合わせて、広告との距離を48px確保 */
+      margin-top: 28px;
+    }
   }
 
   .action-button {
@@ -560,7 +607,7 @@
       gap: 20px;
     }
 
-    .quiz-detail :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
+    .quiz-detail > :global(.adsense-container:not(.revealed):not(.ad-reserved)) {
       margin-top: -20px;
     }
 

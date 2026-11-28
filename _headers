@@ -1,0 +1,5 @@
+/*
+  Strict-Transport-Security: max-age=63072000
+
+/logo.svg
+  Cache-Control: public, max-age=86400

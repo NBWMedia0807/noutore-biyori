@@ -1,8 +1,13 @@
-import { HOME_BREADCRUMB, SITE } from '$lib/config/site.js';
+import { toProxiedSanityImageUrl } from './utils/imageProxy.js';
+import { HOME_BREADCRUMB, SITE } from './config/site.js';
 
 const MIN_DESCRIPTION_LENGTH = 120;
 const MAX_DESCRIPTION_LENGTH = 160;
 const SENTENCE_END_PATTERN = /[。.!?！？]$/;
+const OG_IMAGE_WIDTH = 1280;
+const OG_IMAGE_HEIGHT = 720;
+
+const isSanityImageUrl = (url) => /^https?:\/\/cdn\.sanity\.io\/images\//i.test(url);
 
 const toAbsoluteUrl = (pathOrUrl) => {
   if (!pathOrUrl) return SITE.url;
@@ -50,17 +55,14 @@ const composeDescription = (primary, extras = []) => {
 
   if (description.length > MAX_DESCRIPTION_LENGTH) {
     const truncated = description.slice(0, MAX_DESCRIPTION_LENGTH);
-    const punctuationMarks = ['。', '！', '!', '？', '?', '、', ',', '，', '．', '.'];
-    const cutIndex = punctuationMarks.reduce((maxIndex, mark) => {
-      const index = truncated.lastIndexOf(mark);
-      return index > maxIndex ? index : maxIndex;
-    }, -1);
+    const sentenceEnds = [...truncated.matchAll(/[。！？]|[.!?](?=\s|$)/g)];
+    const cutIndex = sentenceEnds.at(-1)?.index ?? -1;
 
     if (cutIndex >= MIN_DESCRIPTION_LENGTH / 2) {
       description = truncated.slice(0, cutIndex + 1);
     } else {
-      const withoutTrailingWord = truncated.replace(/\s+\S*$/, '').trim();
-      description = withoutTrailingWord || truncated.trim();
+      const excerpt = truncated.slice(0, -1).replace(/\s+[a-z0-9]+$/i, '').replace(/[、,，\s]+$/, '');
+      description = `${excerpt}…`;
     }
   }
 
@@ -69,14 +71,22 @@ const composeDescription = (primary, extras = []) => {
 
 /**
  * Sanity CDN URL に OGP 用変換パラメータを付与する。
- * アスペクト比 1.91:1（1200×630px）に統一し、Discover カードの表示を最適化する。
+ * 1280×720px の枠内に収め、元のアスペクト比を維持する。
  * Sanity 以外の URL はそのまま返す。
  */
 const buildOgImageUrl = (url) => {
   if (!url || typeof url !== 'string') return url;
-  if (!url.includes('cdn.sanity.io/images')) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}w=1200&h=630&fit=crop&fm=webp&q=80`;
+  if (!isSanityImageUrl(url)) return url;
+  const imageUrl = new URL(url);
+  for (const parameter of ['crop', 'rect', 'ar']) {
+    imageUrl.searchParams.delete(parameter);
+  }
+  imageUrl.searchParams.set('w', String(OG_IMAGE_WIDTH));
+  imageUrl.searchParams.set('h', String(OG_IMAGE_HEIGHT));
+  imageUrl.searchParams.set('fit', 'max');
+  imageUrl.searchParams.set('fm', 'webp');
+  imageUrl.searchParams.set('q', '80');
+  return imageUrl.href;
 };
 
 const toIsoString = (value) => {
@@ -159,7 +169,7 @@ const buildArticleSchema = ({
     author: {
       '@type': 'Organization',
       name: authorName ?? SITE.authorName ?? SITE.organization.name,
-      ...(authorUrl && { url: authorUrl })
+      url: authorUrl ?? toAbsoluteUrl('/author/editorial-team')
     },
     publisher: {
       '@type': 'Organization',
@@ -211,14 +221,14 @@ export const createPageSeo = ({
   appendSiteName = true,
   additionalJsonLd = [],
   descriptionFallbacks = [],
+  appendSiteDescription = true,
   faqQuestion = '',
   faqAnswer = ''
 } = {}) => {
   const canonical = toAbsoluteUrl(path);
   const sanitizedDescription = composeDescription(description, [
     ...(Array.isArray(descriptionFallbacks) ? descriptionFallbacks : [descriptionFallbacks]),
-    SITE.tagline,
-    SITE.description
+    ...(appendSiteDescription ? [SITE.tagline, SITE.description] : [])
   ]);
   const resolvedTitle = (() => {
     const baseTitle = title ? sanitizeText(title) : `${SITE.name}｜${SITE.tagline}`;
@@ -226,9 +236,23 @@ export const createPageSeo = ({
     return `${baseTitle}｜${SITE.name}`;
   })();
 
-  const ogImage = image ? buildOgImageUrl(toAbsoluteUrl(image)) : SITE.defaultOgImage;
-  const normalizedImageWidth = typeof imageWidth === 'number' ? Math.max(Math.floor(imageWidth), 0) : undefined;
-  const normalizedImageHeight = typeof imageHeight === 'number' ? Math.max(Math.floor(imageHeight), 0) : undefined;
+  const sourceImage = image ? toAbsoluteUrl(image) : SITE.defaultOgImage;
+  const ogImage = toProxiedSanityImageUrl(buildOgImageUrl(sourceImage));
+  const usesSanityImage = isSanityImageUrl(sourceImage);
+  const dimensions = usesSanityImage
+    ? new URL(sourceImage).pathname.match(/-(\d+)x(\d+)\.[^/]+$/)
+    : null;
+  // fit=max は小さい画像を拡大しない。規定サイズにならない画像には固定値を付けない。
+  const isStandardSanityImage = usesSanityImage && (!dimensions || (
+    Number(dimensions[1]) >= OG_IMAGE_WIDTH &&
+    Number(dimensions[1]) * OG_IMAGE_HEIGHT === Number(dimensions[2]) * OG_IMAGE_WIDTH
+  ));
+  const normalizedImageWidth = usesSanityImage
+    ? (isStandardSanityImage ? OG_IMAGE_WIDTH : undefined)
+    : typeof imageWidth === 'number' ? Math.max(Math.floor(imageWidth), 0) : undefined;
+  const normalizedImageHeight = usesSanityImage
+    ? (isStandardSanityImage ? OG_IMAGE_HEIGHT : undefined)
+    : typeof imageHeight === 'number' ? Math.max(Math.floor(imageHeight), 0) : undefined;
 
   const articleTitle = sanitizeText(article?.title ?? title ?? SITE.name);
   const articlePublished = article ? toIsoString(article.datePublished) : undefined;
@@ -291,6 +315,9 @@ export const createPageSeo = ({
       : null
   };
 };
+
+export const createMatchstickCategoryDescription = (totalCount) =>
+  `公開中のマッチ棒クイズ${totalCount}問の一覧です。マッチ棒を1本動かして、正しい式に直すパズルに挑戦できます。`;
 
 export const createCategoryDescription = (title, fallback) => {
   const customDescription = sanitizeText(fallback ?? '');

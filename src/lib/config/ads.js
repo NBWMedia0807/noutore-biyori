@@ -15,3 +15,6 @@ export const FEED_AD_SLOTS = [
   '1738982872', // noutorebiyori_list_infeed_03（記事9枚目の後ろ）
   '2661182301', // noutorebiyori_list_infeed_04（記事12枚目の後ろ）
 ];
+
+// 新スロット発行済み（2026-11-24）: noutore-side-rail-160x600（固定 160×600）。一覧上 5756190566 とは分ける。
+export const SIDE_RAIL_SLOT = '2110613730';

@@ -48,15 +48,11 @@ const RELATED_FIELDS = `{
   )${IMAGE_FIELDS}
 }`;
 
-// 取得件数は 40 件。フィード側で「公開から10日以内」に絞り込むため、
-// 絞り込み後も十分な件数が残るよう配信上限（30件）より多めに取る。
-export const RSS_GUNOSY_QUERY = /* groq */ `
-*[
-  _type == "quiz" &&
-  ${PUBLISHED_FILTER}
-] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...40]{
+const ITEM_FIELDS = `{
   _id,
   _updatedAt,
+  reviewStatus,
+  retractedAt,
   publishedAt,
   _createdAt,
   title,
@@ -104,28 +100,73 @@ export const RSS_GUNOSY_QUERY = /* groq */ `
       ${EXCLUDE_NULL_TEXT_FILTER}
   },
 
-  // 手動指定が3件に満たない場合の補充用（同カテゴリの新着）
-  "autoRelated": select(
-    defined(category._ref) => *[
-      _type == "quiz" &&
-      ${PUBLISHED_FILTER} &&
-      references(^.category._ref) &&
-      _id != ^._id
-    ]
-    | order(${PUBLISHED_DATETIME_FIELD} desc)[0...5]${RELATED_FIELDS},
-    []
-  ),
+}`;
 
-  // 同カテゴリだけでは3枠が埋まらない場合の最終補充（全カテゴリの新着）。
-  // カテゴリの記事数が少ない、またはカテゴリ未設定の記事では autoRelated が
-  // 3件に届かず、gnf:relatedLink が欠けたまま配信されていた。
-  // relatedLink はアプリ内で本文を読んだ人をサイトへ連れてくる唯一の導線なので、
-  // 空き枠を作らないことを優先する。
+// 取り下げ通知用。guid・link・本文・画像は出すが、関連記事の取得はしない（重いため）。
+const DELETED_FIELDS = `{
+  _id,
+  _updatedAt,
+  reviewStatus,
+  retractedAt,
+  publishedAt,
+  _createdAt,
+  title,
+  "slug": slug.current,
+
+  problemDescription,
+  hints,
+  answerExplanation,
+  closingMessage,
+
+  "mainImage": select(
+    defined(mainImage) => mainImage,
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    null
+  )${IMAGE_FIELDS},
+
+  "problemImage": select(
+    defined(problemImage) => problemImage,
+    defined(questionImage) => questionImage,
+    null
+  )${IMAGE_FIELDS},
+
+  "answerImage": answerImage${IMAGE_FIELDS},
+
+  "author": author->{ name },
+
+  "category": category->{ _id, title, name, "slug": slug.current }
+}`;
+
+// active は10日ルールで絞るため配信上限の30件より多めに取得する。
+export const RSS_GUNOSY_QUERY = /* groq */ `{
+  "active": *[
+    _type == "quiz" &&
+    ${PUBLISHED_FILTER}
+  ] | order(${PUBLISHED_DATETIME_FIELD} desc, _updatedAt desc)[0...40]${ITEM_FIELDS},
+
+  "retracted": *[
+    _type == "quiz" &&
+    defined(slug.current) &&
+    !(_id in path("drafts.**")) &&
+    ${PUBLISHED_DATETIME_FIELD} <= now() &&
+    reviewStatus == "retracted"
+  ] | order(dateTime(coalesce(retractedAt, _updatedAt)) desc)[0...60]${DELETED_FIELDS},
+
+  // 自分自身を除いても従来どおり最大8件を使えるよう、候補を9件取得する。
   "fallbackRelated": *[
     _type == "quiz" &&
-    ${PUBLISHED_FILTER} &&
-    _id != ^._id
-  ]
-  | order(${PUBLISHED_DATETIME_FIELD} desc)[0...8]${RELATED_FIELDS}
+    ${PUBLISHED_FILTER}
+  ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...9]${RELATED_FIELDS},
+
+  // 同カテゴリの新着はカテゴリごとに1回だけ取る。JS で自分自身を除いて先頭5件を使う。
+  "autoRelatedByCategory": *[_type == "category"]{
+    _id,
+    "items": *[
+      _type == "quiz" &&
+      ${PUBLISHED_FILTER} &&
+      references(^._id)
+    ] | order(${PUBLISHED_DATETIME_FIELD} desc)[0...6]${RELATED_FIELDS}
+  }
 }
 `;

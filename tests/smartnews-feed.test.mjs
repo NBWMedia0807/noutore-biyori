@@ -51,6 +51,25 @@ const canonicalUrl = (article) => {
 };
 
 const feed = await fetchFeed();
+
+test('SmartNews の記事・関連・広告の Sanity サムネイルは幅1200px', () => {
+  for (const pattern of [
+    /<media:thumbnail url="([^"]+)"/g,
+    /<snf:relatedLink [^>]* thumbnail="([^"]+)"/g,
+    /<snf:sponsoredLink [^>]* thumbnail="([^"]+)"/g,
+  ]) {
+    const urls = [...feed.matchAll(pattern)].map(([, url]) => new URL(url.replaceAll('&amp;', '&')));
+    assert.ok(urls.some((url) => url.hostname === 'cdn.sanity.io'));
+    for (const url of urls) {
+      if (url.href === `${SITE}logo.png`) continue;
+      assert.equal(url.searchParams.get('w'), '1200');
+      assert.equal(url.searchParams.has('h'), false);
+      assert.equal(url.searchParams.has('rect'), false);
+    }
+  }
+  assert.match(feed, /<snf:logo>\s*<url>https:\/\/noutorebiyori\.com\/logo\.png<\/url>/);
+});
+
 const articles = createSmartnewsFixtureArticles();
 
 // フィードは候補から30件を選ぶので、サンプル記事の並びとは一致しない。

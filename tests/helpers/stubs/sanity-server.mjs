@@ -13,6 +13,7 @@ export const previewDraftsEnabled = false;
 export const shouldSkipSanityFetch = () => false;
 
 export const client = {
+  config: () => ({ projectId: 'quljge22', dataset: 'production' }),
   async fetch(query) {
     const text = String(query ?? '');
     // 記事本体のクエリだけが relatedLinks を投影している。

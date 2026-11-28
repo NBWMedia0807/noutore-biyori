@@ -1,3 +1,4 @@
+import { resolveRequestedPage } from '$lib/server/pagination.js';
 import { redirect } from '@sveltejs/kit';
 import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
 import { createPageSeo } from '$lib/seo.js';
@@ -14,13 +15,6 @@ export const config = { runtime: 'nodejs22.x' };
 // 全件フェッチは記事数に比例して TTFB・転送量・Sanity コストが悪化するため、
 // ホーム・カテゴリと同じ12件ページングに統一する。
 const QUIZ_LIST_PAGE_SIZE = 12;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  const integer = Math.trunc(parsed);
-  return integer >= 1 ? integer : 1;
-};
 
 const QUIZZES_QUERY = /* groq */ `{
   "items": *[
@@ -58,7 +52,7 @@ const createEmptyPagination = (path) => ({
 export const load = async (event) => {
   const { url, setHeaders, isDataRequest } = event;
   const path = url.pathname;
-  const requestedPage = parsePageParam(url.searchParams.get('page'));
+  const requestedPage = resolveRequestedPage(url);
   const offset = (requestedPage - 1) * QUIZ_LIST_PAGE_SIZE;
 
   if (!isDataRequest) {

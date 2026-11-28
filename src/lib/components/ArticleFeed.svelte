@@ -49,6 +49,7 @@
   /* 記事3枚ごとの広告はグリッド全幅の行として表示する */
   .feed-ad {
     grid-column: 1 / -1;
+    margin-block: 48px;
   }
 
   /*
@@ -59,17 +60,5 @@
    */
   .feed-ad:has(:global(ins.adsbygoogle[data-ad-status='unfilled'])) {
     display: none;
-  }
-
-  /*
-   * SP（モバイル）のみ表示。
-   * PC・タブレット幅では display:none にする。
-   * display:none の要素は IntersectionObserver が交差を検知しないため、
-   * AdSense.svelte 側の広告 push 自体が走らず、広告リクエストも発生しない。
-   */
-  @media (min-width: 768px) {
-    .feed-ad {
-      display: none;
-    }
   }
 </style>

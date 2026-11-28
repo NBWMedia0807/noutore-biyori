@@ -9,7 +9,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  attachHoistedAutoRelated,
   buildGunosyFeed,
+  GUNOSY_CACHE_CONTROL,
   buildGuid,
   resolveModifiedDate,
   toGunosyItem,
@@ -505,4 +507,122 @@ test('セルフチェッカーが gnf:relatedLink 4件以上を検出する', ()
     errors.some((e) => e.message.includes('gnf:relatedLink')),
     JSON.stringify(errors)
   );
+});
+
+test('取り下げた記事は active と同じ item を deleted として出す', () => {
+  const { docs: [doc], now } = buildFixtureFeed();
+  const active = buildFixtureFeed({ now, docs: [{ ...doc, reviewStatus: 'approved' }] });
+  const deleted = buildFixtureFeed({
+    now,
+    docs: [{ ...doc, reviewStatus: 'retracted', retractedAt: now.toISOString() }],
+  });
+  const [item] = itemBlocks(deleted.xml);
+  assert.match(item, /<media:status state="deleted" \/>/);
+  assert.deepEqual(
+    itemBlocks(deleted.xml),
+    itemBlocks(active.xml).map((block) => block.replace('state="active"', 'state="deleted"'))
+  );
+});
+
+test('取り下げ日時の31日境界と更新日時の代用を判定する', () => {
+  const { docs: [doc], now } = buildFixtureFeed();
+  const boundary = now.getTime() - 31 * 24 * 60 * 60 * 1000;
+  const fixtures = [
+    { slug: 'at-boundary', retractedAt: new Date(boundary).toISOString() },
+    { slug: 'expired', retractedAt: new Date(boundary - 1).toISOString() },
+    { slug: 'studio-retraction', _updatedAt: now.toISOString() },
+    { slug: 'needs-review', reviewStatus: 'needs_review' },
+    { slug: 'draft-retraction', _id: 'drafts.quiz-retracted' },
+  ].map((overrides) => ({
+    ...doc,
+    _id: overrides.slug,
+    reviewStatus: 'retracted',
+    ...overrides,
+  }));
+  const { xml } = buildFixtureFeed({ now, docs: fixtures });
+  assert.equal(itemBlocks(xml).length, 2);
+  assert.match(xml, /<link>[^<]*\/at-boundary\?/);
+  assert.match(xml, /<link>[^<]*\/studio-retraction\?/);
+});
+
+test('公開から10日を超えた削除通知を active 30件に追加する', () => {
+  const { docs: [doc], now } = buildFixtureFeed();
+  const active = Array.from({ length: 30 }, (_, i) => ({
+    ...doc,
+    _id: `active-${i}`,
+    slug: `active-${i}`,
+  }));
+  const deleted = {
+    ...doc,
+    _id: 'old-deleted',
+    slug: 'old-deleted',
+    reviewStatus: 'retracted',
+    publishedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+    retractedAt: now.toISOString(),
+  };
+  const { xml } = buildFixtureFeed({ now, docs: [...active, deleted] });
+  const items = itemBlocks(xml);
+  assert.equal(items.length, 31);
+  assert.ok(items.slice(0, 30).every((item) => item.includes('state="active"')));
+  assert.match(items[30], /state="deleted"/);
+  const { errors, warnings } = validateGunosyFeed(xml);
+  assert.deepEqual(errors, []);
+  assert.ok(!warnings.some(({ message }) => message.includes('取り込まれません')));
+});
+
+test('共有の関連記事候補から自分自身を除き、従来の8件を使う', () => {
+  const { docs: [doc], buildImageUrl } = buildFixtureFeed();
+  const fallback = Array.from({ length: 9 }, (_, i) => ({
+    _id: i === 0 ? doc._id : `fallback-${i}`,
+    slug: i === 0 ? doc.slug : `fallback-${i}`,
+    title: `関連記事 ${i}`,
+    image: i >= 7 ? doc.problemImage : null,
+  }));
+  const item = toGunosyItem(
+    { ...doc, manualRelated: [], autoRelated: [] },
+    { buildImageUrl, fallbackRelated: fallback }
+  );
+  assert.deepEqual(item.related.map(({ title }) => title), ['関連記事 7', '関連記事 8', '関連記事 1']);
+});
+
+test('キャッシュ方針はエッジの有効期限と更新中・障害時の再利用を指定する', () => {
+  assert.equal(
+    GUNOSY_CACHE_CONTROL,
+    'public, max-age=60, s-maxage=900, stale-while-revalidate=86400, stale-if-error=86400'
+  );
+});
+
+test('カテゴリごとに取った同カテゴリ新着は、自分を除いて先頭5件になる', () => {
+  const { docs: [doc] } = buildFixtureFeed();
+  const catId = doc.category._id;
+  const items = Array.from({ length: 7 }, (_, i) => ({
+    _id: i === 0 ? doc._id : `same-cat-${i}`,
+    title: `同カテゴリ ${i}`
+  }));
+  const [attached] = attachHoistedAutoRelated(
+    [{ ...doc, manualRelated: [], autoRelated: [] }],
+    [
+      { _id: catId, items },
+      { _id: 'other-cat', items: [{ _id: 'other-1', title: '別カテゴリ' }] }
+    ]
+  );
+  assert.deepEqual(
+    attached.autoRelated.map(({ _id }) => _id),
+    ['same-cat-1', 'same-cat-2', 'same-cat-3', 'same-cat-4', 'same-cat-5']
+  );
+});
+
+test('取り下げ記事には同カテゴリ新着を付けない', () => {
+  const { docs: [doc] } = buildFixtureFeed();
+  const retracted = {
+    ...doc,
+    reviewStatus: 'retracted',
+    retractedAt: new Date().toISOString(),
+    autoRelated: undefined
+  };
+  const [attached] = attachHoistedAutoRelated(
+    [retracted],
+    [{ _id: doc.category._id, items: [{ _id: 'same-cat-1', title: '同カテゴリ 1' }] }]
+  );
+  assert.equal(attached.autoRelated, undefined);
 });

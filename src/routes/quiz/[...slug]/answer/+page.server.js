@@ -1,13 +1,15 @@
 import { redirect } from '@sveltejs/kit';
 import { createSlugContext, findQuizDocument } from '$lib/server/quiz.js';
 import { fetchRelatedQuizzes } from '$lib/server/related-quizzes.js';
-import { QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
+import { QUIZ_PUBLISHED_FIELD, QUIZ_PUBLISHED_FILTER } from '$lib/queries/quizVisibility.js';
 import { throwGoneOrNotFound } from '$lib/server/retracted.js';
 import { createPageSeo, portableTextToPlain, resolveQuizOgImage } from '$lib/seo.js';
 import { SITE } from '$lib/config/site.js';
 import { resolvePublishedDate } from '$lib/utils/publishedDate.js';
-// ▼ 修正済み: 正しいインポート
-import { client } from '$lib/sanity/client.js';
+import { client, shouldSkipSanityFetch } from '$lib/sanity.server.js';
+import { getQuizStubQuizzesByCategory, isQuizStubEnabled } from '$lib/server/quiz-stub.js';
+import { normalizeChallengePublishedAt, selectNextChallenge } from '$lib/utils/nextChallenge.js';
+import { isArithmeticQuiz, selectArithmeticLinks } from '$lib/utils/arithmeticLinks.js';
 
 export const prerender = false;
 export const ssr = true;
@@ -16,6 +18,7 @@ export const config = { runtime: 'nodejs22.x' };
 const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED_FILTER}][0]{
   _id,
   title,
+  quizType,
   "slug": slug.current,
   "categoryId": category._ref,
   category->{ title, "slug": slug.current },
@@ -29,13 +32,77 @@ const Q = /* groq */ `*[_type == "quiz" && slug.current == $slug${QUIZ_PUBLISHED
   _updatedAt
 }`;
 
-// ▼ 追加: 「さらにもう一問」用のクエリ
-const nextChallengeQuery = /* groq */ `*[_type == "quiz" && defined(slug.current) && slug.current != $slug && category._ref == $categoryId${QUIZ_PUBLISHED_FILTER} && isRepublished != true] | order(publishedAt desc)[0...3]{
+const publishedTime = `dateTime(select(length(${QUIZ_PUBLISHED_FIELD}) == 10 => ${QUIZ_PUBLISHED_FIELD} + "T00:00:00Z", ${QUIZ_PUBLISHED_FIELD}))`;
+const candidateFilter = /* groq */ `_type == "quiz" && defined(slug.current)
+  && slug.current != $slug && category._ref == $categoryId
+  ${QUIZ_PUBLISHED_FILTER}
+  && !(_id in path("drafts.**")) && ${publishedTime} <= dateTime(now())
+  && isRepublished != true`;
+const candidateFields = /* groq */ `{
   title,
   "slug": slug.current,
   category->{ title, "slug": slug.current },
-  "image": problemImage{ asset->{ _id, url, metadata } }
+  "publishedAt": ${QUIZ_PUBLISHED_FIELD}
 }`;
+const nextChallengeQuery = /* groq */ `{
+  "newer": *[${candidateFilter} && ${publishedTime} > dateTime($publishedAt)]
+    | order(${publishedTime} asc, slug.current asc)[0]${candidateFields},
+  "older": *[${candidateFilter} && ${publishedTime} < dateTime($publishedAt)]
+    | order(${publishedTime} desc, slug.current asc)[0]${candidateFields}
+}`;
+
+const arithmeticLinksQuery = /* groq */ `*[
+  ${candidateFilter}
+  && (quizType == "arithmetic" || !defined(quizType))
+] | order(${publishedTime} desc, slug.current asc)[0...8]{
+  title, "slug": slug.current
+}`;
+
+async function fetchArithmeticLinks(quiz) {
+  if (!isArithmeticQuiz(quiz)) return [];
+
+  try {
+    let candidates;
+    if (isQuizStubEnabled()) {
+      const now = Date.now();
+      candidates = getQuizStubQuizzesByCategory(quiz.category.slug)
+        .filter((candidate) =>
+          candidate.slug !== quiz.slug &&
+          (candidate.quizType == null || candidate.quizType === 'arithmetic') &&
+          candidate.isRepublished !== true &&
+          !candidate._id.startsWith('drafts.') &&
+          (candidate.reviewStatus == null || candidate.reviewStatus === 'approved') &&
+          Date.parse(normalizeChallengePublishedAt(candidate)) <= now
+        )
+        .sort((a, b) => Date.parse(normalizeChallengePublishedAt(b)) - Date.parse(normalizeChallengePublishedAt(a)))
+        .slice(0, 8);
+    } else {
+      if (shouldSkipSanityFetch() || !quiz.categoryId) return [];
+      candidates = await client.fetch(arithmeticLinksQuery, { slug: quiz.slug, categoryId: quiz.categoryId });
+    }
+
+    return selectArithmeticLinks(quiz, candidates);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchNextChallenge(quiz) {
+  if (isQuizStubEnabled() || shouldSkipSanityFetch()) {
+    return selectNextChallenge(quiz, getQuizStubQuizzesByCategory(quiz.category?.slug), Date.now());
+  }
+
+  if (!quiz.categoryId || !quiz.category?.slug) return null;
+  const publishedAt = normalizeChallengePublishedAt(quiz);
+  if (!publishedAt) return null;
+
+  const { newer, older } = await client.fetch(nextChallengeQuery, {
+    slug: quiz.slug,
+    categoryId: quiz.categoryId,
+    publishedAt,
+  });
+  return selectNextChallenge(quiz, [newer, older], Date.now());
+}
 
 export async function load({ params, setHeaders }) {
   const slugSegments = Array.isArray(params.slug) ? params.slug : [params.slug];
@@ -52,18 +119,13 @@ export async function load({ params, setHeaders }) {
     throw redirect(308, `/quiz/${quiz.slug}/answer`);
   }
 
-  // ▼ 修正: 並行してデータ取得
-  const [related, nextChallengePosts] = await Promise.all([
+  const [related, nextChallenge, arithmeticLinks] = await Promise.all([
     fetchRelatedQuizzes({
       slug: quiz.slug,
       categorySlug: quiz.category?.slug ?? null
     }),
-    quiz.categoryId
-      ? client.fetch(nextChallengeQuery, {
-        slug: quiz.slug,
-        categoryId: quiz.categoryId
-      })
-      : Promise.resolve([])
+    fetchNextChallenge(quiz),
+    fetchArithmeticLinks(quiz),
   ]);
 
   setHeaders({ 'Cache-Control': 'public, max-age=60, s-maxage=300' });
@@ -120,7 +182,8 @@ export async function load({ params, setHeaders }) {
   return {
     quiz,
     related,
-    nextChallengePosts,
+    nextChallenge,
+    arithmeticLinks,
     ui: {
       showHeader: true,
       hideGlobalNavTabs: true,
