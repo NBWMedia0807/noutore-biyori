@@ -1,5 +1,6 @@
 // src/lib/sanity.server.js
 import { createClient } from '@sanity/client';
+import { withSanityEdgeCache } from './server/sanity-edge-cache.js';
 import { env } from '$env/dynamic/private';
 import { SANITY_DEFAULTS, warnMissingSanityEnv } from './sanityDefaults.js';
 
@@ -79,7 +80,7 @@ if (!env.SANITY_PROJECT_ID) {
   console.warn('[sanity.server] SANITY_PROJECT_ID is missing; falling back to default projectId.');
 }
 
-export const client = createClient({
+export const client = withSanityEdgeCache(createClient({
   projectId,
   dataset,
   apiVersion,
@@ -90,7 +91,7 @@ export const client = createClient({
   // （Sanity の API CDN は認証付きリクエストにも対応している）。
   useCdn: !enablePreviewDrafts,
   perspective: enablePreviewDrafts ? 'previewDrafts' : 'published'
-});
+}), { ttlSeconds: env.SANITY_EDGE_CACHE_TTL });
 
 export const shouldSkipSanityFetch = () => shouldBypassSanity;
 export const previewDraftsEnabled = enablePreviewDrafts;
